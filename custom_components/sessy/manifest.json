@@ -1,0 +1,17 @@
+{
+  "domain": "sessy",
+  "name": "Sessy",
+  "version": "0.0.1",
+  "config_flow": true,
+  "documentation": "https://github.com/PimDoos/ha-sessy",
+  "issue_tracker": "https://github.com/PimDoos/ha-sessy/issues",
+  "requirements": ["sessypy"],
+  "ssdp": [],
+  "zeroconf": [],
+  "homekit": {},
+  "dependencies": [],
+  "codeowners": [
+    "@PimDoos"
+  ],
+  "iot_class": "local_polling"
+}
