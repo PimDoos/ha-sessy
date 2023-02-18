@@ -12,6 +12,7 @@ TODO:
 - [ ] Add Power Setpoint service
 - [ ] Add Power Strategy service
 - [ ] Add Energy sensors
+- [ ] Add update entities
 - [X] Add Device Registry information
 - [ ] Add logo to home-assistant/brands
 - [ ] Add HACS configuration
