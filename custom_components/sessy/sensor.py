@@ -6,7 +6,10 @@ from homeassistant.const import (
     POWER_KILO_WATT,
     POWER_WATT,
     ENERGY_KILO_WATT_HOUR,
-    PERCENTAGE
+    PERCENTAGE,
+    ELECTRIC_POTENTIAL_MILLIVOLT,
+    ELECTRIC_CURRENT_AMPERE,
+    SIGNAL_STRENGTH_DECIBELS_MILLIWATT
 )
 from homeassistant.components.sensor import SensorEntity, SensorDeviceClass, SensorStateClass
 from homeassistant.core import HomeAssistant, callback
@@ -23,6 +26,13 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
 
     device = hass.data[DOMAIN][config_entry.entry_id][SESSY_DEVICE]
     sensors = []
+
+    await add_cache_command(hass, config_entry, SessyApiCommand.NETWORK_STATUS, DEFAULT_SCAN_INTERVAL)
+    sensors.append(
+        SessySensor(hass, config_entry, "WiFi RSSI",
+                    SessyApiCommand.NETWORK_STATUS, "wifi_sta.rssi",
+                    SensorDeviceClass.SIGNAL_STRENGTH, SensorStateClass.MEASUREMENT, SIGNAL_STRENGTH_DECIBELS_MILLIWATT)
+    )
 
     if isinstance(device, SessyBattery):
         await add_cache_command(hass, config_entry, SessyApiCommand.POWER_STATUS, DEFAULT_SCAN_INTERVAL)
@@ -46,6 +56,24 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
                         SessyApiCommand.POWER_STATUS, "sessy.power_setpoint",
                         SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, POWER_WATT)
         )
+        for phase_id in range(1,4): 
+            sensors.append(
+                SessySensor(hass, config_entry, f"Renewable Energy Phase { phase_id } Voltage",
+                            SessyApiCommand.POWER_STATUS, f"renewable_energy_phase{ phase_id }.voltage_rms",
+                            SensorDeviceClass.VOLTAGE, SensorStateClass.MEASUREMENT, ELECTRIC_POTENTIAL_MILLIVOLT)
+            )
+            sensors.append(
+                SessySensor(hass, config_entry, f"Renewable Energy Phase { phase_id } Current",
+                            SessyApiCommand.POWER_STATUS, f"renewable_energy_phase{ phase_id }.current_rms",
+                            SensorDeviceClass.CURRENT, SensorStateClass.MEASUREMENT, ELECTRIC_CURRENT_AMPERE)
+            )
+            sensors.append(
+                SessySensor(hass, config_entry, f"Renewable Energy Phase { phase_id } Power",
+                            SessyApiCommand.POWER_STATUS, f"renewable_energy_phase{ phase_id }.power",
+                            SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, POWER_WATT)
+            )
+
+
     elif isinstance(device, SessyP1Meter):
         await add_cache_command(hass, config_entry, SessyApiCommand.P1_STATUS, DEFAULT_SCAN_INTERVAL)
         sensors.append(

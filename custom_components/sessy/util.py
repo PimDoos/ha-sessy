@@ -28,4 +28,3 @@ async def add_cache_command(hass: HomeAssistant, config_entry: ConfigEntry, comm
 
 def friendly_status_string(status_string: str) -> str:
     return status_string.removeprefix("SYSTEM_STATE_").removeprefix("POWER_STRATEGY_").replace("_"," ").title()
-
