@@ -15,3 +15,15 @@ TODO:
 - [ ] Add Device Registry information
 - [ ] Add logo to home-assistant/brands
 - [ ] Add HACS configuration
+
+Installation
+============
+
+HACS
+----
+Not available yet
+
+Manual
+------
+Copy the `custom_components/sessy` folder to the `custom_components` folder in your configuration directory.
+Install the sessypy module in Home Assistant's VENV.
