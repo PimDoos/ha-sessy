@@ -25,3 +25,7 @@ async def add_cache_command(hass: HomeAssistant, config_entry: ConfigEntry, comm
     
     hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE_TRACKERS][command] = async_track_time_interval(hass, update, interval)
     await update(datetime.now())
+
+def friendly_status_string(status_string: str) -> str:
+    return status_string.removeprefix("SYSTEM_STATE_").removeprefix("POWER_STRATEGY_").replace("_"," ").title()
+

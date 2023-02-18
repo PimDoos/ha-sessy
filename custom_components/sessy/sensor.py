@@ -16,7 +16,7 @@ from sessypy.devices import SessyBattery, SessyDevice, SessyP1Meter
 
 
 from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, SERIAL_NUMBER, SESSY_CACHE, SESSY_DEVICE, SESSY_DEVICE_INFO, UPDATE_TOPIC
-from .util import add_cache_command
+from .util import add_cache_command, friendly_status_string
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities):
     """Set up the Sessy sensors"""
@@ -26,6 +26,11 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
 
     if isinstance(device, SessyBattery):
         await add_cache_command(hass, config_entry, SessyApiCommand.POWER_STATUS, DEFAULT_SCAN_INTERVAL)
+        sensors.append(
+            SessySensor(hass, config_entry, "System State",
+                        SessyApiCommand.POWER_STATUS, "sessy.system_state",
+                        transform_function=friendly_status_string)
+        )
         sensors.append(
             SessySensor(hass, config_entry, "State of Charge",
                         SessyApiCommand.POWER_STATUS, "sessy.state_of_charge",
@@ -44,8 +49,8 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
     elif isinstance(device, SessyP1Meter):
         await add_cache_command(hass, config_entry, SessyApiCommand.P1_STATUS, DEFAULT_SCAN_INTERVAL)
         sensors.append(
-            SessySensor(hass, config_entry, "Power",
-                        SessyApiCommand.POWER_STATUS, "net_power_delivered",
+            SessySensor(hass, config_entry, "P1 Power",
+                        SessyApiCommand.P1_STATUS, "net_power_delivered",
                         SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, POWER_KILO_WATT)
         )
 
@@ -100,7 +105,11 @@ class SessySensor(SensorEntity):
     
     @property
     def state(self):
-        return self.get_cache_value(self.cache_key)
+        value = self.get_cache_value(self.cache_key)
+        if self.transform_function:
+            return self.transform_function(value)
+        else:
+            return self.get_cache_value(self.cache_key)
     
     @property
     def available(self):
