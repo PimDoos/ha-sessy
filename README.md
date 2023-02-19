@@ -24,9 +24,8 @@ Installation
 
 HACS
 ----
-Not available yet
+Add this repository to HACS via the Custom Repositories options
 
 Manual
 ------
 - Copy the `custom_components/sessy` folder to the `custom_components` folder in your configuration directory.
-- Install the sessypy module in Home Assistant's VENV or copy the [`sessypy`](https://github.com/PimDoos/sessypy/tree/main/src/sessypy) module folder to the `custom_components/sessy` folder.
