@@ -17,7 +17,8 @@ TODO:
 - [ ] Add update entities
 - [X] Add Device Registry information
 - [ ] Add logo to home-assistant/brands
-- [ ] Add HACS configuration
+- [X] Add HACS configuration
+- [ ] Add to HACS Default repository
 
 Installation
 ============
