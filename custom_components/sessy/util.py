@@ -1,4 +1,6 @@
+from __future__ import annotations
 from datetime import datetime, timedelta
+from enum import Enum
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.event import async_track_time_interval
@@ -28,3 +30,16 @@ async def add_cache_command(hass: HomeAssistant, config_entry: ConfigEntry, comm
 
 def friendly_status_string(status_string: str) -> str:
     return status_string.removeprefix("SYSTEM_STATE_").removeprefix("POWER_STRATEGY_").replace("_"," ").title()
+
+def enum_to_options_list(options: Enum, transform_function: function = None) -> list:
+    output = list()
+    for option in options:
+        value = option.value
+        if transform_function:
+            output.append(transform_function(option.value))
+        else:
+            output.append(option.value)
+
+
+def unit_interval_to_percentage(input: float) -> float:
+    return round(input * 100,1)

@@ -14,12 +14,14 @@ from homeassistant.const import (
 from homeassistant.components.sensor import SensorEntity, SensorDeviceClass, SensorStateClass
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
-from sessypy.const import SessyApiCommand
+
+from sessypy.const import SessyApiCommand, SessyPowerStrategy, SessySystemState
 from sessypy.devices import SessyBattery, SessyDevice, SessyP1Meter
 
 
 from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, SERIAL_NUMBER, SESSY_CACHE, SESSY_DEVICE, SESSY_DEVICE_INFO, UPDATE_TOPIC
-from .util import add_cache_command, friendly_status_string
+from .util import add_cache_command, enum_to_options_list, friendly_status_string, unit_interval_to_percentage
+from .sessyentity import SessyEntity
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities):
     """Set up the Sessy sensors"""
@@ -27,24 +29,25 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
     device = hass.data[DOMAIN][config_entry.entry_id][SESSY_DEVICE]
     sensors = []
 
-    await add_cache_command(hass, config_entry, SessyApiCommand.NETWORK_STATUS, DEFAULT_SCAN_INTERVAL)
-    sensors.append(
-        SessySensor(hass, config_entry, "WiFi RSSI",
-                    SessyApiCommand.NETWORK_STATUS, "wifi_sta.rssi",
-                    SensorDeviceClass.SIGNAL_STRENGTH, SensorStateClass.MEASUREMENT, SIGNAL_STRENGTH_DECIBELS_MILLIWATT)
-    )
-
     if isinstance(device, SessyBattery):
+        await add_cache_command(hass, config_entry, SessyApiCommand.NETWORK_STATUS, DEFAULT_SCAN_INTERVAL)
+        sensors.append(
+            SessySensor(hass, config_entry, "WiFi RSSI",
+                        SessyApiCommand.NETWORK_STATUS, "wifi_sta.rssi",
+                        SensorDeviceClass.SIGNAL_STRENGTH, SensorStateClass.MEASUREMENT, SIGNAL_STRENGTH_DECIBELS_MILLIWATT)
+        )
         await add_cache_command(hass, config_entry, SessyApiCommand.POWER_STATUS, DEFAULT_SCAN_INTERVAL)
         sensors.append(
             SessySensor(hass, config_entry, "System State",
                         SessyApiCommand.POWER_STATUS, "sessy.system_state",
-                        transform_function=friendly_status_string)
+                        SensorDeviceClass.ENUM,
+                        transform_function=friendly_status_string, options = enum_to_options_list(SessySystemState))
         )
         sensors.append(
             SessySensor(hass, config_entry, "State of Charge",
                         SessyApiCommand.POWER_STATUS, "sessy.state_of_charge",
-                        SensorDeviceClass.BATTERY, SensorStateClass.MEASUREMENT, PERCENTAGE)
+                        SensorDeviceClass.BATTERY, SensorStateClass.MEASUREMENT, PERCENTAGE,
+                        transform_function=unit_interval_to_percentage)
         )
         sensors.append(
             SessySensor(hass, config_entry, "Power",
@@ -86,81 +89,68 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
 
 
     
-class SessySensor(SensorEntity):
+class SessySensor(SessyEntity, SensorEntity):
     def __init__(self, hass: HomeAssistant, config_entry: ConfigEntry, name: str,
                  cache_command: SessyApiCommand, cache_key,
                  device_class: SensorDeviceClass = None, state_class: SensorStateClass = None, unit_of_measurement = None,
                  options = None, transform_function: function = None):
-        self.hass = hass
-        self.config_entry = config_entry
         
-        self.cache = hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE][cache_command]
-        self.cache_command = cache_command
-        self.cache_key = cache_key
-        self.update_topic = UPDATE_TOPIC.format(cache_command)
+        super().__init__(hass=hass, config_entry=config_entry, name=name, 
+                       cache_command=cache_command, cache_key=cache_key, 
+                       transform_function=transform_function)
 
-        device: SessyDevice = hass.data[DOMAIN][config_entry.entry_id][SESSY_DEVICE]
-
-        self._attr_name = f"{ device.name } { name }"
-        self._attr_unique_id = f"sessy-{ device.serial_number }-sensor-{ name.replace(' ','') }".lower()
         self._attr_device_class = device_class
         self._attr_state_class = state_class
         self._attr_unit_of_measurement = unit_of_measurement
         self._attr_native_unit_of_measurement = unit_of_measurement
-
         self._attr_options = options
-        
-        self._attr_device_info = hass.data[DOMAIN][config_entry.entry_id][SESSY_DEVICE_INFO]
 
+    # async def async_added_to_hass(self):
+    #     @callback
+    #     def update():
+    #         self.cache = self.hass.data[DOMAIN][self.config_entry.entry_id][SESSY_CACHE][self.cache_command]
+    #         self.async_write_ha_state()
 
-        self.transform_function = transform_function
+    #     await super().async_added_to_hass()
+    #     self.update_topic_listener = async_dispatcher_connect(
+    #         self.hass, self.update_topic, update
+    #     )
+    #     self.async_on_remove(self.update_topic_listener)
 
-    async def async_added_to_hass(self):
-        @callback
-        def update():
-            self.cache = self.hass.data[DOMAIN][self.config_entry.entry_id][SESSY_CACHE][self.cache_command]
-            self.async_write_ha_state()
-
-        await super().async_added_to_hass()
-        self.update_topic_listener = async_dispatcher_connect(
-            self.hass, self.update_topic, update
-        )
-        self.async_on_remove(self.update_topic_listener)
-
-    @property
-    def should_poll(self) -> bool:
-        return False
+    # @property
+    # def should_poll(self) -> bool:
+    #     return False
     
-    @property
-    def state(self):
-        value = self.get_cache_value(self.cache_key)
-        if self.transform_function:
-            return self.transform_function(value)
-        else:
-            return self.get_cache_value(self.cache_key)
+    # @property
+    # def state(self):
+    #     value = self.get_cache_value(self.cache_key)
+    #     if self.transform_function:
+    #         return self.transform_function(value)
+    #     else:
+    #         return self.get_cache_value(self.cache_key)
     
-    @property
-    def available(self):
-        return self.get_cache_value(self.cache_key) != None
+    # @property
+    # def available(self):
+    #     return self.get_cache_value(self.cache_key) != None
     
-    def get_cache_value(self, key):
-        if self.cache == None:
-            return None
+    # def get_cache_value(self, key):
+    #     if self.cache == None:
+    #         return None
 
-        value = self.cache
+    #     value = self.cache
 
-        if len(value) == 0:
-            return None
-        else:
-            node: str
-            for node in key.split("."):
-                if node.isdigit():
-                    node = int(node)
-                if value == None:
-                    return None
-                elif node in value:
-                    value = value[node]
-                    continue
-                else:
-                    value = None
-        return value
+    #     if len(value) == 0:
+    #         return None
+    #     else:
+    #         node: str
+    #         for node in key.split("."):
+    #             if node.isdigit():
+    #                 node = int(node)
+    #             if value == None:
+    #                 return None
+    #             elif node in value:
+    #                 value = value[node]
+    #                 continue
+    #             else:
+    #                 value = None
+    #     return value
