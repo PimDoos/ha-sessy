@@ -4,7 +4,9 @@ Work in progress :)
 
 Currently supported:
 - Connect to Battery or P1 Dongle
-- No entities (yet)
+- Power Status sensors
+- Wifi RSSI sensor (Battery only)
+- P1 Status sensors (P1 Dongle only)
 
 TODO:
 - [X] Add Power Status sensors
