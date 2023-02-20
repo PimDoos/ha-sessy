@@ -4,6 +4,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import Entity
+from homeassistant.helpers.typing import StateType
 
 from sessypy.const import SessyApiCommand
 from sessypy.devices import SessyDevice
@@ -19,6 +20,8 @@ class SessyEntity(Entity):
         self.cache = hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE][cache_command]
         self.cache_command = cache_command
         self.cache_key = cache_key
+        self.cache_value: StateType = None
+
         self.update_topic = UPDATE_TOPIC.format(cache_command)
         self.transform_function = transform_function
 
@@ -32,30 +35,29 @@ class SessyEntity(Entity):
     async def async_added_to_hass(self):
         @callback
         def update():
-            self.cache = self.hass.data[DOMAIN][self.config_entry.entry_id][SESSY_CACHE][self.cache_command]
+            value = self.get_cache_value(self.cache_key)
+            if self.transform_function:
+                self.cache_value = self.transform_function(value)
+            else:
+                self.cache_value = value
+            
+            self.update_from_cache()
             self.async_write_ha_state()
 
         await super().async_added_to_hass()
         self.update_topic_listener = async_dispatcher_connect(
             self.hass, self.update_topic, update
         )
+        update()
         self.async_on_remove(self.update_topic_listener)
 
+    def update_from_cache(self):
+        """Entity function to write the latest cache value to the proper attributes. Implemented on platform level."""
+        raise NotImplementedError()
+    
     @property
     def should_poll(self) -> bool:
         return False
-    
-    @property
-    def state(self):
-        value = self.get_cache_value(self.cache_key)
-        if self.transform_function:
-            return self.transform_function(value)
-        else:
-            return self.get_cache_value(self.cache_key)
-    
-    @property
-    def available(self):
-        return self.get_cache_value(self.cache_key) != None
     
     def get_cache_value(self, key):
         if self.cache == None:

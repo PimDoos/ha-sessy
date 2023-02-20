@@ -12,10 +12,9 @@ from homeassistant.const import (
     SIGNAL_STRENGTH_DECIBELS_MILLIWATT
 )
 from homeassistant.components.sensor import SensorEntity, SensorDeviceClass, SensorStateClass
-from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.dispatcher import async_dispatcher_connect
+from homeassistant.core import HomeAssistant
 
-from sessypy.const import SessyApiCommand, SessyPowerStrategy, SessySystemState
+from sessypy.const import SessyApiCommand, SessySystemState
 from sessypy.devices import SessyBattery, SessyDevice, SessyP1Meter
 
 
@@ -102,3 +101,7 @@ class SessySensor(SessyEntity, SensorEntity):
         self._attr_unit_of_measurement = unit_of_measurement
         self._attr_native_unit_of_measurement = unit_of_measurement
         self._attr_options = options
+    
+    def update_from_cache(self):
+        self._attr_available = self.cache_value != None
+        self._attr_native_value = self.cache_value
