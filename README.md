@@ -17,7 +17,8 @@ TODO:
 - [ ] Add update entities
 - [X] Add Device Registry information
 - [ ] Add logo to home-assistant/brands
-- [ ] Add HACS configuration
+- [X] Add HACS configuration
+- [ ] Add to HACS Default repository
 
 Installation
 ============
@@ -29,3 +30,16 @@ Add this repository to HACS via the Custom Repositories options
 Manual
 ------
 - Copy the `custom_components/sessy` folder to the `custom_components` folder in your configuration directory.
+
+Configuration
+=============
+Add Sessy via the Integrations menu: 
+
+- Go to Integrations > Add Integrations > Sessy
+
+  [![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=sessy)
+
+- Enter the IP address or hostname and the local username and password for the device you want to add
+
+- The integration will discover the device type and add it to Home Assistant
+
