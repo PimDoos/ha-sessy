@@ -10,13 +10,12 @@ Currently supported:
 
 TODO:
 - [X] Add Power Status sensors
-- [ ] Add Power Strategy sensors
-- [ ] Add Power Setpoint service
-- [ ] Add Power Strategy service
+- [X] Add Power Strategy select
+- [X] Add Power Setpoint number entity
 - [ ] Add Energy sensors
 - [ ] Add update entities
 - [X] Add Device Registry information
-- [ ] Add logo to home-assistant/brands
+- [X] Add logo to home-assistant/brands
 - [X] Add HACS configuration
 - [ ] Add to HACS Default repository
 
