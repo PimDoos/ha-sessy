@@ -35,6 +35,7 @@ class SessyEntity(Entity):
     async def async_added_to_hass(self):
         @callback
         def update():
+            self.cache = self.hass.data[DOMAIN][self.config_entry.entry_id][SESSY_CACHE][self.cache_command]
             value = self.get_cache_value(self.cache_key)
             if self.transform_function:
                 self.cache_value = self.transform_function(value)
