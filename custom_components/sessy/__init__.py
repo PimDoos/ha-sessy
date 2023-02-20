@@ -17,7 +17,7 @@ from .const import DOMAIN, SERIAL_NUMBER, SESSY_CACHE, SESSY_CACHE_TRACKERS, SES
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.SELECT]
+PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.SELECT, Platform.NUMBER]
 
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
