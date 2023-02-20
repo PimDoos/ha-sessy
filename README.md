@@ -5,6 +5,8 @@ Work in progress :)
 Currently supported:
 - Connect to Battery or P1 Dongle
 - Power Status sensors
+- Set power strategy (select entity)
+- Set power setpoint (number entity)
 - Wifi RSSI sensor (Battery only)
 - P1 Status sensors (P1 Dongle only)
 
