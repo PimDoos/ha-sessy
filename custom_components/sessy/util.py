@@ -5,8 +5,10 @@ from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.dispatcher import async_dispatcher_send
+
 from sessypy.const import SessyApiCommand
 from sessypy.devices import SessyDevice
+from sessypy.util import SessyConnectionException
 
 
 from .const import DOMAIN, SESSY_CACHE, SESSY_CACHE_TRACKERS, SESSY_CACHE_TRIGGERS, SESSY_DEVICE, UPDATE_TOPIC
@@ -17,8 +19,14 @@ async def add_cache_command(hass: HomeAssistant, config_entry: ConfigEntry, comm
 
     async def update(event_time_utc: datetime = None):
         device: SessyDevice = hass.data[DOMAIN][config_entry.entry_id][SESSY_DEVICE]
-        result = await device.api.get(command)
+        cache: dict = hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE]
 
+        try:
+            result = await device.api.get(command)
+            cache[command] = result
+        except:
+            cache[command] = None
+        
         cache: dict = hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE]
         cache[command] = result
         
