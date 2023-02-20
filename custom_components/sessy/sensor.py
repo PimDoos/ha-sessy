@@ -53,11 +53,6 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
                         SessyApiCommand.POWER_STATUS, "sessy.power",
                         SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, POWER_WATT)
         )
-        sensors.append(
-            SessySensor(hass, config_entry, "Power Setpoint",
-                        SessyApiCommand.POWER_STATUS, "sessy.power_setpoint",
-                        SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, POWER_WATT)
-        )
         for phase_id in range(1,4): 
             sensors.append(
                 SessySensor(hass, config_entry, f"Renewable Energy Phase { phase_id } Voltage",
