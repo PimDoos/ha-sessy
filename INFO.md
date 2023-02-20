@@ -17,6 +17,12 @@ Sessy Battery
 - Network Status
   - WiFi RSSI (dBm)
 
+- Power Strategy
+  - Get and set strategy via select entity
+
+- Power Setpoint
+  - Get and set via number entity
+
 Sessy P1 Dongle
 ---------------
 - P1 Status
