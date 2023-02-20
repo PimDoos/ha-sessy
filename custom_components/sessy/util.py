@@ -5,20 +5,28 @@ from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.dispatcher import async_dispatcher_send
+
 from sessypy.const import SessyApiCommand
 from sessypy.devices import SessyDevice
+from sessypy.util import SessyConnectionException
 
 
-from .const import DOMAIN, SESSY_CACHE, SESSY_CACHE_TRACKERS, SESSY_DEVICE, UPDATE_TOPIC
+from .const import DOMAIN, SESSY_CACHE, SESSY_CACHE_TRACKERS, SESSY_CACHE_TRIGGERS, SESSY_DEVICE, UPDATE_TOPIC
 
 async def add_cache_command(hass: HomeAssistant, config_entry: ConfigEntry, command: SessyApiCommand, interval: timedelta):
     if not command in hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE]:
         hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE][command] = dict()
 
-    async def update(event_time_utc: datetime):
+    async def update(event_time_utc: datetime = None):
         device: SessyDevice = hass.data[DOMAIN][config_entry.entry_id][SESSY_DEVICE]
-        result = await device.api.get(command)
+        cache: dict = hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE]
 
+        try:
+            result = await device.api.get(command)
+            cache[command] = result
+        except:
+            cache[command] = None
+        
         cache: dict = hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE]
         cache[command] = result
         
@@ -26,12 +34,16 @@ async def add_cache_command(hass: HomeAssistant, config_entry: ConfigEntry, comm
 
     
     hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE_TRACKERS][command] = async_track_time_interval(hass, update, interval)
-    await update(datetime.now())
+    hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE_TRIGGERS][command] = update
+    await update()
+async def trigger_cache_update(hass: HomeAssistant, config_entry: ConfigEntry, command: SessyApiCommand):
+    update = hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE_TRIGGERS][command]
+    await update()
 
 def friendly_status_string(status_string: str) -> str:
     return status_string.removeprefix("SYSTEM_STATE_").removeprefix("POWER_STRATEGY_").replace("_"," ").title()
 
-def enum_to_options_list(options: Enum, transform_function: function = None) -> list:
+def enum_to_options_list(options: Enum, transform_function: function = None) -> list[str]:
     output = list()
     for option in options:
         value = option.value
@@ -39,6 +51,7 @@ def enum_to_options_list(options: Enum, transform_function: function = None) -> 
             output.append(transform_function(option.value))
         else:
             output.append(option.value)
+    return output
 
 
 def unit_interval_to_percentage(input: float) -> float:

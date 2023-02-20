@@ -18,7 +18,7 @@ from sessypy.const import SessyApiCommand, SessySystemState
 from sessypy.devices import SessyBattery, SessyDevice, SessyP1Meter
 
 
-from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, SERIAL_NUMBER, SESSY_CACHE, SESSY_DEVICE, SESSY_DEVICE_INFO, UPDATE_TOPIC
+from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, SESSY_DEVICE
 from .util import add_cache_command, enum_to_options_list, friendly_status_string, unit_interval_to_percentage
 from .sessyentity import SessyEntity
 
@@ -40,7 +40,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
             SessySensor(hass, config_entry, "System State",
                         SessyApiCommand.POWER_STATUS, "sessy.system_state",
                         SensorDeviceClass.ENUM,
-                        transform_function=friendly_status_string, options = enum_to_options_list(SessySystemState))
+                        transform_function=friendly_status_string, options = enum_to_options_list(SessySystemState, friendly_status_string))
         )
         sensors.append(
             SessySensor(hass, config_entry, "State of Charge",
@@ -51,11 +51,6 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
         sensors.append(
             SessySensor(hass, config_entry, "Power",
                         SessyApiCommand.POWER_STATUS, "sessy.power",
-                        SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, POWER_WATT)
-        )
-        sensors.append(
-            SessySensor(hass, config_entry, "Power Setpoint",
-                        SessyApiCommand.POWER_STATUS, "sessy.power_setpoint",
                         SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, POWER_WATT)
         )
         for phase_id in range(1,4): 
@@ -98,7 +93,6 @@ class SessySensor(SessyEntity, SensorEntity):
 
         self._attr_device_class = device_class
         self._attr_state_class = state_class
-        self._attr_unit_of_measurement = unit_of_measurement
         self._attr_native_unit_of_measurement = unit_of_measurement
         self._attr_options = options
     

@@ -13,3 +13,4 @@ TIME_TRACKER_POWER = "time_tracker_power"
 
 SESSY_CACHE = "sessy_cache"
 SESSY_CACHE_TRACKERS = "sessy_cache_trackers"
+SESSY_CACHE_TRIGGERS = "sessy_cache_triggers"
