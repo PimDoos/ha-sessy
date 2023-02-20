@@ -1,7 +1,5 @@
 """The Sessy integration."""
 from __future__ import annotations
-from datetime import timedelta
-import datetime
 import logging
 
 from homeassistant.config_entries import ConfigEntry
@@ -15,11 +13,11 @@ from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from sessypy.devices import SessyBattery, SessyCTMeter, SessyP1Meter, get_sessy_device
 from sessypy.util import SessyLoginException, SessyConnectionException, SessyNotSupportedException
 
-from .const import DOMAIN, SERIAL_NUMBER, SESSY_CACHE, SESSY_CACHE_TRACKERS, SESSY_DEVICE, SESSY_DEVICE_INFO
+from .const import DOMAIN, SERIAL_NUMBER, SESSY_CACHE, SESSY_CACHE_TRACKERS, SESSY_CACHE_TRIGGERS, SESSY_DEVICE, SESSY_DEVICE_INFO
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS: list[Platform] = [Platform.SENSOR]
+PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.SELECT]
 
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
@@ -71,6 +69,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
 
     hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE] = dict()
     hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE_TRACKERS] = dict()
+    hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE_TRIGGERS] = dict()
 
     for platform in PLATFORMS:
         hass.async_create_task(
