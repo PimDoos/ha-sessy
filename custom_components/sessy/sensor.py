@@ -47,7 +47,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
             SessySensor(hass, config_entry, "State of Charge",
                         SessyApiCommand.POWER_STATUS, "sessy.state_of_charge",
                         SensorDeviceClass.BATTERY, SensorStateClass.MEASUREMENT, PERCENTAGE,
-                        transform_function=unit_interval_to_percentage)
+                        transform_function=unit_interval_to_percentage, precision = 1)
         )
         sensors.append(
             SessySensor(hass, config_entry, "Power",
@@ -77,7 +77,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
         sensors.append(
             SessySensor(hass, config_entry, "P1 Power",
                         SessyApiCommand.P1_STATUS, "net_power_delivered",
-                        SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, POWER_KILO_WATT)
+                        SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, POWER_KILO_WATT, precision = 3)
         )
 
     async_add_entities(sensors)
@@ -86,7 +86,7 @@ class SessySensor(SessyEntity, SensorEntity):
     def __init__(self, hass: HomeAssistant, config_entry: ConfigEntry, name: str,
                  cache_command: SessyApiCommand, cache_key,
                  device_class: SensorDeviceClass = None, state_class: SensorStateClass = None, unit_of_measurement = None,
-                 options = None, transform_function: function = None):
+                 options = None, transform_function: function = None, precision: int = None):
         
         super().__init__(hass=hass, config_entry=config_entry, name=name, 
                        cache_command=cache_command, cache_key=cache_key, 
@@ -95,6 +95,7 @@ class SessySensor(SessyEntity, SensorEntity):
         self._attr_device_class = device_class
         self._attr_state_class = state_class
         self._attr_native_unit_of_measurement = unit_of_measurement
+        self._attr_native_precision = precision
         self._attr_options = options
     
     def update_from_cache(self):
