@@ -1,11 +1,11 @@
 {
   "domain": "sessy",
   "name": "Sessy",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "config_flow": true,
   "documentation": "https://github.com/PimDoos/ha-sessy",
   "issue_tracker": "https://github.com/PimDoos/ha-sessy/issues",
-  "requirements": ["sessypy==0.0.2"],
+  "requirements": ["sessypy==0.0.3"],
   "ssdp": [],
   "zeroconf": [],
   "homekit": {},
