@@ -18,7 +18,7 @@ from sessypy.const import SessyApiCommand, SessySystemState
 from sessypy.devices import SessyBattery, SessyDevice, SessyP1Meter
 
 
-from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, SESSY_DEVICE
+from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, SESSY_DEVICE, SCAN_INTERVAL_POWER
 from .util import add_cache_command, enum_to_options_list, friendly_status_string, unit_interval_to_percentage
 from .sessyentity import SessyEntity
 
@@ -28,14 +28,15 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
     device = hass.data[DOMAIN][config_entry.entry_id][SESSY_DEVICE]
     sensors = []
 
+    await add_cache_command(hass, config_entry, SessyApiCommand.NETWORK_STATUS)
+    sensors.append(
+        SessySensor(hass, config_entry, "WiFi RSSI",
+                    SessyApiCommand.NETWORK_STATUS, "wifi_sta.rssi",
+                    SensorDeviceClass.SIGNAL_STRENGTH, SensorStateClass.MEASUREMENT, SIGNAL_STRENGTH_DECIBELS_MILLIWATT)
+    )
+
     if isinstance(device, SessyBattery):
-        await add_cache_command(hass, config_entry, SessyApiCommand.NETWORK_STATUS, DEFAULT_SCAN_INTERVAL)
-        sensors.append(
-            SessySensor(hass, config_entry, "WiFi RSSI",
-                        SessyApiCommand.NETWORK_STATUS, "wifi_sta.rssi",
-                        SensorDeviceClass.SIGNAL_STRENGTH, SensorStateClass.MEASUREMENT, SIGNAL_STRENGTH_DECIBELS_MILLIWATT)
-        )
-        await add_cache_command(hass, config_entry, SessyApiCommand.POWER_STATUS, DEFAULT_SCAN_INTERVAL)
+        await add_cache_command(hass, config_entry, SessyApiCommand.POWER_STATUS, SCAN_INTERVAL_POWER)
         sensors.append(
             SessySensor(hass, config_entry, "System State",
                         SessyApiCommand.POWER_STATUS, "sessy.system_state",
@@ -72,7 +73,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
 
 
     elif isinstance(device, SessyP1Meter):
-        await add_cache_command(hass, config_entry, SessyApiCommand.P1_STATUS, DEFAULT_SCAN_INTERVAL)
+        await add_cache_command(hass, config_entry, SessyApiCommand.P1_STATUS, SCAN_INTERVAL_POWER)
         sensors.append(
             SessySensor(hass, config_entry, "P1 Power",
                         SessyApiCommand.P1_STATUS, "net_power_delivered",
