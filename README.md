@@ -9,13 +9,14 @@ Currently supported:
 - Set power setpoint (number entity)
 - Wifi RSSI sensor (Battery only)
 - P1 Status sensors (P1 Dongle only)
+- Firmware updates
 
 TODO:
 - [X] Add Power Status sensors
 - [X] Add Power Strategy select
 - [X] Add Power Setpoint number entity
 - [ ] Add Energy sensors
-- [ ] Add update entities
+- [X] Add update entities
 - [X] Add Device Registry information
 - [X] Add logo to home-assistant/brands
 - [X] Add HACS configuration
