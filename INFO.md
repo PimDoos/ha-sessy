@@ -23,7 +23,14 @@ Sessy Battery
 - Power Setpoint
   - Get and set via number entity
 
+- Firmware updates
+
 Sessy P1 Dongle
 ---------------
 - P1 Status
   - Net power flow (kW)
+
+- Network Status
+  - WiFi RSSI (dBm)
+
+- Firmware updates

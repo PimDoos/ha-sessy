@@ -20,7 +20,7 @@ class SessyEntity(Entity):
         self.cache = hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE][cache_command]
         self.cache_command = cache_command
         self.cache_key = cache_key
-        self.cache_value: StateType = None
+        self.cache_value = None
 
         self.update_topic = UPDATE_TOPIC.format(cache_command)
         self.transform_function = transform_function
