@@ -17,7 +17,7 @@ from .const import DOMAIN, SERIAL_NUMBER, SESSY_CACHE, SESSY_CACHE_TRACKERS, SES
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.SELECT, Platform.NUMBER]
+PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.SELECT, Platform.NUMBER, Platform.UPDATE]
 
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
@@ -38,6 +38,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
         raise ConfigEntryNotReady
     except SessyConnectionException:
         raise ConfigEntryNotReady
+            
     
     if device is None:
         raise ConfigEntryNotReady
@@ -62,7 +63,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     elif isinstance(device, SessyP1Meter):
         device_info[ATTR_MODEL] = "Sessy P1 Dongle"
     elif isinstance(device, SessyCTMeter):
-        device_info[ATTR_MODEL] = "Sessy P1 Dongle"
+        device_info[ATTR_MODEL] = "Sessy CT Dongle"
 
     hass.data[DOMAIN][config_entry.entry_id][SESSY_DEVICE_INFO] = device_info
 

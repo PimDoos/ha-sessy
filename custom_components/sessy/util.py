@@ -11,9 +11,9 @@ from sessypy.devices import SessyDevice
 from sessypy.util import SessyConnectionException
 
 
-from .const import DOMAIN, SESSY_CACHE, SESSY_CACHE_TRACKERS, SESSY_CACHE_TRIGGERS, SESSY_DEVICE, UPDATE_TOPIC
+from .const import DOMAIN, SESSY_CACHE, SESSY_CACHE_TRACKERS, SESSY_CACHE_TRIGGERS, SESSY_DEVICE, UPDATE_TOPIC, DEFAULT_SCAN_INTERVAL
 
-async def add_cache_command(hass: HomeAssistant, config_entry: ConfigEntry, command: SessyApiCommand, interval: timedelta):
+async def add_cache_command(hass: HomeAssistant, config_entry: ConfigEntry, command: SessyApiCommand, interval: timedelta = DEFAULT_SCAN_INTERVAL):
     if not command in hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE]:
         hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE][command] = dict()
 
@@ -25,11 +25,9 @@ async def add_cache_command(hass: HomeAssistant, config_entry: ConfigEntry, comm
             result = await device.api.get(command)
             cache[command] = result
         except:
+            result = None
             cache[command] = None
-        
-        cache: dict = hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE]
-        cache[command] = result
-        
+                
         async_dispatcher_send(hass, UPDATE_TOPIC.format(command))
 
     

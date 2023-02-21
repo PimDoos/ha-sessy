@@ -40,7 +40,7 @@ Add Sessy via the Integrations menu:
 
   [![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=sessy)
 
-- Enter the IP address or hostname and the local username and password for the device you want to add
+- Enter the IP address (preferably static) or hostname and the local username and password for the device you want to add
 
 - The integration will discover the device type and add it to Home Assistant
 
