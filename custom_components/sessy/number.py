@@ -18,7 +18,7 @@ from sessypy.const import SessyApiCommand, SessySystemState
 from sessypy.devices import SessyBattery, SessyDevice, SessyP1Meter
 
 
-from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, SESSY_DEVICE
+from .const import DOMAIN, SESSY_DEVICE, SCAN_INTERVAL_POWER
 from .util import add_cache_command, enum_to_options_list, friendly_status_string, trigger_cache_update, unit_interval_to_percentage
 from .sessyentity import SessyEntity
 
@@ -29,7 +29,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
     numbers = []
 
     if isinstance(device, SessyBattery):
-        await add_cache_command(hass, config_entry, SessyApiCommand.POWER_STATUS, DEFAULT_SCAN_INTERVAL)
+        await add_cache_command(hass, config_entry, SessyApiCommand.POWER_STATUS, SCAN_INTERVAL_POWER)
         numbers.append(
             SessyNumber(hass, config_entry, "Power Setpoint",
                         SessyApiCommand.POWER_STATUS, "sessy.power_setpoint",
