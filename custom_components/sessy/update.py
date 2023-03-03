@@ -11,7 +11,7 @@ from sessypy.const import SessyApiCommand, SessyOtaTarget, SessyOtaState
 from sessypy.devices import SessyBattery, SessyDevice, SessyP1Meter
 
 from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, SESSY_DEVICE, SCAN_INTERVAL_OTA, SCAN_INTERVAL_OTA_CHECK
-from .util import add_cache_command, trigger_cache_update
+from .util import add_cache_command, trigger_cache_update, unit_interval_to_percentage
 from .sessyentity import SessyEntity
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities):
@@ -71,7 +71,7 @@ class SessyUpdate(SessyEntity, UpdateEntity):
             if not progress:
                 self._attr_in_progress = True
             else:
-                self._attr_in_progress = progress
+                self._attr_in_progress = unit_interval_to_percentage(progress)
         else:
             self._attr_in_progress = False
         
