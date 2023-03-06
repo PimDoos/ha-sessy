@@ -96,8 +96,8 @@ class SessySensor(SessyEntity, SensorEntity):
         self._attr_state_class = state_class
         self._attr_native_unit_of_measurement = unit_of_measurement
 
-        # TODO move this to _attr_suggested_display_precision in 2022.3
-        self._attr_native_precision = precision
+        self._attr_suggested_display_precision = precision
+        
         self._attr_options = options
     
     def update_from_cache(self):
