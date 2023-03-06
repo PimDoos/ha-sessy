@@ -13,6 +13,7 @@ from homeassistant.const import (
 )
 from homeassistant.components.sensor import SensorEntity, SensorDeviceClass, SensorStateClass
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import EntityCategory
 
 from sessypy.const import SessyApiCommand, SessySystemState
 from sessypy.devices import SessyBattery, SessyDevice, SessyP1Meter
@@ -32,7 +33,8 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
     sensors.append(
         SessySensor(hass, config_entry, "WiFi RSSI",
                     SessyApiCommand.NETWORK_STATUS, "wifi_sta.rssi",
-                    SensorDeviceClass.SIGNAL_STRENGTH, SensorStateClass.MEASUREMENT, SIGNAL_STRENGTH_DECIBELS_MILLIWATT)
+                    SensorDeviceClass.SIGNAL_STRENGTH, SensorStateClass.MEASUREMENT, SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
+                    entity_category=EntityCategory.DIAGNOSTIC)
     )
 
     if isinstance(device, SessyBattery):
@@ -86,7 +88,7 @@ class SessySensor(SessyEntity, SensorEntity):
     def __init__(self, hass: HomeAssistant, config_entry: ConfigEntry, name: str,
                  cache_command: SessyApiCommand, cache_key,
                  device_class: SensorDeviceClass = None, state_class: SensorStateClass = None, unit_of_measurement = None,
-                 options = None, transform_function: function = None, precision: int = None):
+                 options = None, entity_category: EntityCategory = None, transform_function: function = None, precision: int = None):
         
         super().__init__(hass=hass, config_entry=config_entry, name=name, 
                        cache_command=cache_command, cache_key=cache_key, 
@@ -95,6 +97,7 @@ class SessySensor(SessyEntity, SensorEntity):
         self._attr_device_class = device_class
         self._attr_state_class = state_class
         self._attr_native_unit_of_measurement = unit_of_measurement
+        self._attr_entity_category = entity_category
 
         self._attr_suggested_display_precision = precision
         
