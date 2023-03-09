@@ -62,22 +62,28 @@ class SessyUpdate(SessyEntity, UpdateEntity):
         else:
             self._attr_available = True
 
-        self._attr_latest_version = self.cache_value.get("available_firmware", dict()).get("version", None)
+        state = self.cache_value.get("state", SessyOtaState.INACTIVE.value)
+
         self._attr_installed_version = self.cache_value.get("installed_firmware", dict()).get("version", None)
         
-        state = self.cache_value.get("state", None)
+        # Skip version check if Sessy reports it is up to date or has not checked yet
+        if state in [SessyOtaState.UP_TO_DATE.value, SessyOtaState.INACTIVE.value]:
+            self._attr_latest_version = self._attr_installed_version
+        else:
+            self._attr_latest_version = self.cache_value.get("available_firmware", dict()).get("version", None)   
+        
         if state == SessyOtaState.UPDATING.value:
             progress: int = self.cache_value.get("update_progress", None)
             if not progress:
                 self._attr_in_progress = True
             else:
                 self._attr_in_progress = unit_interval_to_percentage(progress)
+        elif state == SessyOtaState.DONE.value:
+            self._attr_in_progress = 100
         else:
             self._attr_in_progress = False
         
-        
-        
-        
+
     async def async_install(self, version: str | None, backup: bool, **kwargs: Any) -> None:
         device: SessyDevice = self.hass.data[DOMAIN][self.config_entry.entry_id][SESSY_DEVICE]
         
