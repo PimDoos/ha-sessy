@@ -15,7 +15,7 @@ from homeassistant.components.sensor import SensorEntity, SensorDeviceClass, Sen
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 
-from sessypy.const import SessyApiCommand, SessySystemState
+from sessypy.const import SessyApiCommand, SessySystemState, SessyP1State
 from sessypy.devices import SessyBattery, SessyDevice, SessyP1Meter
 
 
@@ -80,6 +80,13 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
             SessySensor(hass, config_entry, "P1 Power",
                         SessyApiCommand.P1_STATUS, "net_power_delivered",
                         SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, POWER_KILO_WATT, precision = 3)
+        )
+        sensors.append(
+            SessySensor(hass, config_entry, "P1 Status",
+                        SessyApiCommand.P1_STATUS, "state",
+                        SensorDeviceClass.ENUM,
+                        transform_function=friendly_status_string, options = enum_to_options_list(SessyP1State, friendly_status_string)
+                        )
         )
 
     async_add_entities(sensors)
