@@ -55,7 +55,7 @@ async def trigger_cache_update(hass: HomeAssistant, config_entry: ConfigEntry, c
     await update()
 
 def friendly_status_string(status_string: str) -> str:
-    return status_string.removeprefix("SYSTEM_STATE_").removeprefix("POWER_STRATEGY_").replace("_"," ").title()
+    return status_string.removeprefix("P1_").removeprefix("SYSTEM_STATE_").removeprefix("POWER_STRATEGY_").replace("_"," ").title()
 
 def enum_to_options_list(options: Enum, transform_function: function = None) -> list[str]:
     output = list()
