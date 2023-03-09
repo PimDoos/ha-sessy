@@ -30,10 +30,26 @@ async def add_cache_command(hass: HomeAssistant, config_entry: ConfigEntry, comm
                 
         async_dispatcher_send(hass, UPDATE_TOPIC.format(command))
 
-    
+    if command in hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE_TRACKERS]:
+        # Remove running tracker to avoid duplicates
+        hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE_TRACKERS][command]()
+
     hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE_TRACKERS][command] = async_track_time_interval(hass, update, interval)
     hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE_TRIGGERS][command] = update
     await update()
+
+async def clear_cache_command(hass: HomeAssistant, config_entry: ConfigEntry, command: SessyApiCommand = None):
+    trackers = hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE_TRACKERS]
+    if command == None:
+        
+        for tracker_command in trackers:
+            tracker = trackers[tracker_command]
+            tracker()
+    else:
+        tracker = trackers[command]
+        tracker()
+
+
 async def trigger_cache_update(hass: HomeAssistant, config_entry: ConfigEntry, command: SessyApiCommand):
     update = hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE_TRIGGERS][command]
     await update()
