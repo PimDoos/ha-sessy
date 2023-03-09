@@ -2,6 +2,7 @@
 from __future__ import annotations
 import logging
 
+
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     Platform, CONF_USERNAME, CONF_PASSWORD, CONF_HOST, 
@@ -14,6 +15,7 @@ from sessypy.devices import SessyBattery, SessyCTMeter, SessyP1Meter, get_sessy_
 from sessypy.util import SessyLoginException, SessyConnectionException, SessyNotSupportedException
 
 from .const import DOMAIN, SERIAL_NUMBER, SESSY_CACHE, SESSY_CACHE_TRACKERS, SESSY_CACHE_TRIGGERS, SESSY_DEVICE, SESSY_DEVICE_INFO
+from .util import clear_cache_command
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -83,6 +85,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
+        await clear_cache_command(hass, entry)
         await hass.data[DOMAIN][entry.entry_id][SESSY_DEVICE].close()
         if entry.entry_id in hass.data[DOMAIN]:
             hass.data[DOMAIN].pop(entry.entry_id)
