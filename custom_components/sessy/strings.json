@@ -42,7 +42,6 @@
     },
     "select":{
       "battery_strategy":{
-        "name":"Power Strategy",
         "state":{
           "api":"API",
           "nom":"Null on the meter",

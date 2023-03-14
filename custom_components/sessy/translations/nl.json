@@ -42,7 +42,6 @@
     },
     "select":{
       "battery_strategy":{
-        "name":"Strategie",
         "state":{
           "api":"API",
           "nom":"Nul op de meter",
