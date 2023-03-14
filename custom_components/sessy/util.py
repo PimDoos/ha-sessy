@@ -54,8 +54,18 @@ async def trigger_cache_update(hass: HomeAssistant, config_entry: ConfigEntry, c
     update = hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE_TRIGGERS][command]
     await update()
 
-def friendly_status_string(status_string: str) -> str:
-    return status_string.removeprefix("P1_").removeprefix("SYSTEM_STATE_").removeprefix("POWER_STRATEGY_").replace("_"," ").title()
+def backend_status_string(status_string: str, prefix: str = "") -> str:
+    return status_string.removeprefix(prefix).lower()
+
+def status_string_p1(status_string: str) -> str:
+    return backend_status_string(status_string, "P1_")
+
+def status_string_system_state(status_string: str) -> str:
+    return backend_status_string(status_string, "SYSTEM_STATE_")
+
+def status_string_power_strategy(status_string: str) -> str:
+    return backend_status_string(status_string, "POWER_STRATEGY_")
+
 
 def enum_to_options_list(options: Enum, transform_function: function = None) -> list[str]:
     output = list()

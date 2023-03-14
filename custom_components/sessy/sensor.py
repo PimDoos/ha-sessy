@@ -20,7 +20,7 @@ from sessypy.devices import SessyBattery, SessyDevice, SessyP1Meter
 
 
 from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, SESSY_DEVICE, SCAN_INTERVAL_POWER
-from .util import add_cache_command, enum_to_options_list, friendly_status_string, unit_interval_to_percentage
+from .util import add_cache_command, enum_to_options_list, status_string_p1, status_string_system_state, unit_interval_to_percentage
 from .sessyentity import SessyEntity
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities):
@@ -43,7 +43,8 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
             SessySensor(hass, config_entry, "System State",
                         SessyApiCommand.POWER_STATUS, "sessy.system_state",
                         SensorDeviceClass.ENUM,
-                        transform_function=friendly_status_string, options = enum_to_options_list(SessySystemState, friendly_status_string))
+                        translation_key = "battery_system_state", transform_function=status_string_system_state,
+                        options = enum_to_options_list(SessySystemState, status_string_system_state))
         )
         sensors.append(
             SessySensor(hass, config_entry, "State of Charge",
@@ -85,7 +86,8 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
             SessySensor(hass, config_entry, "P1 Status",
                         SessyApiCommand.P1_STATUS, "state",
                         SensorDeviceClass.ENUM,
-                        transform_function=friendly_status_string, options = enum_to_options_list(SessyP1State, friendly_status_string)
+                        translation_key = "p1_state", transform_function=status_string_p1,
+                        options = enum_to_options_list(SessyP1State, status_string_p1)
                         )
         )
 
@@ -95,11 +97,12 @@ class SessySensor(SessyEntity, SensorEntity):
     def __init__(self, hass: HomeAssistant, config_entry: ConfigEntry, name: str,
                  cache_command: SessyApiCommand, cache_key,
                  device_class: SensorDeviceClass = None, state_class: SensorStateClass = None, unit_of_measurement = None,
-                 options = None, entity_category: EntityCategory = None, transform_function: function = None, precision: int = None):
+                 transform_function: function = None, translation_key: str = None,
+                 options = None, entity_category: EntityCategory = None, precision: int = None):
         
         super().__init__(hass=hass, config_entry=config_entry, name=name, 
                        cache_command=cache_command, cache_key=cache_key, 
-                       transform_function=transform_function)
+                       transform_function=transform_function, translation_key=translation_key)
 
         self._attr_device_class = device_class
         self._attr_state_class = state_class
