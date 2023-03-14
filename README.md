@@ -10,6 +10,7 @@ Currently supported:
 - Wifi RSSI sensor (Battery only)
 - P1 Status sensors (P1 Dongle only)
 - Firmware updates
+- Change configuration (min/max power)
 
 TODO:
 - [X] Add Power Status sensors

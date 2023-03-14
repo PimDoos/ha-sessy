@@ -25,6 +25,8 @@ Sessy Battery
 
 - Firmware updates
 
+- Configuration (Min/max power)
+
 Sessy P1 Dongle
 ---------------
 - P1 Status
