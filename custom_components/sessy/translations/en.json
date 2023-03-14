@@ -1,21 +1,55 @@
 {
-    "config": {
-        "abort": {
-            "already_configured": "Device is already configured"
-        },
-        "error": {
-            "cannot_connect": "Failed to connect",
-            "invalid_auth": "Invalid authentication",
-            "unknown": "Unexpected error"
-        },
-        "step": {
-            "user": {
-                "data": {
-                    "host": "Hostname",
-                    "password": "Password",
-                    "username": "Username"
-                }
-            }
+  "config": {
+    "step": {
+      "user": {
+        "data": {
+          "username": "[%key:common::config_flow::data::username%]",
+          "password": "[%key:common::config_flow::data::password%]",
+          "host": "[%key:common::config_flow::data::host%]"
         }
+      }
+    },
+    "error": {
+      "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",
+      "invalid_auth": "[%key:common::config_flow::error::invalid_auth%]",
+      "unknown": "[%key:common::config_flow::error::unknown%]"
+    },
+    "abort": {
+      "already_configured": "[%key:common::config_flow::abort::already_configured_device%]"
     }
+  },
+  "entity": {
+    "sensor":{
+      "battery_system_state":{
+        "state":{
+          "running_safe": "Active",
+          "standby": "Standby",
+          "waiting_for_safe_situation": "Waiting for safe situation",
+          "waiting_in_safe_situation": "Waiting in safe situation",
+          "wait_for_peripherals": "Waiting for peripherals",
+          "error": "Error"
+        }
+      },
+      "p1_state":{
+        "state":{
+          "not_connected": "Not connected",
+          "datavalidity_err": "Data validity error",
+          "version_err": "Version error",
+          "parse_err": "Parse error",
+          "ok": "OK"
+        }
+      }
+    },
+    "select":{
+      "battery_strategy":{
+        "name":"Power Strategy",
+        "state":{
+          "api":"API",
+          "nom":"Null on the meter",
+          "roi":"Dynamic",
+          "idle":"Idle"
+        }
+      }
+    }
+  }
 }

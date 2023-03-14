@@ -22,32 +22,32 @@
     "sensor":{
       "battery_system_state":{
         "state":{
-          "running_safe": "Active",
+          "running_safe": "Actief",
           "standby": "Standby",
-          "waiting_for_safe_situation": "Waiting for safe situation",
-          "waiting_in_safe_situation": "Waiting in safe situation",
-          "wait_for_peripherals": "Waiting for peripherals",
-          "error": "Error"
+          "waiting_for_safe_situation": "Wacht op veilige situatie",
+          "waiting_in_safe_situation": "Wacht in veilige situatie",
+          "wait_for_peripherals": "Wacht op randapparatuur",
+          "error": "Fout"
         }
       },
       "p1_state":{
         "state":{
-          "not_connected": "Not connected",
-          "datavalidity_err": "Data validity error",
-          "version_err": "Version error",
-          "parse_err": "Parse error",
+          "not_connected": "Niet verbonden",
+          "datavalidity_err": "Datavalidatiefout",
+          "version_err": "Versiefout",
+          "parse_err": "Verwerkingsfout",
           "ok": "OK"
         }
       }
     },
     "select":{
       "battery_strategy":{
-        "name":"Power Strategy",
+        "name":"Strategie",
         "state":{
           "api":"API",
-          "nom":"Null on the meter",
-          "roi":"Dynamic",
-          "idle":"Idle"
+          "nom":"Nul op de meter",
+          "roi":"Dynamisch",
+          "idle":"Inactief"
         }
       }
     }
