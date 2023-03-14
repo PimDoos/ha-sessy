@@ -3,24 +3,18 @@ from __future__ import annotations
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
-    POWER_KILO_WATT,
-    POWER_WATT,
-    ENERGY_KILO_WATT_HOUR,
-    PERCENTAGE,
-    ELECTRIC_POTENTIAL_MILLIVOLT,
-    ELECTRIC_CURRENT_AMPERE,
-    SIGNAL_STRENGTH_DECIBELS_MILLIWATT
+    POWER_WATT
 )
 from homeassistant.components.number import NumberEntity, NumberDeviceClass
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 
-from sessypy.const import SessyApiCommand, SessySystemState
-from sessypy.devices import SessyBattery, SessyDevice, SessyP1Meter
+from sessypy.const import SessyApiCommand
+from sessypy.devices import SessyBattery, SessyDevice
 
 
 from .const import DOMAIN, SESSY_DEVICE, SCAN_INTERVAL_POWER, DEFAULT_SCAN_INTERVAL
-from .util import add_cache_command, enum_to_options_list, friendly_status_string, trigger_cache_update, unit_interval_to_percentage
+from .util import add_cache_command, trigger_cache_update
 from .sessyentity import SessyEntity
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities):
