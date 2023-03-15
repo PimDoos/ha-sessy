@@ -11,7 +11,7 @@ from sessypy.devices import SessyBattery, SessyDevice
 
 
 from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, SESSY_DEVICE
-from .util import add_cache_command, enum_to_options_list, friendly_status_string, trigger_cache_update
+from .util import add_cache_command, enum_to_options_list, trigger_cache_update, status_string_power_strategy
 from .sessyentity import SessyEntity
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities):
@@ -25,19 +25,19 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
         selects.append(
             SessySelect(hass, config_entry, "Power Strategy",
                         SessyApiCommand.POWER_STRATEGY,"strategy",
-                        options=SessyPowerStrategy, transform_function=friendly_status_string)
-		)
+                        options=SessyPowerStrategy, translation_key = "battery_strategy", transform_function=status_string_power_strategy)
+        )
 
     async_add_entities(selects)
     
 class SessySelect(SessyEntity, SelectEntity):
     def __init__(self, hass: HomeAssistant, config_entry: ConfigEntry, name: str,
                  cache_command: SessyApiCommand, cache_key,
-                 options: Enum, transform_function: function = None):
+                 options: Enum, transform_function: function = None, translation_key: str = None):
         
         super().__init__(hass=hass, config_entry=config_entry, name=name, 
                        cache_command=cache_command, cache_key=cache_key, 
-                       transform_function=transform_function)
+                       transform_function=transform_function, translation_key=translation_key)
         
         self.real_options = enum_to_options_list(options)
         self._attr_options = enum_to_options_list(options, transform_function)

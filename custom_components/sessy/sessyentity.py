@@ -13,7 +13,7 @@ from .const import DOMAIN, SESSY_CACHE, SESSY_DEVICE, SESSY_DEVICE_INFO, UPDATE_
 
 class SessyEntity(Entity):
     def __init__(self, hass: HomeAssistant, config_entry: ConfigEntry, name: str,
-                 cache_command: SessyApiCommand, cache_key, transform_function: function = None):
+                 cache_command: SessyApiCommand, cache_key, transform_function: function = None, translation_key: str = None):
         self.hass = hass
         self.config_entry = config_entry
         
@@ -31,6 +31,7 @@ class SessyEntity(Entity):
         self._attr_has_entity_name = True
         self._attr_unique_id = f"sessy-{ device.serial_number }-sensor-{ name.replace(' ','') }".lower()
         self._attr_device_info = hass.data[DOMAIN][config_entry.entry_id][SESSY_DEVICE_INFO]
+        self._attr_translation_key = translation_key
         
 
     async def async_added_to_hass(self):
