@@ -37,15 +37,18 @@ class SessyEntity(Entity):
     async def async_added_to_hass(self):
         @callback
         def update():
-            self.cache = self.hass.data[DOMAIN][self.config_entry.entry_id][SESSY_CACHE][self.cache_command]
-            value = self.get_cache_value(self.cache_key)
-            if self.transform_function:
-                self.cache_value = self.transform_function(value)
-            else:
-                self.cache_value = value
-            
-            self.update_from_cache()
-            self.async_write_ha_state()
+            try:
+                self.cache = self.hass.data[DOMAIN][self.config_entry.entry_id][SESSY_CACHE][self.cache_command]
+                value = self.get_cache_value(self.cache_key)
+                if self.transform_function:
+                    self.cache_value = self.transform_function(value)
+                else:
+                    self.cache_value = value
+            except:
+                self.cache_value = None
+            finally:
+                self.update_from_cache()
+                self.async_write_ha_state()
 
         await super().async_added_to_hass()
         self.update_topic_listener = async_dispatcher_connect(
