@@ -22,7 +22,7 @@
     "sensor":{
       "battery_system_state":{
         "state":{
-          "running_safe": "Active",
+          "running_safe": "Running safe",
           "standby": "Standby",
           "waiting_for_safe_situation": "Waiting for safe situation",
           "waiting_in_safe_situation": "Waiting in safe situation",
