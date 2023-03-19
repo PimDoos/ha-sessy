@@ -16,11 +16,11 @@ TODO:
 - [X] Add Power Status sensors
 - [X] Add Power Strategy select
 - [X] Add Power Setpoint number entity
-- [ ] Add Energy sensors
 - [X] Add update entities
 - [X] Add Device Registry information
 - [X] Add logo to home-assistant/brands
 - [X] Add HACS configuration
+- [ ] Add Energy sensors
 - [ ] Add to HACS Default repository
 
 Installation
