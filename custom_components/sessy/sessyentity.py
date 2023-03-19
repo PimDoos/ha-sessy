@@ -27,7 +27,7 @@ class SessyEntity(Entity):
 
         device: SessyDevice = hass.data[DOMAIN][config_entry.entry_id][SESSY_DEVICE]
 
-        self._attr_name = f"{ name }"
+        self._attr_name = name
         self._attr_has_entity_name = True
         self._attr_unique_id = f"sessy-{ device.serial_number }-sensor-{ name.replace(' ','') }".lower()
         self._attr_device_info = hass.data[DOMAIN][config_entry.entry_id][SESSY_DEVICE_INFO]
