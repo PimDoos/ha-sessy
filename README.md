@@ -1,6 +1,8 @@
 # ha-sessy
+[![Validate with hassfest](https://github.com/PimDoos/ha-sessy/actions/workflows/hassfest.yaml/badge.svg)](https://github.com/PimDoos/ha-sessy/actions/workflows/hassfest.yaml)
+[![HACS Action](https://github.com/PimDoos/ha-sessy/actions/workflows/hacs.yaml/badge.svg)](https://github.com/PimDoos/ha-sessy/actions/workflows/hacs.yaml)
+
 Home Assistant integration for Sessy home battery system.
-Work in progress :)
 
 Currently supported:
 - Connect to Battery or P1 Dongle
@@ -16,11 +18,11 @@ TODO:
 - [X] Add Power Status sensors
 - [X] Add Power Strategy select
 - [X] Add Power Setpoint number entity
-- [ ] Add Energy sensors
 - [X] Add update entities
 - [X] Add Device Registry information
 - [X] Add logo to home-assistant/brands
 - [X] Add HACS configuration
+- [ ] Add Energy sensors
 - [ ] Add to HACS Default repository
 
 Installation
@@ -28,6 +30,8 @@ Installation
 
 HACS
 ----
+[![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
+
 Add this repository to HACS via the Custom Repositories options
 
 Manual
