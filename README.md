@@ -1,6 +1,8 @@
 # ha-sessy
+[![Validate with hassfest](https://github.com/PimDoos/ha-sessy/actions/workflows/hassfest.yaml/badge.svg)](https://github.com/PimDoos/ha-sessy/actions/workflows/hassfest.yaml)
+[![HACS Action](https://github.com/PimDoos/ha-sessy/actions/workflows/hacs.yaml/badge.svg)](https://github.com/PimDoos/ha-sessy/actions/workflows/hacs.yaml)
+
 Home Assistant integration for Sessy home battery system.
-Work in progress :)
 
 Currently supported:
 - Connect to Battery or P1 Dongle
