@@ -8,7 +8,7 @@ from homeassistant.const import (
     ENERGY_KILO_WATT_HOUR,
     PERCENTAGE,
     ELECTRIC_POTENTIAL_MILLIVOLT,
-    ELECTRIC_CURRENT_AMPERE,
+    ELECTRIC_CURRENT_MILLIAMPERE,
     SIGNAL_STRENGTH_DECIBELS_MILLIWATT
 )
 from homeassistant.components.sensor import SensorEntity, SensorDeviceClass, SensorStateClass
@@ -66,7 +66,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
             sensors.append(
                 SessySensor(hass, config_entry, f"Renewable Energy Phase { phase_id } Current",
                             SessyApiCommand.POWER_STATUS, f"renewable_energy_phase{ phase_id }.current_rms",
-                            SensorDeviceClass.CURRENT, SensorStateClass.MEASUREMENT, ELECTRIC_CURRENT_AMPERE)
+                            SensorDeviceClass.CURRENT, SensorStateClass.MEASUREMENT, ELECTRIC_CURRENT_MILLIAMPERE)
             )
             sensors.append(
                 SessySensor(hass, config_entry, f"Renewable Energy Phase { phase_id } Power",
