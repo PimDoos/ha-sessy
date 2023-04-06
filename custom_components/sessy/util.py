@@ -66,6 +66,8 @@ def status_string_system_state(status_string: str) -> str:
 def status_string_power_strategy(status_string: str) -> str:
     return backend_status_string(status_string, "POWER_STRATEGY_")
 
+def devide_by_thousand(input: int) -> float:
+    return input / 1000
 
 def enum_to_options_list(options: Enum, transform_function: function = None) -> list[str]:
     output = list()

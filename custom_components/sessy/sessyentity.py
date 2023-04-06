@@ -1,4 +1,6 @@
 from __future__ import annotations
+import logging
+_LOGGER = logging.getLogger(__name__)
 
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.config_entries import ConfigEntry
@@ -9,7 +11,7 @@ from homeassistant.helpers.typing import StateType
 from sessypy.const import SessyApiCommand
 from sessypy.devices import SessyDevice
 
-from .const import DOMAIN, SESSY_CACHE, SESSY_DEVICE, SESSY_DEVICE_INFO, UPDATE_TOPIC
+from .const import DOMAIN, ENTITY_ERROR_THRESHOLD, SESSY_CACHE, SESSY_DEVICE, SESSY_DEVICE_INFO, UPDATE_TOPIC
 
 class SessyEntity(Entity):
     def __init__(self, hass: HomeAssistant, config_entry: ConfigEntry, name: str,
@@ -27,11 +29,13 @@ class SessyEntity(Entity):
 
         device: SessyDevice = hass.data[DOMAIN][config_entry.entry_id][SESSY_DEVICE]
 
-        self._attr_name = f"{ name }"
+        self._attr_name = name
         self._attr_has_entity_name = True
         self._attr_unique_id = f"sessy-{ device.serial_number }-sensor-{ name.replace(' ','') }".lower()
         self._attr_device_info = hass.data[DOMAIN][config_entry.entry_id][SESSY_DEVICE_INFO]
         self._attr_translation_key = translation_key
+
+        self._update_failed_count = 0
         
 
     async def async_added_to_hass(self):
@@ -44,8 +48,18 @@ class SessyEntity(Entity):
                     self.cache_value = self.transform_function(value)
                 else:
                     self.cache_value = value
-            except:
+
+                self._update_failed_count = 0
+            except Exception as e:
+                self._update_failed_count += 1
                 self.cache_value = None
+
+                error_message = f"Updating entity '{self.name}' failed for {self._update_failed_count} consecutive attempts. Exception occured: '{ e }'"
+                if self._update_failed_count > ENTITY_ERROR_THRESHOLD:
+                    _LOGGER.warning(error_message)
+                else:
+                    _LOGGER.debug(error_message)
+
             finally:
                 self.update_from_cache()
                 self.async_write_ha_state()

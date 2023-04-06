@@ -9,7 +9,8 @@ from homeassistant.const import (
     PERCENTAGE,
     ELECTRIC_POTENTIAL_MILLIVOLT,
     ELECTRIC_CURRENT_MILLIAMPERE,
-    SIGNAL_STRENGTH_DECIBELS_MILLIWATT
+    SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
+    FREQUENCY_HERTZ
 )
 from homeassistant.components.sensor import SensorEntity, SensorDeviceClass, SensorStateClass
 from homeassistant.core import HomeAssistant
@@ -20,7 +21,7 @@ from sessypy.devices import SessyBattery, SessyDevice, SessyP1Meter
 
 
 from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, SESSY_DEVICE, SCAN_INTERVAL_POWER
-from .util import add_cache_command, enum_to_options_list, status_string_p1, status_string_system_state, unit_interval_to_percentage
+from .util import add_cache_command, enum_to_options_list, status_string_p1, status_string_system_state, unit_interval_to_percentage, devide_by_thousand
 from .sessyentity import SessyEntity
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities):
@@ -47,6 +48,11 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
                         options = enum_to_options_list(SessySystemState, status_string_system_state))
         )
         sensors.append(
+            SessySensor(hass, config_entry, "System State Details",
+                        SessyApiCommand.POWER_STATUS, "sessy.system_state_details",
+                        entity_category=EntityCategory.DIAGNOSTIC)
+        )
+        sensors.append(
             SessySensor(hass, config_entry, "State of Charge",
                         SessyApiCommand.POWER_STATUS, "sessy.state_of_charge",
                         SensorDeviceClass.BATTERY, SensorStateClass.MEASUREMENT, PERCENTAGE,
@@ -56,6 +62,12 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
             SessySensor(hass, config_entry, "Power",
                         SessyApiCommand.POWER_STATUS, "sessy.power",
                         SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, POWER_WATT)
+        )
+        sensors.append(
+            SessySensor(hass, config_entry, "Frequency",
+                        SessyApiCommand.POWER_STATUS, "sessy.frequency",
+                        SensorDeviceClass.FREQUENCY, SensorStateClass.MEASUREMENT, FREQUENCY_HERTZ,
+                        transform_function=devide_by_thousand, precision = 3)
         )
         for phase_id in range(1,4): 
             sensors.append(
