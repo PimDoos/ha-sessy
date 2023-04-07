@@ -21,7 +21,7 @@ from sessypy.devices import SessyBattery, SessyDevice, SessyP1Meter
 
 
 from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, SESSY_DEVICE, SCAN_INTERVAL_POWER
-from .util import add_cache_command, enum_to_options_list, status_string_p1, status_string_system_state, unit_interval_to_percentage, devide_by_thousand
+from .util import add_cache_command, enum_to_options_list, status_string_p1, status_string_system_state, unit_interval_to_percentage, divide_by_thousand
 from .sessyentity import SessyEntity
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities):
@@ -67,9 +67,9 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
             SessySensor(hass, config_entry, "Frequency",
                         SessyApiCommand.POWER_STATUS, "sessy.frequency",
                         SensorDeviceClass.FREQUENCY, SensorStateClass.MEASUREMENT, FREQUENCY_HERTZ,
-                        transform_function=devide_by_thousand, precision = 3)
+                        transform_function=divide_by_thousand, precision = 3)
         )
-        for phase_id in range(1,4): 
+        for phase_id in range(1,4):
             sensors.append(
                 SessySensor(hass, config_entry, f"Renewable Energy Phase { phase_id } Voltage",
                             SessyApiCommand.POWER_STATUS, f"renewable_energy_phase{ phase_id }.voltage_rms",
@@ -104,16 +104,16 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
         )
 
     async_add_entities(sensors)
-    
+
 class SessySensor(SessyEntity, SensorEntity):
     def __init__(self, hass: HomeAssistant, config_entry: ConfigEntry, name: str,
                  cache_command: SessyApiCommand, cache_key,
                  device_class: SensorDeviceClass = None, state_class: SensorStateClass = None, unit_of_measurement = None,
                  transform_function: function = None, translation_key: str = None,
                  options = None, entity_category: EntityCategory = None, precision: int = None):
-        
-        super().__init__(hass=hass, config_entry=config_entry, name=name, 
-                       cache_command=cache_command, cache_key=cache_key, 
+
+        super().__init__(hass=hass, config_entry=config_entry, name=name,
+                       cache_command=cache_command, cache_key=cache_key,
                        transform_function=transform_function, translation_key=translation_key)
 
         self._attr_device_class = device_class
@@ -122,9 +122,9 @@ class SessySensor(SessyEntity, SensorEntity):
         self._attr_entity_category = entity_category
 
         self._attr_suggested_display_precision = precision
-        
+
         self._attr_options = options
-    
+
     def update_from_cache(self):
         self._attr_available = self.cache_value != None
         self._attr_native_value = self.cache_value

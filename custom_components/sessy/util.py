@@ -27,7 +27,7 @@ async def add_cache_command(hass: HomeAssistant, config_entry: ConfigEntry, comm
         except:
             result = None
             cache[command] = None
-                
+
         async_dispatcher_send(hass, UPDATE_TOPIC.format(command))
 
     if command in hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE_TRACKERS]:
@@ -41,7 +41,7 @@ async def add_cache_command(hass: HomeAssistant, config_entry: ConfigEntry, comm
 async def clear_cache_command(hass: HomeAssistant, config_entry: ConfigEntry, command: SessyApiCommand = None):
     trackers = hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE_TRACKERS]
     if command == None:
-        
+
         for tracker_command in trackers:
             tracker = trackers[tracker_command]
             tracker()
@@ -66,7 +66,7 @@ def status_string_system_state(status_string: str) -> str:
 def status_string_power_strategy(status_string: str) -> str:
     return backend_status_string(status_string, "POWER_STRATEGY_")
 
-def devide_by_thousand(input: int) -> float:
+def divide_by_thousand(input: int) -> float:
     return input / 1000
 
 def enum_to_options_list(options: Enum, transform_function: function = None) -> list[str]:
