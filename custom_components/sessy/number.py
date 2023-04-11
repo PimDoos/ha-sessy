@@ -29,7 +29,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
             SessyNumber(hass, config_entry, "Power Setpoint",
                         SessyApiCommand.POWER_STATUS, "sessy.power_setpoint",
                         SessyApiCommand.POWER_SETPOINT, "setpoint",
-                        NumberDeviceClass.POWER, POWER_WATT, -2200, 1700)
+                        NumberDeviceClass.POWER, POWER_WATT, -2200, 2200)
             
         )
 
