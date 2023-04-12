@@ -3,14 +3,18 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any
 
+import logging
+_LOGGER = logging.getLogger(__name__)
+
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.components.update import UpdateEntity, UpdateDeviceClass, UpdateEntityFeature
+from homeassistant.const import ATTR_SW_VERSION
 
 from sessypy.const import SessyApiCommand, SessyOtaTarget, SessyOtaState
 from sessypy.devices import SessyBattery, SessyDevice, SessyP1Meter
 
-from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, SESSY_DEVICE, SCAN_INTERVAL_OTA, SCAN_INTERVAL_OTA_CHECK
+from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, SESSY_DEVICE, SCAN_INTERVAL_OTA, SCAN_INTERVAL_OTA_CHECK, SESSY_DEVICE_INFO
 from .util import add_cache_command, trigger_cache_update, unit_interval_to_percentage
 from .sessyentity import SessyEntity
 
@@ -64,8 +68,15 @@ class SessyUpdate(SessyEntity, UpdateEntity):
 
         state = self.cache_value.get("state", SessyOtaState.INACTIVE.value)
 
-        self._attr_installed_version = self.cache_value.get("installed_firmware", dict()).get("version", None)
         
+        self._attr_installed_version = self.cache_value.get("installed_firmware", dict()).get("version", None)
+
+        if self.update_target == SessyOtaTarget.SELF:
+            try: 
+                self.hass.data[DOMAIN][self.config_entry.entry_id][SESSY_DEVICE_INFO][ATTR_SW_VERSION] = self._attr_installed_version
+            except:
+                _LOGGER.warning("Could not write OTA status to device info")
+
         # Skip version check if Sessy reports it is up to date or has not checked yet
         if state in [SessyOtaState.UP_TO_DATE.value, SessyOtaState.INACTIVE.value]:
             self._attr_latest_version = self._attr_installed_version

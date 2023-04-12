@@ -3,15 +3,19 @@ from datetime import datetime, timedelta
 from enum import Enum
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import (
+    Platform, CONF_USERNAME, CONF_PASSWORD, CONF_HOST, 
+    ATTR_NAME, ATTR_MODEL, ATTR_SW_VERSION, ATTR_IDENTIFIERS, ATTR_CONFIGURATION_URL, ATTR_MANUFACTURER
+)
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 
 from sessypy.const import SessyApiCommand
-from sessypy.devices import SessyDevice
+from sessypy.devices import SessyDevice, SessyBattery, SessyP1Meter, SessyCTMeter
 from sessypy.util import SessyConnectionException
 
 
-from .const import DOMAIN, SESSY_CACHE, SESSY_CACHE_TRACKERS, SESSY_CACHE_TRIGGERS, SESSY_DEVICE, UPDATE_TOPIC, DEFAULT_SCAN_INTERVAL
+from .const import DOMAIN, SESSY_CACHE, SESSY_CACHE_TRACKERS, SESSY_CACHE_TRIGGERS, SESSY_DEVICE, SESSY_DEVICE_INFO, UPDATE_TOPIC, DEFAULT_SCAN_INTERVAL
 
 async def add_cache_command(hass: HomeAssistant, config_entry: ConfigEntry, command: SessyApiCommand, interval: timedelta = DEFAULT_SCAN_INTERVAL):
     if not command in hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE]:
@@ -82,3 +86,24 @@ def enum_to_options_list(options: Enum, transform_function: function = None) -> 
 
 def unit_interval_to_percentage(input: float) -> float:
     return round(input * 100,1)
+
+async def generate_device_info(hass: HomeAssistant, config_entry: ConfigEntry, device: SessyDevice) -> dict:
+    # Generate Device Info
+    device_info = dict()
+    device_info[ATTR_NAME] = device.name
+    device_info[ATTR_MANUFACTURER] = "Charged B.V."
+    device_info[ATTR_IDENTIFIERS] = {(DOMAIN, device.serial_number)}
+    device_info[ATTR_CONFIGURATION_URL] = f"http://{device.host}/"
+
+    software_info = await device.get_ota_status()
+    installed_version = software_info.get("self",dict()).get("installed_firmware",dict()).get("version", None)
+    device_info[ATTR_SW_VERSION] = installed_version
+
+    if isinstance(device, SessyBattery):
+        device_info[ATTR_MODEL] = "Sessy Battery"
+    elif isinstance(device, SessyP1Meter):
+        device_info[ATTR_MODEL] = "Sessy P1 Dongle"
+    elif isinstance(device, SessyCTMeter):
+        device_info[ATTR_MODEL] = "Sessy CT Dongle"
+
+    return device_info
