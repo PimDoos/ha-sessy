@@ -5,17 +5,16 @@ import logging
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
-    Platform, CONF_USERNAME, CONF_PASSWORD, CONF_HOST, 
-    ATTR_NAME, ATTR_MODEL, ATTR_SW_VERSION, ATTR_IDENTIFIERS, ATTR_CONFIGURATION_URL, ATTR_MANUFACTURER
+    Platform, CONF_USERNAME, CONF_PASSWORD, CONF_HOST
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 
-from sessypy.devices import SessyBattery, SessyCTMeter, SessyP1Meter, get_sessy_device
+from sessypy.devices import get_sessy_device
 from sessypy.util import SessyLoginException, SessyConnectionException, SessyNotSupportedException
 
 from .const import DOMAIN, SERIAL_NUMBER, SESSY_CACHE, SESSY_CACHE_TRACKERS, SESSY_CACHE_TRIGGERS, SESSY_DEVICE, SESSY_DEVICE_INFO
-from .util import clear_cache_command
+from .util import clear_cache_command, generate_device_info
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -50,24 +49,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
 
 
     # Generate Device Info
-    device_info = dict()
-    device_info[ATTR_NAME] = device.name
-    device_info[ATTR_MANUFACTURER] = "Charged B.V."
-    device_info[ATTR_IDENTIFIERS] = {(DOMAIN, device.serial_number)}
-    device_info[ATTR_CONFIGURATION_URL] = f"http://{device.host}/"
-
-    software_info = await device.get_ota_status()
-    installed_version = software_info.get("self",dict()).get("installed_firmware",dict()).get("version", None)
-    device_info[ATTR_SW_VERSION] = installed_version
-
-    if isinstance(device, SessyBattery):
-        device_info[ATTR_MODEL] = "Sessy Battery"
-    elif isinstance(device, SessyP1Meter):
-        device_info[ATTR_MODEL] = "Sessy P1 Dongle"
-    elif isinstance(device, SessyCTMeter):
-        device_info[ATTR_MODEL] = "Sessy CT Dongle"
-
-    hass.data[DOMAIN][config_entry.entry_id][SESSY_DEVICE_INFO] = device_info
+    hass.data[DOMAIN][config_entry.entry_id][SESSY_DEVICE_INFO] = await generate_device_info(hass, config_entry, device)
 
 
     hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE] = dict()
