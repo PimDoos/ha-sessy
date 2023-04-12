@@ -27,6 +27,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][config_entry.entry_id] = {}
 
+    _LOGGER.debug(f"Connecting to Sessy device at {config_entry.data.get(CONF_HOST)}")
     try:
         device = await get_sessy_device(
             host = config_entry.data.get(CONF_HOST),
@@ -39,7 +40,8 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
         raise ConfigEntryNotReady
     except SessyConnectionException:
         raise ConfigEntryNotReady
-            
+    else:
+        _LOGGER.info(f"Connection to {device.__class__} at {device.host} successful")
     
     if device is None:
         raise ConfigEntryNotReady
