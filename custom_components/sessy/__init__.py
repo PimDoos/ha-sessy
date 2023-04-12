@@ -34,17 +34,18 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
             username = config_entry.data.get(CONF_USERNAME),
             password = config_entry.data.get(CONF_PASSWORD),
         )
+        
     except SessyLoginException:
         raise ConfigEntryAuthFailed
     except SessyNotSupportedException:
         raise ConfigEntryNotReady
     except SessyConnectionException:
         raise ConfigEntryNotReady
-    else:
-        _LOGGER.info(f"Connection to {device.__class__} at {device.host} successful")
     
     if device is None:
         raise ConfigEntryNotReady
+    else:
+        _LOGGER.info(f"Connection to {device.__class__} at {device.host} successful")
 
     hass.data[DOMAIN][config_entry.entry_id][SERIAL_NUMBER] = config_entry.data.get(CONF_USERNAME).upper()
     hass.data[DOMAIN][config_entry.entry_id][SESSY_DEVICE] = device
