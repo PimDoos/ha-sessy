@@ -95,10 +95,6 @@ async def generate_device_info(hass: HomeAssistant, config_entry: ConfigEntry, d
     device_info[ATTR_IDENTIFIERS] = {(DOMAIN, device.serial_number)}
     device_info[ATTR_CONFIGURATION_URL] = f"http://{device.host}/"
 
-    software_info = await device.get_ota_status()
-    installed_version = software_info.get("self",dict()).get("installed_firmware",dict()).get("version", None)
-    device_info[ATTR_SW_VERSION] = installed_version
-
     if isinstance(device, SessyBattery):
         device_info[ATTR_MODEL] = "Sessy Battery"
     elif isinstance(device, SessyP1Meter):
