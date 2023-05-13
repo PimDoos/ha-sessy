@@ -117,7 +117,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
             sensors.append(
                 SessySensor(hass, config_entry, f"Phase { phase_id } Voltage",
                             SessyApiCommand.P1_DETAILS, f"voltage_l{ phase_id }",
-                            SensorDeviceClass.VOLTAGE, SensorStateClass.MEASUREMENT, ELECTRIC_POTENTIAL_VOLT)
+                            SensorDeviceClass.VOLTAGE, SensorStateClass.MEASUREMENT, ELECTRIC_POTENTIAL_VOLT, precision = 3)
             )
 
 
