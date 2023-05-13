@@ -8,6 +8,7 @@ from homeassistant.const import (
     ENERGY_KILO_WATT_HOUR,
     PERCENTAGE,
     ELECTRIC_POTENTIAL_MILLIVOLT,
+    ELECTRIC_POTENTIAL_VOLT,
     ELECTRIC_CURRENT_MILLIAMPERE,
     SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
     FREQUENCY_HERTZ
@@ -88,20 +89,37 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
 
 
     elif isinstance(device, SessyP1Meter):
-        await add_cache_command(hass, config_entry, SessyApiCommand.P1_STATUS, SCAN_INTERVAL_POWER)
+        await add_cache_command(hass, config_entry, SessyApiCommand.P1_DETAILS, SCAN_INTERVAL_POWER)
         sensors.append(
             SessySensor(hass, config_entry, "P1 Power",
-                        SessyApiCommand.P1_STATUS, "net_power_delivered",
+                        SessyApiCommand.P1_DETAILS, "total_power",
+                        SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, POWER_KILO_WATT, precision = 3)
+        )
+        sensors.append(
+            SessySensor(hass, config_entry, "P1 Consuming Power",
+                        SessyApiCommand.P1_DETAILS, "power_consumed",
+                        SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, POWER_KILO_WATT, precision = 3)
+        )
+        sensors.append(
+            SessySensor(hass, config_entry, "P1 Producing Power",
+                        SessyApiCommand.P1_DETAILS, "power_produced",
                         SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, POWER_KILO_WATT, precision = 3)
         )
         sensors.append(
             SessySensor(hass, config_entry, "P1 Status",
-                        SessyApiCommand.P1_STATUS, "state",
+                        SessyApiCommand.P1_DETAILS, "state",
                         SensorDeviceClass.ENUM,
                         translation_key = "p1_state", transform_function=status_string_p1,
                         options = enum_to_options_list(SessyP1State, status_string_p1)
                         )
         )
+        for phase_id in range(1,4):
+            sensors.append(
+                SessySensor(hass, config_entry, f"Phase { phase_id } Voltage",
+                            SessyApiCommand.P1_DETAILS, f"voltage_l{ phase_id }",
+                            SensorDeviceClass.VOLTAGE, SensorStateClass.MEASUREMENT, ELECTRIC_POTENTIAL_VOLT)
+            )
+
 
     async_add_entities(sensors)
 
