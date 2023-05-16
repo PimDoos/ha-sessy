@@ -3,20 +3,15 @@ from datetime import datetime, timedelta
 from enum import Enum
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import (
-    Platform, CONF_USERNAME, CONF_PASSWORD, CONF_HOST, 
-    ATTR_NAME, ATTR_MODEL, ATTR_SW_VERSION, ATTR_IDENTIFIERS, ATTR_CONFIGURATION_URL, ATTR_MANUFACTURER
-)
+
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 
 from sessypy.const import SessyApiCommand
 from sessypy.devices import SessyDevice, SessyBattery, SessyP1Meter, SessyCTMeter
-from sessypy.util import SessyConnectionException
 
-
-from .const import DOMAIN, SESSY_CACHE, SESSY_CACHE_TRACKERS, SESSY_CACHE_TRIGGERS, SESSY_DEVICE, SESSY_DEVICE_INFO, UPDATE_TOPIC, DEFAULT_SCAN_INTERVAL
+from .const import DOMAIN, SESSY_CACHE, SESSY_CACHE_TRACKERS, SESSY_CACHE_TRIGGERS, SESSY_DEVICE, UPDATE_TOPIC, DEFAULT_SCAN_INTERVAL
 
 async def add_cache_command(hass: HomeAssistant, config_entry: ConfigEntry, command: SessyApiCommand, interval: timedelta = DEFAULT_SCAN_INTERVAL):
     if not command in hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE]:
@@ -79,9 +74,9 @@ def enum_to_options_list(options: Enum, transform_function: function = None) -> 
     for option in options:
         value = option.value
         if transform_function:
-            output.append(transform_function(option.value))
+            output.append(transform_function(value))
         else:
-            output.append(option.value)
+            output.append(value)
     return output
 
 
