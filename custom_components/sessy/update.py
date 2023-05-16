@@ -9,7 +9,8 @@ _LOGGER = logging.getLogger(__name__)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.components.update import UpdateEntity, UpdateDeviceClass, UpdateEntityFeature
-from homeassistant.const import ATTR_SW_VERSION
+from homeassistant.const import ATTR_IDENTIFIERS
+from homeassistant.helpers import device_registry as dr
 
 from sessypy.const import SessyApiCommand, SessyOtaTarget, SessyOtaState
 from sessypy.devices import SessyBattery, SessyDevice, SessyP1Meter
@@ -68,14 +69,17 @@ class SessyUpdate(SessyEntity, UpdateEntity):
 
         state = self.cache_value.get("state", SessyOtaState.INACTIVE.value)
 
-        
+        last_installed_version = self._attr_installed_version
         self._attr_installed_version = self.cache_value.get("installed_firmware", dict()).get("version", None)
 
-        if self.update_target == SessyOtaTarget.SELF:
-            try: 
-                self.hass.data[DOMAIN][self.config_entry.entry_id][SESSY_DEVICE_INFO][ATTR_SW_VERSION] = self._attr_installed_version
+        # Write new firmware version to device registry
+        if self.update_target == SessyOtaTarget.SELF and last_installed_version != self._attr_installed_version:
+            try:
+                device_registry = dr.async_get(self.hass)
+                device = device_registry.async_get_device(self.device_info[ATTR_IDENTIFIERS])
+                device_registry.async_update_device(device.id, sw_version=self.installed_version)
             except:
-                _LOGGER.warning("Could not write OTA status to device info")
+                _LOGGER.warning("Could not write OTA status to device registry")
 
         # Skip version check if Sessy reports it is up to date or has not checked yet
         if state in [SessyOtaState.UP_TO_DATE.value, SessyOtaState.INACTIVE.value]:
