@@ -42,8 +42,6 @@ class SessyEntity(Entity):
         @callback
         def update():
             try:
-                self._attr_device_info = self.hass.data[DOMAIN][self.config_entry.entry_id][SESSY_DEVICE_INFO]
-
                 self.cache = self.hass.data[DOMAIN][self.config_entry.entry_id][SESSY_CACHE][self.cache_command]
                 value = self.get_cache_value(self.cache_key)
                 if self.transform_function:
