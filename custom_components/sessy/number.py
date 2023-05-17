@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
-    POWER_WATT
+    UnitOfPower
 )
 from homeassistant.components.number import NumberEntity, NumberDeviceClass
 from homeassistant.core import HomeAssistant
@@ -29,7 +29,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
             SessyNumber(hass, config_entry, "Power Setpoint",
                         SessyApiCommand.POWER_STATUS, "sessy.power_setpoint",
                         SessyApiCommand.POWER_SETPOINT, "setpoint",
-                        NumberDeviceClass.POWER, POWER_WATT, -2200, 2200)
+                        NumberDeviceClass.POWER, UnitOfPower.WATT, -2200, 2200)
             
         )
 
@@ -43,7 +43,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
             SessyNumber(hass, config_entry, "Minimum Power",
                         SessyApiCommand.SYSTEM_SETTINGS, "min_power",
                         SessyApiCommand.SYSTEM_SETTINGS, "min_power",
-                        NumberDeviceClass.POWER, POWER_WATT, 0, 2200,
+                        NumberDeviceClass.POWER, UnitOfPower.WATT, 0, 2200,
                         entity_category=EntityCategory.CONFIG,
                         action_function=partial_update_settings)
             
@@ -52,7 +52,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
             SessyNumber(hass, config_entry, "Maximum Power",
                         SessyApiCommand.SYSTEM_SETTINGS, "max_power",
                         SessyApiCommand.SYSTEM_SETTINGS, "max_power",
-                        NumberDeviceClass.POWER, POWER_WATT, 0, 2200,
+                        NumberDeviceClass.POWER, UnitOfPower.WATT, 0, 2200,
                         entity_category=EntityCategory.CONFIG,
                         action_function=partial_update_settings)
             
