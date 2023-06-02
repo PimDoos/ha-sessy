@@ -7,6 +7,7 @@ from typing import Any
 import voluptuous as vol
 
 from homeassistant import config_entries
+from homeassistant.components import zeroconf
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.exceptions import HomeAssistantError
@@ -15,22 +16,15 @@ from homeassistant.const import (
     CONF_USERNAME,
     CONF_HOST
 )
+from homeassistant.helpers import device_registry as dr
 
 from sessypy.devices import get_sessy_device, SessyBattery, SessyP1Meter
 from sessypy.util import SessyConnectionException, SessyLoginException
-
 
 from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
-STEP_USER_DATA_SCHEMA = vol.Schema(
-    {
-        vol.Required(CONF_HOST): str,
-        vol.Required(CONF_USERNAME): str,
-        vol.Required(CONF_PASSWORD): str,
-    }
-)
 async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str, Any]:
     """Validate the user input allows us to connect.
 
@@ -66,13 +60,21 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     VERSION = 1
 
+
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Handle the initial step."""
+        data_schema = vol.Schema(
+            {
+                vol.Required(CONF_HOST): str,
+                vol.Required(CONF_USERNAME): str,
+                vol.Required(CONF_PASSWORD): str,
+            }
+        )
         if user_input is None:
             return self.async_show_form(
-                step_id="user", data_schema=STEP_USER_DATA_SCHEMA
+                step_id="user", data_schema=data_schema
             )
 
         errors = {}
@@ -90,8 +92,40 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             return self.async_create_entry(title=info["title"], data=user_input)
 
         return self.async_show_form(
-            step_id="user", data_schema=STEP_USER_DATA_SCHEMA, errors=errors
+            step_id="user", data_schema=data_schema, errors=errors
         )
+    
+    async def async_step_zeroconf(
+        self, discovery_info: zeroconf.ZeroconfServiceInfo
+    ) -> FlowResult:
+        """Handle zeroconf discovery."""
+        try:
+            local_name = discovery_info.hostname[:-1]
+            serial_number = discovery_info.properties.get("serial")
+            _LOGGER.info(f"Discovered Sessy device at {local_name} with serial: {serial_number}")
+            
+
+
+            self._abort_if_unique_id_configured(updates={CONF_HOST: local_name})
+            for ip_address in discovery_info.addresses:
+                self._abort_if_unique_id_configured(updates={CONF_HOST: ip_address})
+
+            data_schema = vol.Schema(
+                {
+                    vol.Required(CONF_HOST, default=local_name): str,
+                    vol.Required(CONF_USERNAME, default=serial_number): str,
+                    vol.Required(CONF_PASSWORD): str,
+                }
+            )
+
+            return self.async_show_form(
+                step_id="user", data_schema=data_schema
+            )
+    
+        except:
+            self.async_abort(reason="")
+        
+
 
 
 class CannotConnect(HomeAssistantError):
