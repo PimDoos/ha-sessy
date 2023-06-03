@@ -20,7 +20,8 @@
       "cannot_connect": "Failed to connect",
       "invalid_auth": "Invalid authentication",
       "unknown": "Unexpected error"
-    }
+    },
+    "flow_title": "{name}"
   },
   "entity": {
     "sensor":{
