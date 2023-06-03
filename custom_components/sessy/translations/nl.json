@@ -7,6 +7,13 @@
           "password": "Wachtwoord",
           "host": "Host"
         }
+      },
+      "zeroconf": {
+        "data": {
+          "username": "Gebruikersnaam",
+          "password": "Wachtwoord",
+          "host": "Host"
+        }
       }
     },
     "error": {

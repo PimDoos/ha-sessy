@@ -7,6 +7,13 @@
           "password": "Password",
           "host": "Host"
         }
+      },
+      "zeroconf": {
+        "data": {
+          "username": "Username",
+          "password": "Password",
+          "host": "Host"
+        }
       }
     },
     "error": {
