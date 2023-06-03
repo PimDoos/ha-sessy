@@ -14,7 +14,8 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.const import (
     CONF_PASSWORD,
     CONF_USERNAME,
-    CONF_HOST
+    CONF_HOST,
+    CONF_NAME
 )
 from homeassistant.helpers import device_registry as dr
 
@@ -26,10 +27,7 @@ from .const import DOMAIN
 _LOGGER = logging.getLogger(__name__)
 
 async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str, Any]:
-    """Validate the user input allows us to connect.
-
-    Data has the keys from STEP_USER_DATA_SCHEMA with values provided by the user.
-    """
+    """Validate the user input allows us to connect."""
 
     try:
         device = await get_sessy_device(
@@ -60,15 +58,19 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     VERSION = 1
 
+    hostname = None
+    username = None
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Handle the initial step."""
+
+        _LOGGER.info("Starting user config flow for Sessy")
         data_schema = vol.Schema(
             {
-                vol.Required(CONF_HOST): str,
-                vol.Required(CONF_USERNAME): str,
+                vol.Required(CONF_HOST, default=self.hostname or "sessy-"): str,
+                vol.Required(CONF_USERNAME, default=self.username or vol.UNDEFINED): str,
                 vol.Required(CONF_PASSWORD): str,
             }
         )
@@ -99,34 +101,39 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self, discovery_info: zeroconf.ZeroconfServiceInfo
     ) -> FlowResult:
         """Handle zeroconf discovery."""
+
+        _LOGGER.info("Starting zeroconf config flow for Sessy")
         try:
             local_name = discovery_info.hostname[:-1]
             serial_number = discovery_info.properties.get("serial")
             _LOGGER.info(f"Discovered Sessy device at {local_name} with serial: {serial_number}")
             
+            
 
-
+            await self.async_set_unique_id(serial_number)
             self._abort_if_unique_id_configured(updates={CONF_HOST: local_name})
             for ip_address in discovery_info.addresses:
                 self._abort_if_unique_id_configured(updates={CONF_HOST: ip_address})
 
-            data_schema = vol.Schema(
-                {
-                    vol.Required(CONF_HOST, default=local_name): str,
-                    vol.Required(CONF_USERNAME, default=serial_number): str,
-                    vol.Required(CONF_PASSWORD): str,
-                }
-            )
+            self.context[CONF_NAME] = local_name.removesuffix(".local")
 
-            return self.async_show_form(
-                step_id="user", data_schema=data_schema
-            )
-    
+            self.hostname = local_name
+            self.username = serial_number
         except:
-            self.async_abort(reason="")
-        
+            self.async_abort(reason="discovery_error")
 
+        data_schema = vol.Schema(
+            {
+                vol.Required(CONF_HOST, default=self.hostname): str,
+                vol.Required(CONF_USERNAME, default=self.username): str,
+                vol.Required(CONF_PASSWORD): str,
+            }
+        )
 
+        return self.async_show_form(
+            step_id="user", data_schema=data_schema
+        )
+    
 
 class CannotConnect(HomeAssistantError):
     """Error to indicate we cannot connect."""
