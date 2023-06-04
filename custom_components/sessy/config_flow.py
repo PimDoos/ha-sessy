@@ -96,7 +96,15 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="user", data_schema=data_schema, errors=errors
         )
-    
+    @property
+    def _name(self) -> str | None:
+        return self.context.get(CONF_NAME)
+
+    @_name.setter
+    def _name(self, value: str) -> None:
+        self.context[CONF_NAME] = value
+        self.context["title_placeholders"] = {"name": self._name}
+
     async def async_step_zeroconf(
         self, discovery_info: zeroconf.ZeroconfServiceInfo
     ) -> FlowResult:
@@ -115,7 +123,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             for ip_address in discovery_info.addresses:
                 self._abort_if_unique_id_configured(updates={CONF_HOST: ip_address})
 
-            self.context[CONF_NAME] = local_name.removesuffix(".local")
+            self._name = local_name.removesuffix(".local")
 
             self.hostname = local_name
             self.username = serial_number
