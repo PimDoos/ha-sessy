@@ -67,6 +67,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Handle the initial step."""
 
         _LOGGER.info("Starting user config flow for Sessy")
+
+        # Use discovered hostname and username if available, otherwise use defaults
         data_schema = vol.Schema(
             {
                 vol.Required(CONF_HOST, default=self.hostname or "sessy-"): str,
@@ -81,6 +83,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         errors = {}
 
+        # Attempt to connect to Sessy API
         try:
             info = await validate_input(self.hass, user_input)
         except CannotConnect:
@@ -91,8 +94,10 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             _LOGGER.exception("Unexpected exception")
             errors["base"] = "unknown"
         else:
+            # Connection was succesful, create config entry
             return self.async_create_entry(title=info["title"], data=user_input)
 
+        # Pass errors to user and show form again
         return self.async_show_form(
             step_id="user", data_schema=data_schema, errors=errors
         )
@@ -112,24 +117,27 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         _LOGGER.info("Starting zeroconf config flow for Sessy")
         try:
+            # Get device info from zeroconf
             local_name = discovery_info.hostname[:-1]
             serial_number = discovery_info.properties.get("serial")
             _LOGGER.info(f"Discovered Sessy device at {local_name} with serial: {serial_number}")
-            
-            
 
+            # Check for duplicates
             await self.async_set_unique_id(serial_number)
             self._abort_if_unique_id_configured(updates={CONF_HOST: local_name})
             for ip_address in discovery_info.addresses:
                 self._abort_if_unique_id_configured(updates={CONF_HOST: ip_address})
 
+            # Update the config flow title
             self._name = local_name.removesuffix(".local")
 
+            # Update the autofill information
             self.hostname = local_name
             self.username = serial_number
         except:
             self.async_abort(reason="discovery_error")
 
+        # Prompt user for the password
         return await self.async_step_user()
     
 
