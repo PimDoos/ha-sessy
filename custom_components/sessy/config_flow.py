@@ -133,7 +133,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self.hostname = local_name
             self.username = serial_number
         except:
-            self.async_abort(reason="discovery_error")
+            return self.async_abort(reason="discovery_error")
         else:
             # Prompt user for the password
             return await self.async_step_user()
