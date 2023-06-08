@@ -20,7 +20,8 @@ from sessypy.devices import SessyBattery, SessyDevice, SessyP1Meter
 
 
 from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, SESSY_DEVICE, SCAN_INTERVAL_POWER
-from .util import add_cache_command, enum_to_options_list, status_string_p1, status_string_system_state, unit_interval_to_percentage, divide_by_thousand
+from .util import (add_cache_command, enum_to_options_list, status_string_p1, status_string_system_state, 
+                   unit_interval_to_percentage, divide_by_thousand, only_negative_as_positive, only_positive)
 from .sessyentity import SessyEntity
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities):
@@ -70,6 +71,18 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
             SessySensor(hass, config_entry, "Power",
                         SessyApiCommand.POWER_STATUS, "sessy.power",
                         SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.WATT)
+        )
+        sensors.append(
+            SessySensor(hass, config_entry, "Charge Power",
+                        SessyApiCommand.POWER_STATUS, "sessy.power",
+                        SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.WATT,
+                        transform_function=only_negative_as_positive)
+        )
+        sensors.append(
+            SessySensor(hass, config_entry, "Discharge Power",
+                        SessyApiCommand.POWER_STATUS, "sessy.power",
+                        SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.WATT,
+                        transform_function=only_positive)
         )
         sensors.append(
             SessySensor(hass, config_entry, "Frequency",
