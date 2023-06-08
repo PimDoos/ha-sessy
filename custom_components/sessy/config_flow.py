@@ -134,9 +134,9 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self.username = serial_number
         except:
             self.async_abort(reason="discovery_error")
-
-        # Prompt user for the password
-        return await self.async_step_user()
+        else:
+            # Prompt user for the password
+            return await self.async_step_user()
     
 
 class CannotConnect(HomeAssistantError):
