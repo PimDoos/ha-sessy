@@ -124,7 +124,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
             # Check for duplicates
             await self.async_set_unique_id(serial_number)
-            self._abort_if_unique_id_configured()
+            self._abort_if_unique_id_configured(updates={CONF_HOST: local_name})
 
             # Update the config flow title
             self._name = local_name.removesuffix(".local")
