@@ -27,6 +27,13 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][config_entry.entry_id] = {}
 
+    hass.data[DOMAIN][config_entry.entry_id][SERIAL_NUMBER] = config_entry.data.get(CONF_USERNAME).upper()
+    
+    # Prevent duplicate entries in older setups
+    if not config_entry.unique_id:
+        config_entry.unique_id = hass.data[DOMAIN][config_entry.entry_id][SERIAL_NUMBER]
+
+
     _LOGGER.debug(f"Connecting to Sessy device at {config_entry.data.get(CONF_HOST)}")
     try:
         device = await get_sessy_device(
@@ -47,9 +54,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     else:
         _LOGGER.info(f"Connection to {device.__class__} at {device.host} successful")
 
-    hass.data[DOMAIN][config_entry.entry_id][SERIAL_NUMBER] = config_entry.data.get(CONF_USERNAME).upper()
     hass.data[DOMAIN][config_entry.entry_id][SESSY_DEVICE] = device
-
 
     # Generate Device Info
     hass.data[DOMAIN][config_entry.entry_id][SESSY_DEVICE_INFO] = await generate_device_info(hass, config_entry, device)

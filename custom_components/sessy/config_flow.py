@@ -81,6 +81,9 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 step_id="user", data_schema=data_schema
             )
 
+        await self.async_set_unique_id(user_input.get(CONF_USERNAME))
+        self._abort_if_unique_id_configured(updates={CONF_HOST: user_input.get(CONF_HOST)})
+
         errors = {}
 
         # Attempt to connect to Sessy API
