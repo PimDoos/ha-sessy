@@ -7,13 +7,21 @@
           "password": "Password",
           "host": "Host"
         }
+      },
+      "zeroconf": {
+        "data": {
+          "username": "Username",
+          "password": "Password",
+          "host": "Host"
+        }
       }
     },
     "error": {
       "cannot_connect": "Failed to connect",
       "invalid_auth": "Invalid authentication",
       "unknown": "Unexpected error"
-    }
+    },
+    "flow_title": "{name}"
   },
   "entity": {
     "sensor":{

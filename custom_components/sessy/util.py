@@ -69,6 +69,12 @@ def status_string_power_strategy(status_string: str) -> str:
 def divide_by_thousand(input: int) -> float:
     return input / 1000
 
+def only_negative_as_positive(input: int) -> int:
+    return min(input, 0) * -1
+
+def only_positive(input: int) -> int:
+    return max(input, 0)
+
 def enum_to_options_list(options: Enum, transform_function: function = None) -> list[str]:
     output = list()
     for option in options:

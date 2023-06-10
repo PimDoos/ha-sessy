@@ -7,13 +7,21 @@
           "password": "Wachtwoord",
           "host": "Host"
         }
+      },
+      "zeroconf": {
+        "data": {
+          "username": "Gebruikersnaam",
+          "password": "Wachtwoord",
+          "host": "Host"
+        }
       }
     },
     "error": {
       "cannot_connect": "Kan geen verbinding maken",
       "invalid_auth": "Ongeldige gebruikersnaam en/of wachtwoord",
       "unknown": "Onbekende fout"
-    }
+    },
+    "flow_title": "{name}"
   },
   "entity": {
     "sensor":{
