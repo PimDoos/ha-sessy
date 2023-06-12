@@ -43,7 +43,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
             SessyNumber(hass, config_entry, "Minimum Power",
                         SessyApiCommand.SYSTEM_SETTINGS, "min_power",
                         SessyApiCommand.SYSTEM_SETTINGS, "min_power",
-                        NumberDeviceClass.POWER, UnitOfPower.WATT, 0, 2200,
+                        NumberDeviceClass.POWER, UnitOfPower.WATT, 50, 2000,
                         entity_category=EntityCategory.CONFIG,
                         action_function=partial_update_settings)
             
@@ -52,7 +52,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
             SessyNumber(hass, config_entry, "Maximum Power",
                         SessyApiCommand.SYSTEM_SETTINGS, "max_power",
                         SessyApiCommand.SYSTEM_SETTINGS, "max_power",
-                        NumberDeviceClass.POWER, UnitOfPower.WATT, 0, 2200,
+                        NumberDeviceClass.POWER, UnitOfPower.WATT, 50, 2200,
                         entity_category=EntityCategory.CONFIG,
                         action_function=partial_update_settings)
             
