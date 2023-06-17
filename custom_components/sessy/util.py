@@ -1,5 +1,5 @@
 from __future__ import annotations
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
 from enum import Enum
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
@@ -74,6 +74,16 @@ def only_negative_as_positive(input: int) -> int:
 
 def only_positive(input: int) -> int:
     return max(input, 0)
+
+def time_from_string(input: str) -> time:
+    return datetime.strptime(input, "%H:%M").time()
+
+def start_time_from_string(input: str) -> time:
+    return time_from_string(input.split("-")[0])
+
+def stop_time_from_string(input: str) -> time:
+    return time_from_string(input.split("-")[1])
+
 
 def enum_to_options_list(options: Enum, transform_function: function = None) -> list[str]:
     output = list()
