@@ -5,12 +5,14 @@
 Home Assistant integration for Sessy home battery system.
 
 Currently supported:
-- Connect to Battery or P1 Dongle
-- Power Status sensors
+- Autodiscovery
+- Connect to Battery and/or P1 Dongle
+- Battery status sensors
+- Battery charge/discharge sensors
 - Set power strategy (select entity)
 - Set power setpoint (number entity)
-- Wifi RSSI sensor (Battery only)
-- P1 Status sensors (P1 Dongle only)
+- Wifi RSSI sensor
+- P1 Grid Status sensors (P1 Dongle only)
 - Firmware updates
 - Change configuration (min/max power)
 
