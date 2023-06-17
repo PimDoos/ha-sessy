@@ -94,12 +94,14 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
             sensors.append(
                 SessySensor(hass, config_entry, f"Renewable Energy Phase { phase_id } Voltage",
                             SessyApiCommand.POWER_STATUS, f"renewable_energy_phase{ phase_id }.voltage_rms",
-                            SensorDeviceClass.VOLTAGE, SensorStateClass.MEASUREMENT, UnitOfElectricPotential.MILLIVOLT)
+                            SensorDeviceClass.VOLTAGE, SensorStateClass.MEASUREMENT, UnitOfElectricPotential.MILLIVOLT,
+                            suggested_unit_of_measurement=UnitOfElectricPotential.VOLT)
             )
             sensors.append(
                 SessySensor(hass, config_entry, f"Renewable Energy Phase { phase_id } Current",
                             SessyApiCommand.POWER_STATUS, f"renewable_energy_phase{ phase_id }.current_rms",
-                            SensorDeviceClass.CURRENT, SensorStateClass.MEASUREMENT, UnitOfElectricCurrent.MILLIAMPERE)
+                            SensorDeviceClass.CURRENT, SensorStateClass.MEASUREMENT, UnitOfElectricCurrent.MILLIAMPERE,
+                            suggested_unit_of_measurement=UnitOfElectricCurrent.AMPERE)
             )
             sensors.append(
                 SessySensor(hass, config_entry, f"Renewable Energy Phase { phase_id } Power",
@@ -147,7 +149,7 @@ class SessySensor(SessyEntity, SensorEntity):
                  cache_command: SessyApiCommand, cache_key,
                  device_class: SensorDeviceClass = None, state_class: SensorStateClass = None, unit_of_measurement = None,
                  transform_function: function = None, translation_key: str = None,
-                 options = None, entity_category: EntityCategory = None, precision: int = None):
+                 options = None, entity_category: EntityCategory = None, precision: int = None, suggested_unit_of_measurement = None):
 
         super().__init__(hass=hass, config_entry=config_entry, name=name,
                        cache_command=cache_command, cache_key=cache_key,
@@ -159,6 +161,7 @@ class SessySensor(SessyEntity, SensorEntity):
         self._attr_entity_category = entity_category
 
         self._attr_suggested_display_precision = precision
+        self._attr_suggested_unit_of_measurement = suggested_unit_of_measurement
 
         self._attr_options = options
 
