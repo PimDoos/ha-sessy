@@ -1,11 +1,12 @@
-"""Number to read data from Sessy"""
+"""Time entities to control Sessy"""
 from __future__ import annotations
+from datetime import time
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     UnitOfPower
 )
-from homeassistant.components.number import NumberEntity, NumberDeviceClass
+from homeassistant.components.time import TimeEntity
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 
@@ -14,58 +15,63 @@ from sessypy.devices import SessyBattery, SessyDevice
 
 
 from .const import DOMAIN, SESSY_DEVICE, SCAN_INTERVAL_POWER, DEFAULT_SCAN_INTERVAL
-from .util import add_cache_command, trigger_cache_update
+from .util import add_cache_command, start_time_from_string, stop_time_from_string, time_from_string, trigger_cache_update
 from .sessyentity import SessyEntity
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities):
-    """Set up the Sessy numbers"""
+    """Set up the Sessy time entities"""
 
     device = hass.data[DOMAIN][config_entry.entry_id][SESSY_DEVICE]
-    numbers = []
+    times = []
 
     if isinstance(device, SessyBattery):
-        await add_cache_command(hass, config_entry, SessyApiCommand.POWER_STATUS, SCAN_INTERVAL_POWER)
-        numbers.append(
-            SessyNumber(hass, config_entry, "Power Setpoint",
-                        SessyApiCommand.POWER_STATUS, "sessy.power_setpoint",
-                        SessyApiCommand.POWER_SETPOINT, "setpoint",
-                        NumberDeviceClass.POWER, UnitOfPower.WATT, -2200, 2200)
-            
-        )
-
         await add_cache_command(hass, config_entry, SessyApiCommand.SYSTEM_SETTINGS, DEFAULT_SCAN_INTERVAL)
-        async def partial_update_settings(key,value):
+        
+        async def partial_update_enabled_time(start_time: time = None, stop_time: time = None) -> str:
             settings: dict = await device.get_system_settings()
-            settings[key] = value
+            settings_enabled_time = settings.get("enabled_time").split("-")
+
+            if not start_time:
+                start_time = time_from_string(settings_enabled_time[0])
+
+            if not stop_time:
+                stop_time = time_from_string(settings_enabled_time[1])
+
+            settings_enabled_time = f"{start_time.strftime('%H:%M')}-{stop_time.strftime('%H:%M')}"
+            settings["enabled_time"] = settings_enabled_time
             return settings
         
-        numbers.append(
-            SessyNumber(hass, config_entry, "Minimum Power",
-                        SessyApiCommand.SYSTEM_SETTINGS, "min_power",
-                        SessyApiCommand.SYSTEM_SETTINGS, "min_power",
-                        NumberDeviceClass.POWER, UnitOfPower.WATT, 50, 2000,
+        async def update_start_time(key, value: time):
+            return await partial_update_enabled_time(start_time = value)
+        
+        async def update_stop_time(key, value: time):
+            return await partial_update_enabled_time(stop_time = value)
+        
+        times.append(
+            SessyTime(hass, config_entry, "Start Time",
+                        SessyApiCommand.SYSTEM_SETTINGS, "enabled_time",
+                        SessyApiCommand.SYSTEM_SETTINGS, "enabled_time",
                         entity_category=EntityCategory.CONFIG,
-                        action_function=partial_update_settings)
+                        action_function=update_start_time,
+                        transform_function=start_time_from_string)
             
         ),
-        numbers.append(
-            SessyNumber(hass, config_entry, "Maximum Power",
-                        SessyApiCommand.SYSTEM_SETTINGS, "max_power",
-                        SessyApiCommand.SYSTEM_SETTINGS, "max_power",
-                        NumberDeviceClass.POWER, UnitOfPower.WATT, 50, 2200,
+        times.append(
+            SessyTime(hass, config_entry, "Stop Time",
+                        SessyApiCommand.SYSTEM_SETTINGS, "enabled_time",
+                        SessyApiCommand.SYSTEM_SETTINGS, "enabled_time",
                         entity_category=EntityCategory.CONFIG,
-                        action_function=partial_update_settings)
+                        action_function=update_stop_time,
+                        transform_function=stop_time_from_string)
             
         )
 
-    async_add_entities(numbers)
+    async_add_entities(times)
     
-class SessyNumber(SessyEntity, NumberEntity):
+class SessyTime(SessyEntity, TimeEntity):
     def __init__(self, hass: HomeAssistant, config_entry: ConfigEntry, name: str,
                  cache_command: SessyApiCommand, cache_key,
                  action_command: SessyApiCommand, action_key: SessyApiCommand,
-                 device_class: NumberDeviceClass = None, unit_of_measurement = None,
-                 min_value: float = None, max_value: float = None, 
                  entity_category: EntityCategory = None,
                  transform_function: function = None, action_function: function = None):
         
@@ -73,11 +79,6 @@ class SessyNumber(SessyEntity, NumberEntity):
                        cache_command=cache_command, cache_key=cache_key, 
                        transform_function=transform_function)
 
-
-        self._attr_device_class = device_class
-        self._attr_native_unit_of_measurement = unit_of_measurement
-        self._attr_native_min_value = min_value
-        self._attr_native_max_value = max_value
         self._attr_entity_category = entity_category
         
         self.action_command = action_command
@@ -88,13 +89,13 @@ class SessyNumber(SessyEntity, NumberEntity):
         self._attr_available = self.cache_value != None
         self._attr_native_value = self.cache_value
         
-    async def async_set_native_value(self, value: float):
+    async def async_set_value(self, value: time):
         device: SessyDevice = self.hass.data[DOMAIN][self.config_entry.entry_id][SESSY_DEVICE]
         
         if not self.action_function:
-            payload = {self.action_key: int(value)}
+            payload = {self.action_key: str(value)}
         else:
-            payload = await self.action_function(self.action_key, int(value))
+            payload = await self.action_function(self.action_key, value)
             
         await device.api.post(self.action_command, payload)
         await trigger_cache_update(self.hass, self.config_entry, self.cache_command)
