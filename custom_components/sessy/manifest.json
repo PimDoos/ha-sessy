@@ -10,7 +10,7 @@
   "integration_type": "device",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/PimDoos/ha-sessy/issues",
-  "requirements": ["sessypy==0.0.11"],
+  "requirements": ["sessypy==0.1.0"],
   "version": "0.4.0",
   "zeroconf":[
     {"type":"_http._tcp.local.","name":"sessy-*"}
