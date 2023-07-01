@@ -13,7 +13,7 @@ from homeassistant.const import ATTR_IDENTIFIERS
 from homeassistant.helpers import device_registry as dr
 
 from sessypy.const import SessyApiCommand, SessyOtaTarget, SessyOtaState
-from sessypy.devices import SessyBattery, SessyDevice, SessyP1Meter
+from sessypy.devices import SessyBattery, SessyDevice, SessyP1Meter, SessyCTMeter
 
 from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, SESSY_DEVICE, SCAN_INTERVAL_OTA, SCAN_INTERVAL_OTA_CHECK, SESSY_DEVICE_INFO
 from .util import add_cache_command, trigger_cache_update, unit_interval_to_percentage
@@ -32,11 +32,11 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
         updates.append(
             SessyUpdate(hass, config_entry, "Battery Dongle", SessyOtaTarget.SELF)
         )
-
         updates.append(
             SessyUpdate(hass, config_entry, "Battery", SessyOtaTarget.SERIAL)
 		)
-    elif isinstance(device, SessyP1Meter):
+
+    elif isinstance(device, SessyP1Meter) or isinstance(device, SessyCTMeter):
         updates.append(
             SessyUpdate(hass, config_entry, "Dongle", SessyOtaTarget.SELF)
         )
