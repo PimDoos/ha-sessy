@@ -16,7 +16,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 
 from sessypy.const import SessyApiCommand, SessySystemState, SessyP1State
-from sessypy.devices import SessyBattery, SessyDevice, SessyP1Meter
+from sessypy.devices import SessyBattery, SessyDevice, SessyP1Meter, SessyCTMeter
 
 
 from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, SESSY_DEVICE, SCAN_INTERVAL_POWER
@@ -140,6 +140,25 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
                 SessySensor(hass, config_entry, f"Phase { phase_id } Voltage",
                             SessyApiCommand.P1_DETAILS, f"voltage_l{ phase_id }",
                             SensorDeviceClass.VOLTAGE, SensorStateClass.MEASUREMENT, UnitOfElectricPotential.VOLT, precision = 2)
+            )
+
+    elif isinstance(device, SessyCTMeter):
+        await add_cache_command(hass, config_entry, SessyApiCommand.P1_DETAILS, SCAN_INTERVAL_POWER)
+        sensors.append(
+            SessySensor(hass, config_entry, "Total Power",
+                        SessyApiCommand.P1_DETAILS, "total_power",
+                        SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.KILO_WATT, precision = 3)
+        )
+        for phase_id in range(1,4):
+            sensors.append(
+                SessySensor(hass, config_entry, f"Phase { phase_id } Voltage",
+                            SessyApiCommand.P1_DETAILS, f"voltage_l{ phase_id }",
+                            SensorDeviceClass.VOLTAGE, SensorStateClass.MEASUREMENT, UnitOfElectricPotential.VOLT, precision = 2)
+            )
+            sensors.append(
+                SessySensor(hass, config_entry, f"Phase { phase_id } Power",
+                            SessyApiCommand.P1_DETAILS, f"power_l{ phase_id }",
+                            SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.KILO_WATT, precision = 3)
             )
 
     async_add_entities(sensors)
