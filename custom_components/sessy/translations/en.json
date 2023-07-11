@@ -38,7 +38,9 @@
           "override_underfrequency": "Override: Under frequency",
           "disconnect": "Disconnect",
           "reconnect":"Reconnect",
-          "battery_empty_or_full": "Battery full/empty"
+          "battery_empty_or_full": "Battery full/empty",
+          "battery_full": "Battery full",
+          "battery_empty": "Battery empty"
         }
       },
       "p1_state":{
