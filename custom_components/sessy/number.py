@@ -17,6 +17,9 @@ from .const import DOMAIN, SESSY_DEVICE, SCAN_INTERVAL_POWER, DEFAULT_SCAN_INTER
 from .util import add_cache_command, trigger_cache_update
 from .sessyentity import SessyEntity
 
+import logging
+_LOGGER = logging.getLogger(__name__)
+
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities):
     """Set up the Sessy numbers"""
 
@@ -47,7 +50,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
                         entity_category=EntityCategory.CONFIG,
                         action_function=partial_update_settings)
             
-        ),
+        )
         numbers.append(
             SessyNumber(hass, config_entry, "Maximum Power",
                         SessyApiCommand.SYSTEM_SETTINGS, "max_power",
@@ -57,6 +60,23 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
                         action_function=partial_update_settings)
             
         )
+
+        # Detect if Sessy has noise level control enabled
+        try:
+            settings = await device.get_system_settings()
+            if settings.get("disable_noise_level", True) == False:
+                numbers.append(
+                    SessyNumber(hass, config_entry, "Noise Level",
+                                SessyApiCommand.SYSTEM_SETTINGS, "allowed_noise_level",
+                                SessyApiCommand.SYSTEM_SETTINGS, "allowed_noise_level",
+                                min_value=1, max_value=5,
+                                entity_category=EntityCategory.CONFIG,
+                                action_function=partial_update_settings)
+                    
+                )
+        except Exception as e:
+            _LOGGER.warning(f"Error setting up noise control: {e}")
+
 
     async_add_entities(numbers)
     
