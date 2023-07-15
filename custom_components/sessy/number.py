@@ -13,7 +13,7 @@ from sessypy.const import SessyApiCommand
 from sessypy.devices import SessyBattery, SessyDevice
 
 
-from .const import DOMAIN, SESSY_DEVICE, SCAN_INTERVAL_POWER, DEFAULT_SCAN_INTERVAL
+from .const import DOMAIN, SESSY_CACHE, SESSY_DEVICE, SCAN_INTERVAL_POWER, DEFAULT_SCAN_INTERVAL
 from .util import add_cache_command, trigger_cache_update
 from .sessyentity import SessyEntity
 
@@ -63,7 +63,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
 
         # Detect if Sessy has noise level control enabled
         try:
-            settings = await device.get_system_settings()
+            settings: dict = hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE][SessyApiCommand.SYSTEM_SETTINGS]
             if settings.get("disable_noise_level", True) == False:
                 numbers.append(
                     SessyNumber(hass, config_entry, "Noise Level",
