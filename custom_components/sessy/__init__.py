@@ -33,24 +33,25 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     if not config_entry.unique_id:
         config_entry.unique_id = hass.data[DOMAIN][config_entry.entry_id][SERIAL_NUMBER]
 
+    host = config_entry.data.get(CONF_HOST)
 
-    _LOGGER.debug(f"Connecting to Sessy device at {config_entry.data.get(CONF_HOST)}")
+    _LOGGER.debug(f"Connecting to Sessy device at {host}")
     try:
         device = await get_sessy_device(
-            host = config_entry.data.get(CONF_HOST),
+            host = host,
             username = config_entry.data.get(CONF_USERNAME),
             password = config_entry.data.get(CONF_PASSWORD),
         )
         
-    except SessyLoginException:
-        raise ConfigEntryAuthFailed
-    except SessyNotSupportedException:
-        raise ConfigEntryNotReady
-    except SessyConnectionException:
-        raise ConfigEntryNotReady
+    except SessyLoginException as e:
+        raise ConfigEntryAuthFailed(f"Failed to connect to Sessy device at {host}: Authentication failed") from e
+    except SessyNotSupportedException as e:
+        raise ConfigEntryNotReady(f"Failed to connect to Sessy device at {host}: Device not supported") from e
+    except SessyConnectionException as e:
+        raise ConfigEntryNotReady(f"Failed to connect to Sessy device at {host}: Network error") from e
     
     if device is None:
-        raise ConfigEntryNotReady
+        raise ConfigEntryNotReady(f"Failed to connect to Sessy device at {host}: Device type discovery failed")
     else:
         _LOGGER.info(f"Connection to {device.__class__} at {device.host} successful")
 

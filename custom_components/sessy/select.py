@@ -5,14 +5,19 @@ from enum import Enum
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.components.select import SelectEntity
+from homeassistant.exceptions import HomeAssistantError
 
 from sessypy.const import SessyApiCommand, SessyPowerStrategy
 from sessypy.devices import SessyBattery, SessyDevice
+from sessypy.util import SessyConnectionException, SessyNotSupportedException
 
 
 from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, SESSY_DEVICE
 from .util import add_cache_command, enum_to_options_list, trigger_cache_update, status_string_power_strategy
 from .sessyentity import SessyEntity
+
+import logging
+_LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities):
     """Set up the Sessy selects"""
@@ -48,9 +53,20 @@ class SessySelect(SessyEntity, SelectEntity):
         
     async def async_select_option(self, option: str) -> None:
         device: SessyDevice = self.hass.data[DOMAIN][self.config_entry.entry_id][SESSY_DEVICE]
-        if self.transform_function:
-            option_index = self._attr_options.index(option)
-            option = self.real_options[option_index]
 
-        await device.api.post(self.cache_command, {self.cache_key: option})
+        try:
+            if self.transform_function:
+                option_index = self._attr_options.index(option)
+                option = self.real_options[option_index]
+
+            await device.api.post(self.cache_command, {self.cache_key: option})
+        except SessyNotSupportedException as e:
+            raise HomeAssistantError(f"Setting value for {self.name} failed: Not supported by device") from e
+            
+        except SessyConnectionException as e:
+            raise HomeAssistantError(f"Setting value for {self.name} failed: Connection error") from e
+
+        except Exception as e:
+            raise HomeAssistantError(f"Setting value for {self.name} failed: {e.__class__}") from e
+
         await trigger_cache_update(self.hass, self.config_entry, self.cache_command)

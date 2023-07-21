@@ -7,10 +7,12 @@ from homeassistant.const import (
 )
 from homeassistant.components.number import NumberEntity, NumberDeviceClass
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity import EntityCategory
 
 from sessypy.const import SessyApiCommand
 from sessypy.devices import SessyBattery, SessyDevice
+from sessypy.util import SessyNotSupportedException, SessyConnectionException
 
 
 from .const import DOMAIN, SESSY_CACHE, SESSY_DEVICE, SCAN_INTERVAL_POWER, DEFAULT_SCAN_INTERVAL
@@ -110,11 +112,20 @@ class SessyNumber(SessyEntity, NumberEntity):
         
     async def async_set_native_value(self, value: float):
         device: SessyDevice = self.hass.data[DOMAIN][self.config_entry.entry_id][SESSY_DEVICE]
-        
-        if not self.action_function:
-            payload = {self.action_key: int(value)}
-        else:
-            payload = await self.action_function(self.action_key, int(value))
-            
-        await device.api.post(self.action_command, payload)
+        try:
+            if not self.action_function:
+                payload = {self.action_key: int(value)}
+            else:
+                payload = await self.action_function(self.action_key, int(value))
+                
+            await device.api.post(self.action_command, payload)
+        except SessyNotSupportedException as e:
+            raise HomeAssistantError(f"Setting value for {self.name} failed: Not supported by device") from e
+
+        except SessyConnectionException as e:
+            raise HomeAssistantError(f"Setting value for {self.name} failed: Connection error") from e
+
+        except Exception as e:
+            raise HomeAssistantError(f"Setting value for {self.name} failed: {e.__class__}") from e
+
         await trigger_cache_update(self.hass, self.config_entry, self.cache_command)

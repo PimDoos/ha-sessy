@@ -4,12 +4,15 @@ from enum import Enum
 from typing import Any
 
 import logging
+
+from sessypy.util import SessyConnectionException, SessyNotSupportedException
 _LOGGER = logging.getLogger(__name__)
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.components.update import UpdateEntity, UpdateDeviceClass, UpdateEntityFeature
 from homeassistant.const import ATTR_IDENTIFIERS
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import device_registry as dr
 
 from sessypy.const import SessyApiCommand, SessyOtaTarget, SessyOtaState
@@ -101,6 +104,15 @@ class SessyUpdate(SessyEntity, UpdateEntity):
 
     async def async_install(self, version: str | None, backup: bool, **kwargs: Any) -> None:
         device: SessyDevice = self.hass.data[DOMAIN][self.config_entry.entry_id][SESSY_DEVICE]
+        try:
+            await device.install_ota(self.update_target)
+        except SessyNotSupportedException as e:
+            raise HomeAssistantError(f"Starting update for {self.name} failed: Not supported by device") from e
+            
+        except SessyConnectionException as e:
+            raise HomeAssistantError(f"Starting update for {self.name} failed: Connection error") from e
+
+        except Exception as e:
+            raise HomeAssistantError(f"Setting value for {self.name} failed: {e.__class__}") from e
         
-        await device.install_ota(self.update_target)
         await trigger_cache_update(self.hass, self.config_entry, self.cache_command)

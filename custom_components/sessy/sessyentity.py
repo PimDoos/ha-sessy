@@ -41,6 +41,7 @@ class SessyEntity(Entity):
     async def async_added_to_hass(self):
         @callback
         def update():
+            error_message = ""
             try:
                 self.cache = self.hass.data[DOMAIN][self.config_entry.entry_id][SESSY_CACHE][self.cache_command]
                 value = self.get_cache_value(self.cache_key)
@@ -50,17 +51,21 @@ class SessyEntity(Entity):
                     self.cache_value = value
 
                 self._update_failed_count = 0
+
+            except AttributeError:
+                error_message = f"Updating entity '{self.name}' failed for {self._update_failed_count} consecutive attempts. Cache update received unexpected response for {self.cache_key}"
             except Exception as e:
-                self._update_failed_count += 1
-                self.cache_value = None
-
                 error_message = f"Updating entity '{self.name}' failed for {self._update_failed_count} consecutive attempts. Exception occured: '{ e }'"
-                if self._update_failed_count > ENTITY_ERROR_THRESHOLD:
-                    _LOGGER.warning(error_message)
-                else:
-                    _LOGGER.debug(error_message)
-
+                
             finally:
+                if error_message:
+                    self._update_failed_count += 1
+                    self.cache_value = None
+                    if self._update_failed_count > ENTITY_ERROR_THRESHOLD:
+                        _LOGGER.warning(error_message)
+                    else:
+                        _LOGGER.debug(error_message)
+
                 self.update_from_cache()
                 self.async_write_ha_state()
 
