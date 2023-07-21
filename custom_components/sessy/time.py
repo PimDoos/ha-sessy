@@ -3,20 +3,21 @@ from __future__ import annotations
 from datetime import time
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import (
-    UnitOfPower
-)
 from homeassistant.components.time import TimeEntity
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 
 from sessypy.const import SessyApiCommand
 from sessypy.devices import SessyBattery, SessyDevice
+from sessypy.util import SessyConnectionException, SessyNotSupportedException
 
 
-from .const import DOMAIN, SESSY_DEVICE, SCAN_INTERVAL_POWER, DEFAULT_SCAN_INTERVAL
+from .const import DOMAIN, SESSY_DEVICE, DEFAULT_SCAN_INTERVAL
 from .util import add_cache_command, start_time_from_string, stop_time_from_string, time_from_string, trigger_cache_update
 from .sessyentity import SessyEntity
+
+import logging
+_LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities):
     """Set up the Sessy time entities"""
@@ -91,11 +92,20 @@ class SessyTime(SessyEntity, TimeEntity):
         
     async def async_set_value(self, value: time):
         device: SessyDevice = self.hass.data[DOMAIN][self.config_entry.entry_id][SESSY_DEVICE]
-        
-        if not self.action_function:
-            payload = {self.action_key: str(value)}
-        else:
-            payload = await self.action_function(self.action_key, value)
+        try:
+            if not self.action_function:
+                payload = {self.action_key: str(value)}
+            else:
+                payload = await self.action_function(self.action_key, value)
+                
+            await device.api.post(self.action_command, payload)
+        except SessyNotSupportedException:
+            _LOGGER.error(f"Setting value for {self.name} failed: Not supported by device")
             
-        await device.api.post(self.action_command, payload)
+        except SessyConnectionException:
+            _LOGGER.error(f"Setting value for {self.name} failed: Connection error")
+
+        except Exception as e:
+            _LOGGER.error(f"Setting value for {self.name} failed: {e.__class__}")
+            
         await trigger_cache_update(self.hass, self.config_entry, self.cache_command)
