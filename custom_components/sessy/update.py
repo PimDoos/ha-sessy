@@ -35,6 +35,9 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
         updates.append(
             SessyUpdate(hass, config_entry, "Battery", SessyOtaTarget.SERIAL)
 		)
+        updates.append(
+            SessyUpdate(hass, config_entry, "All", SessyOtaTarget.ALL)  # available as of version 1.5.1
+		)
 
     elif isinstance(device, SessyP1Meter) or isinstance(device, SessyCTMeter):
         updates.append(
