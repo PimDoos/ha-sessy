@@ -5,6 +5,7 @@ from datetime import time
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.components.time import TimeEntity
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity import EntityCategory
 
 from sessypy.const import SessyApiCommand
@@ -99,13 +100,13 @@ class SessyTime(SessyEntity, TimeEntity):
                 payload = await self.action_function(self.action_key, value)
                 
             await device.api.post(self.action_command, payload)
-        except SessyNotSupportedException:
-            _LOGGER.error(f"Setting value for {self.name} failed: Not supported by device")
+        except SessyNotSupportedException as e:
+            raise HomeAssistantError(f"Setting value for {self.name} failed: Not supported by device") from e
             
-        except SessyConnectionException:
-            _LOGGER.error(f"Setting value for {self.name} failed: Connection error")
+        except SessyConnectionException as e:
+            raise HomeAssistantError(f"Setting value for {self.name} failed: Connection error") from e
 
         except Exception as e:
-            _LOGGER.error(f"Setting value for {self.name} failed: {e.__class__}")
+            raise HomeAssistantError(f"Setting value for {self.name} failed: {e.__class__}") from e
             
         await trigger_cache_update(self.hass, self.config_entry, self.cache_command)

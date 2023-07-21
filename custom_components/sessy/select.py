@@ -5,6 +5,7 @@ from enum import Enum
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.components.select import SelectEntity
+from homeassistant.exceptions import HomeAssistantError
 
 from sessypy.const import SessyApiCommand, SessyPowerStrategy
 from sessypy.devices import SessyBattery, SessyDevice
@@ -59,13 +60,13 @@ class SessySelect(SessyEntity, SelectEntity):
                 option = self.real_options[option_index]
 
             await device.api.post(self.cache_command, {self.cache_key: option})
-        except SessyNotSupportedException:
-            _LOGGER.error(f"Setting value for {self.name} failed: Not supported by device")
+        except SessyNotSupportedException as e:
+            raise HomeAssistantError(f"Setting value for {self.name} failed: Not supported by device") from e
             
-        except SessyConnectionException:
-            _LOGGER.error(f"Setting value for {self.name} failed: Connection error")
+        except SessyConnectionException as e:
+            raise HomeAssistantError(f"Setting value for {self.name} failed: Connection error") from e
 
         except Exception as e:
-            _LOGGER.error(f"Setting value for {self.name} failed: {e.__class__}")
+            raise HomeAssistantError(f"Setting value for {self.name} failed: {e.__class__}") from e
 
         await trigger_cache_update(self.hass, self.config_entry, self.cache_command)

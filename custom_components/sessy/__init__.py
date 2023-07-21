@@ -43,19 +43,15 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
             password = config_entry.data.get(CONF_PASSWORD),
         )
         
-    except SessyLoginException:
-        _LOGGER.error(f"Failed to connect to Sessy device at {host}: Authentication failed")
-        raise ConfigEntryAuthFailed
-    except SessyNotSupportedException:
-        _LOGGER.error(f"Failed to connect to Sessy device at {host}: Device not supported")
-        raise ConfigEntryNotReady
-    except SessyConnectionException:
-        _LOGGER.warning(f"Failed to connect to Sessy device at {host}: Network error")
-        raise ConfigEntryNotReady
+    except SessyLoginException as e:
+        raise ConfigEntryAuthFailed(f"Failed to connect to Sessy device at {host}: Authentication failed") from e
+    except SessyNotSupportedException as e:
+        raise ConfigEntryNotReady(f"Failed to connect to Sessy device at {host}: Device not supported") from e
+    except SessyConnectionException as e:
+        raise ConfigEntryNotReady(f"Failed to connect to Sessy device at {host}: Network error") from e
     
     if device is None:
-        _LOGGER.warning(f"Failed to connect to Sessy device at {host}: Device type discovery failed")
-        raise ConfigEntryNotReady
+        raise ConfigEntryNotReady(f"Failed to connect to Sessy device at {host}: Device type discovery failed")
     else:
         _LOGGER.info(f"Connection to {device.__class__} at {device.host} successful")
 

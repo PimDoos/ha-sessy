@@ -5,10 +5,12 @@ from enum import Enum
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.components.button import ButtonEntity, ButtonDeviceClass
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity import EntityCategory
 
 from sessypy.const import SessyApiCommand
 from sessypy.devices import SessyDevice
+from sessypy.util import SessyConnectionException, SessyNotSupportedException
 
 
 from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, SESSY_DEVICE
@@ -49,4 +51,13 @@ class SessyButton(SessyEntity, ButtonEntity):
         self._attr_available = self.cache_value != None
         
     async def async_press(self):
-        await self.action_function()
+        try:
+            await self.action_function()
+        except SessyNotSupportedException as e:
+            raise HomeAssistantError(f"Setting value for {self.name} failed: Not supported by device") from e
+            
+        except SessyConnectionException as e:
+            raise HomeAssistantError(f"Setting value for {self.name} failed: Connection error") from e
+
+        except Exception as e:
+            raise HomeAssistantError(f"Setting value for {self.name} failed: {e.__class__}") from e
