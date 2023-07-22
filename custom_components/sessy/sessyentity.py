@@ -31,7 +31,7 @@ class SessyEntity(Entity):
 
         self._attr_name = name
         self._attr_has_entity_name = True
-        self._attr_unique_id = f"sessy-{ device.serial_number }-sensor-{ name.replace(' ','') }".lower()
+        self._attr_unique_id = f"sessy-{ device.serial_number }-sensor-{ name.replace(' ','') }".lower() #TODO Technical dept, this will cause issues if we ever need to change entity names
         self._attr_device_info = hass.data[DOMAIN][config_entry.entry_id][SESSY_DEVICE_INFO]
         self._attr_translation_key = translation_key
 
@@ -41,31 +41,30 @@ class SessyEntity(Entity):
     async def async_added_to_hass(self):
         @callback
         def update():
-            error_message = ""
             try:
                 self.cache = self.hass.data[DOMAIN][self.config_entry.entry_id][SESSY_CACHE][self.cache_command]
                 value = self.get_cache_value(self.cache_key)
+                if value is None:
+                    raise TypeError(f"Key {self.cache_key} has no value in cache {self.cache_command}")
+                
                 if self.transform_function:
                     self.cache_value = self.transform_function(value)
                 else:
                     self.cache_value = value
+                
 
                 self._update_failed_count = 0
 
-            except AttributeError:
-                error_message = f"Updating entity '{self.name}' failed for {self._update_failed_count} consecutive attempts. Cache update received unexpected response for {self.cache_key}"
             except Exception as e:
+                self._update_failed_count += 1
                 error_message = f"Updating entity '{self.name}' failed for {self._update_failed_count} consecutive attempts. Exception occured: '{ e }'"
-                
-            finally:
-                if error_message:
-                    self._update_failed_count += 1
-                    self.cache_value = None
-                    if self._update_failed_count > ENTITY_ERROR_THRESHOLD:
-                        _LOGGER.warning(error_message)
-                    else:
-                        _LOGGER.debug(error_message)
+                self.cache_value = None
+                if self._update_failed_count % ENTITY_ERROR_THRESHOLD == 0:
+                    _LOGGER.warning(error_message)
+                else:
+                    _LOGGER.debug(error_message)
 
+            finally:
                 self.update_from_cache()
                 self.async_write_ha_state()
 

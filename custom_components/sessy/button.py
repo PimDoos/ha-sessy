@@ -54,10 +54,10 @@ class SessyButton(SessyEntity, ButtonEntity):
         try:
             await self.action_function()
         except SessyNotSupportedException as e:
-            raise HomeAssistantError(f"Setting value for {self.name} failed: Not supported by device") from e
+            raise HomeAssistantError(f"Sending command for {self.name} failed: Not supported by device") from e
             
         except SessyConnectionException as e:
-            raise HomeAssistantError(f"Setting value for {self.name} failed: Connection error") from e
+            raise HomeAssistantError(f"Sending command for {self.name} failed: Connection error") from e
 
         except Exception as e:
-            raise HomeAssistantError(f"Setting value for {self.name} failed: {e.__class__}") from e
+            raise HomeAssistantError(f"Sending command for {self.name} failed: {e.__class__}") from e

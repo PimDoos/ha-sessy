@@ -11,6 +11,9 @@ from homeassistant.helpers.dispatcher import async_dispatcher_send
 from sessypy.const import SessyApiCommand
 from sessypy.devices import SessyDevice, SessyBattery, SessyP1Meter, SessyCTMeter
 
+import logging
+_LOGGER = logging.getLogger(__name__)
+
 from .const import DOMAIN, SESSY_CACHE, SESSY_CACHE_TRACKERS, SESSY_CACHE_TRIGGERS, SESSY_DEVICE, UPDATE_TOPIC, DEFAULT_SCAN_INTERVAL
 
 async def add_cache_command(hass: HomeAssistant, config_entry: ConfigEntry, command: SessyApiCommand, interval: timedelta = DEFAULT_SCAN_INTERVAL):
@@ -24,9 +27,10 @@ async def add_cache_command(hass: HomeAssistant, config_entry: ConfigEntry, comm
         try:
             result = await device.api.get(command)
             cache[command] = result
-        except:
+        except Exception as e:
             result = None
             cache[command] = None
+            _LOGGER.debug(f"Updating cache for {command} failed with error {e}")
 
         async_dispatcher_send(hass, UPDATE_TOPIC.format(command))
 
