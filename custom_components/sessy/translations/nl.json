@@ -23,6 +23,16 @@
     },
     "flow_title": "{name}"
   },
+  "options": {
+    "step": {
+      "init": {
+        "description": "Hoe vaak nieuwe data wordt opgevraagd bij Sessy",
+        "data":{
+          "scan_interval": "Scan interval"
+        }
+      }
+    }
+  },
   "entity": {
     "sensor":{
       "battery_system_state":{

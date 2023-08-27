@@ -23,6 +23,16 @@
     },
     "flow_title": "{name}"
   },
+  "options": {
+    "step": {
+      "init": {
+        "description": "How often to poll Sessy for new data",
+        "data":{
+          "scan_interval": "Scan interval"
+        }
+      }
+    }
+  },
   "entity": {
     "sensor":{
       "battery_system_state":{
