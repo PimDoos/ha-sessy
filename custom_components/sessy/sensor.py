@@ -30,14 +30,13 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
     device = hass.data[DOMAIN][config_entry.entry_id][SESSY_DEVICE]
     sensors = []
 
-    await add_cache_command(hass, config_entry, SessyApiCommand.NETWORK_STATUS)
     sensors.append(
         SessySensor(hass, config_entry, "WiFi RSSI",
                     SessyApiCommand.NETWORK_STATUS, "wifi_sta.rssi",
                     SensorDeviceClass.SIGNAL_STRENGTH, SensorStateClass.MEASUREMENT, SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
                     entity_category=EntityCategory.DIAGNOSTIC)
     )
-    await add_cache_command(hass, config_entry, SessyApiCommand.SYSTEM_INFO, DEFAULT_SCAN_INTERVAL)
+
     for memory_type in ("internal","external"):
         sensors.append(
             SessySensor(hass, config_entry, f"{ memory_type.title() } Memory Available",
@@ -48,7 +47,6 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
         )
 
     if isinstance(device, SessyBattery):
-        await add_cache_command(hass, config_entry, SessyApiCommand.POWER_STATUS, SCAN_INTERVAL_POWER)
         sensors.append(
             SessySensor(hass, config_entry, "System State",
                         SessyApiCommand.POWER_STATUS, "sessy.system_state",
@@ -111,7 +109,6 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
 
 
     elif isinstance(device, SessyP1Meter):
-        await add_cache_command(hass, config_entry, SessyApiCommand.P1_DETAILS, SCAN_INTERVAL_POWER)
         sensors.append(
             SessySensor(hass, config_entry, "P1 Power",
                         SessyApiCommand.P1_DETAILS, "total_power",
@@ -143,7 +140,6 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
             )
 
     elif isinstance(device, SessyCTMeter):
-        await add_cache_command(hass, config_entry, SessyApiCommand.P1_DETAILS, SCAN_INTERVAL_POWER)
         sensors.append(
             SessySensor(hass, config_entry, "Total Power",
                         SessyApiCommand.P1_DETAILS, "total_power",

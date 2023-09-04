@@ -28,8 +28,6 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
     device = hass.data[DOMAIN][config_entry.entry_id][SESSY_DEVICE]
     updates = []
 
-    await add_cache_command(hass, config_entry, SessyApiCommand.OTA_CHECK, SCAN_INTERVAL_OTA_CHECK)
-    await add_cache_command(hass, config_entry, SessyApiCommand.OTA_STATUS, SCAN_INTERVAL_OTA)
 
     # TODO Disabled by default for now, remove later
     if isinstance(device, SessyBattery):

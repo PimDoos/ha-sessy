@@ -23,7 +23,6 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
     device: SessyDevice = hass.data[DOMAIN][config_entry.entry_id][SESSY_DEVICE]
     buttons = []
 
-    await add_cache_command(hass, config_entry, SessyApiCommand.SYSTEM_INFO, DEFAULT_SCAN_INTERVAL)
     buttons.append(
         SessyButton(hass, config_entry, "Dongle Restart",
                     SessyApiCommand.SYSTEM_INFO, 'status', device.restart,
