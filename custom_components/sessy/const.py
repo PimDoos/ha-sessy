@@ -1,10 +1,11 @@
 from datetime import timedelta
 from sessypy.api import SessyApiCommand
+from sessypy.const import SessyOtaState
 
 DOMAIN = "sessy"
 
 # Default scan interval for all entities except power related
-DEFAULT_SCAN_INTERVAL = timedelta(seconds=30)
+DEFAULT_SCAN_INTERVAL = timedelta(seconds=60)
 
 # Default scan interval for power related entities, overridden by scan_interval option config flow
 DEFAULT_SCAN_INTERVAL_POWER = timedelta(seconds=5)
@@ -25,5 +26,6 @@ TIME_TRACKER_POWER = "time_tracker_power"
 SESSY_CACHE = "sessy_cache"
 SESSY_CACHE_TRACKERS = "sessy_cache_trackers"
 SESSY_CACHE_TRIGGERS = "sessy_cache_triggers"
+SESSY_CACHE_INTERVAL = "sessy_cache_interval"
 
 ENTITY_ERROR_THRESHOLD = 5

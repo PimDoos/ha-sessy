@@ -13,8 +13,8 @@ from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from sessypy.devices import get_sessy_device
 from sessypy.util import SessyLoginException, SessyConnectionException, SessyNotSupportedException
 
-from .const import DOMAIN, SERIAL_NUMBER, SESSY_CACHE, SESSY_CACHE_TRACKERS, SESSY_CACHE_TRIGGERS, SESSY_DEVICE, SESSY_DEVICE_INFO
-from .util import clear_cache_command, generate_device_info
+from .const import DOMAIN, SERIAL_NUMBER, SESSY_CACHE, SESSY_CACHE_INTERVAL, SESSY_CACHE_TRACKERS, SESSY_CACHE_TRIGGERS, SESSY_DEVICE, SESSY_DEVICE_INFO
+from .util import clear_cache_command, generate_device_info, setup_cache, setup_cache_commands
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -57,13 +57,20 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
 
     hass.data[DOMAIN][config_entry.entry_id][SESSY_DEVICE] = device
 
+    # Setup caching
+    await setup_cache(hass, config_entry)
+    await setup_cache_commands(hass, config_entry, device)
+
+    # Update cache command on options flow update
+    async def update_cache_commands(hass, config_entry):
+        await setup_cache_commands(hass, config_entry, device, setup=False)
+
+    config_entry.add_update_listener(
+        listener=update_cache_commands
+    )
+
     # Generate Device Info
     hass.data[DOMAIN][config_entry.entry_id][SESSY_DEVICE_INFO] = await generate_device_info(hass, config_entry, device)
-
-
-    hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE] = dict()
-    hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE_TRACKERS] = dict()
-    hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE_TRIGGERS] = dict()
 
     for platform in PLATFORMS:
         hass.async_create_task(
