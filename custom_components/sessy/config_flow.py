@@ -44,16 +44,16 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
     if device is None:
         raise CannotConnect
     
-    
+    device_id = device.serial_number[0:4]
     # Return info that you want to store in the config entry.
     if isinstance(device, SessyBattery):
-        return {"title": "Sessy Battery"}
+        return {"title": f"Sessy Battery {device_id}"}
     elif isinstance(device, SessyP1Meter):
         return {"title": "Sessy P1"}
     elif isinstance(device, SessyCTMeter):
         return {"title": "Sessy CT"}
     else:
-        return {"title": "Sessy"}
+        return {"title": f"Sessy {device_id}"}
 
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
