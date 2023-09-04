@@ -13,8 +13,8 @@ from sessypy.devices import SessyBattery, SessyDevice
 from sessypy.util import SessyConnectionException, SessyNotSupportedException
 
 
-from .const import DOMAIN, SESSY_DEVICE, DEFAULT_SCAN_INTERVAL
-from .util import add_cache_command, start_time_from_string, stop_time_from_string, time_from_string, trigger_cache_update
+from .const import DOMAIN, SESSY_DEVICE
+from .util import start_time_from_string, stop_time_from_string, time_from_string, trigger_cache_update
 from .sessyentity import SessyEntity
 
 import logging
@@ -26,9 +26,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
     device = hass.data[DOMAIN][config_entry.entry_id][SESSY_DEVICE]
     times = []
 
-    if isinstance(device, SessyBattery):
-        await add_cache_command(hass, config_entry, SessyApiCommand.SYSTEM_SETTINGS, DEFAULT_SCAN_INTERVAL)
-        
+    if isinstance(device, SessyBattery):        
         async def partial_update_enabled_time(start_time: time = None, stop_time: time = None) -> str:
             settings: dict = await device.get_system_settings()
             settings_enabled_time = settings.get("enabled_time").split("-")
