@@ -20,7 +20,7 @@ from homeassistant.const import (
 )
 from homeassistant.helpers import device_registry as dr
 
-from sessypy.devices import get_sessy_device, SessyBattery, SessyP1Meter
+from sessypy.devices import get_sessy_device, SessyBattery, SessyP1Meter, SessyCTMeter
 from sessypy.util import SessyConnectionException, SessyLoginException
 
 from .const import DEFAULT_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL_POWER, DOMAIN
@@ -50,6 +50,8 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
         return {"title": "Sessy Battery"}
     elif isinstance(device, SessyP1Meter):
         return {"title": "Sessy P1"}
+    elif isinstance(device, SessyCTMeter):
+        return {"title": "Sessy CT"}
     else:
         return {"title": "Sessy"}
 
