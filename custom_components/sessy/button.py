@@ -13,8 +13,7 @@ from sessypy.devices import SessyDevice
 from sessypy.util import SessyConnectionException, SessyNotSupportedException
 
 
-from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, SESSY_DEVICE
-from .util import add_cache_command
+from .const import DOMAIN, SESSY_DEVICE
 from .sessyentity import SessyEntity
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities):
