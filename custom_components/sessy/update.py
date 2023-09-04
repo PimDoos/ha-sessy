@@ -28,39 +28,49 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
     device = hass.data[DOMAIN][config_entry.entry_id][SESSY_DEVICE]
     updates = []
 
-    await add_cache_command(hass, config_entry, SessyApiCommand.OTA_CHECK, SCAN_INTERVAL_OTA_CHECK)
-    await add_cache_command(hass, config_entry, SessyApiCommand.OTA_STATUS, SCAN_INTERVAL_OTA)
-    
+
+    # TODO Disabled by default for now, remove later
     if isinstance(device, SessyBattery):
         updates.append(
-            SessyUpdate(hass, config_entry, "Battery Dongle", SessyOtaTarget.SELF)
+            SessyUpdate(hass, config_entry, "Battery Dongle", SessyOtaTarget.SELF, enabled_default=False)
         )
         updates.append(
-            SessyUpdate(hass, config_entry, "Battery", SessyOtaTarget.SERIAL)
+            SessyUpdate(hass, config_entry, "Battery", SessyOtaTarget.SERIAL, enabled_default=False)
 		)
-
+    
     elif isinstance(device, SessyP1Meter) or isinstance(device, SessyCTMeter):
         updates.append(
-            SessyUpdate(hass, config_entry, "Dongle", SessyOtaTarget.SELF)
+            SessyUpdate(hass, config_entry, "Dongle", SessyOtaTarget.SELF, enabled_default=False)
         )
+
+    # Treat Sessy Dongle and serial device (AC board) as one unit
+    updates.append(
+        SessyUpdate(hass, config_entry, "Firmware", SessyOtaTarget.SELF, action_target=SessyOtaTarget.ALL)
+    )
 
     async_add_entities(updates)
     
 class SessyUpdate(SessyEntity, UpdateEntity):
     def __init__(self, hass: HomeAssistant, config_entry: ConfigEntry, name: str,
-                 update_target: SessyOtaTarget, transform_function: function = None
-                 ):
+                 cache_target: SessyOtaTarget, action_target: SessyOtaTarget = None,
+                 transform_function: function = None, enabled_default: bool = True):
         
         cache_command = SessyApiCommand.OTA_STATUS
-        cache_key = update_target.name.lower()
+        cache_key = cache_target.name.lower()
         super().__init__(hass=hass, config_entry=config_entry, name=name, 
                        cache_command=cache_command, cache_key=cache_key, 
                        transform_function=transform_function)
         
+        self._attr_entity_registry_enabled_default = enabled_default
         self._attr_device_class = UpdateDeviceClass.FIRMWARE
         self._attr_supported_features = UpdateEntityFeature.INSTALL + UpdateEntityFeature.PROGRESS
 
-        self.update_target = update_target
+        self.cache_target = cache_target
+        if action_target:
+            self.action_target = action_target
+        else:
+            self.action_target = cache_target
+
         self.cache_value = dict()
        
     def update_from_cache(self):
@@ -76,7 +86,7 @@ class SessyUpdate(SessyEntity, UpdateEntity):
         self._attr_installed_version = self.cache_value.get("installed_firmware", dict()).get("version", None)
 
         # Write new firmware version to device registry
-        if self.update_target == SessyOtaTarget.SELF and last_installed_version != self._attr_installed_version:
+        if self.cache_target == SessyOtaTarget.SELF and last_installed_version != self._attr_installed_version:
             try:
                 device_registry = dr.async_get(self.hass)
                 device = device_registry.async_get_device(self.device_info[ATTR_IDENTIFIERS])
@@ -105,7 +115,7 @@ class SessyUpdate(SessyEntity, UpdateEntity):
     async def async_install(self, version: str | None, backup: bool, **kwargs: Any) -> None:
         device: SessyDevice = self.hass.data[DOMAIN][self.config_entry.entry_id][SESSY_DEVICE]
         try:
-            await device.install_ota(self.update_target)
+            await device.install_ota(self.action_target)
         except SessyNotSupportedException as e:
             raise HomeAssistantError(f"Starting update for {self.name} failed: Not supported by device") from e
             
@@ -113,6 +123,6 @@ class SessyUpdate(SessyEntity, UpdateEntity):
             raise HomeAssistantError(f"Starting update for {self.name} failed: Connection error") from e
 
         except Exception as e:
-            raise HomeAssistantError(f"Setting value for {self.name} failed: {e.__class__}") from e
+            raise HomeAssistantError(f"Starting update for {self.name} failed: {e.__class__}") from e
         
         await trigger_cache_update(self.hass, self.config_entry, self.cache_command)

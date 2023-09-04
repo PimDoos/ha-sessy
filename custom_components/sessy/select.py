@@ -26,7 +26,6 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
     selects = []
 
     if isinstance(device, SessyBattery):
-        await add_cache_command(hass, config_entry, SessyApiCommand.POWER_STRATEGY, DEFAULT_SCAN_INTERVAL)
         selects.append(
             SessySelect(hass, config_entry, "Power Strategy",
                         SessyApiCommand.POWER_STRATEGY,"strategy",

@@ -29,7 +29,6 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
     numbers = []
 
     if isinstance(device, SessyBattery):
-        await add_cache_command(hass, config_entry, SessyApiCommand.POWER_STATUS, SCAN_INTERVAL_POWER)
         numbers.append(
             SessyNumber(hass, config_entry, "Power Setpoint",
                         SessyApiCommand.POWER_STATUS, "sessy.power_setpoint",
@@ -38,7 +37,6 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
             
         )
 
-        await add_cache_command(hass, config_entry, SessyApiCommand.SYSTEM_SETTINGS, DEFAULT_SCAN_INTERVAL)
         async def partial_update_settings(key,value):
             settings: dict = await device.get_system_settings()
             settings[key] = value
