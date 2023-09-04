@@ -18,8 +18,8 @@ from homeassistant.helpers import device_registry as dr
 from sessypy.const import SessyApiCommand, SessyOtaTarget, SessyOtaState
 from sessypy.devices import SessyBattery, SessyDevice, SessyP1Meter, SessyCTMeter
 
-from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, SESSY_DEVICE, SCAN_INTERVAL_OTA, SCAN_INTERVAL_OTA_CHECK, SESSY_DEVICE_INFO
-from .util import add_cache_command, trigger_cache_update, unit_interval_to_percentage
+from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, SESSY_DEVICE, SESSY_DEVICE_INFO, SCAN_INTERVAL_OTA_BUSY
+from .util import add_cache_command, get_cache_interval, trigger_cache_update, unit_interval_to_percentage
 from .sessyentity import SessyEntity
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities):
@@ -100,7 +100,14 @@ class SessyUpdate(SessyEntity, UpdateEntity):
         else:
             self._attr_latest_version = self.cache_value.get("available_firmware", dict()).get("version", None)   
         
+        current_scan_interval = get_cache_interval(self.hass, self.config_entry, SessyApiCommand.OTA_STATUS)
         if state == SessyOtaState.UPDATING.value:
+            # Update OTA cache more quickly during updates
+            if(current_scan_interval != SCAN_INTERVAL_OTA_BUSY):
+                _LOGGER.info(f"Setting OTA status update interval to lower interval (from entity update)")
+                add_cache_command(self.hass, self.config_entry, SessyApiCommand.OTA_STATUS, SCAN_INTERVAL_OTA_BUSY)
+
+
             progress: int = self.cache_value.get("update_progress", None)
             if not progress:
                 self._attr_in_progress = True
@@ -110,6 +117,11 @@ class SessyUpdate(SessyEntity, UpdateEntity):
             self._attr_in_progress = 100
         else:
             self._attr_in_progress = False
+
+            # Restore scan interval
+            if(current_scan_interval != DEFAULT_SCAN_INTERVAL):
+                _LOGGER.info(f"Restoring OTA status update interval to default")
+                add_cache_command(self.hass, self.config_entry, SessyApiCommand.OTA_STATUS, DEFAULT_SCAN_INTERVAL)
         
 
     async def async_install(self, version: str | None, backup: bool, **kwargs: Any) -> None:
@@ -125,4 +137,6 @@ class SessyUpdate(SessyEntity, UpdateEntity):
         except Exception as e:
             raise HomeAssistantError(f"Starting update for {self.name} failed: {e.__class__}") from e
         
-        await trigger_cache_update(self.hass, self.config_entry, self.cache_command)
+        _LOGGER.info(f"Setting OTA status update interval to lower interval (from install action)")
+        await add_cache_command(self.hass, self.config_entry, SessyApiCommand.OTA_STATUS, SCAN_INTERVAL_OTA_BUSY)
+

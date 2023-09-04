@@ -15,7 +15,7 @@ from sessypy.devices import SessyDevice, SessyBattery, SessyP1Meter, SessyCTMete
 import logging
 _LOGGER = logging.getLogger(__name__)
 
-from .const import DEFAULT_SCAN_INTERVAL_POWER, DOMAIN, SCAN_INTERVAL_OTA, SCAN_INTERVAL_OTA_CHECK, SCAN_INTERVAL_POWER, SESSY_CACHE, SESSY_CACHE_INTERVAL, SESSY_CACHE_TRACKERS, SESSY_CACHE_TRIGGERS, SESSY_DEVICE, UPDATE_TOPIC, DEFAULT_SCAN_INTERVAL
+from .const import DEFAULT_SCAN_INTERVAL_POWER, DOMAIN, SCAN_INTERVAL_OTA_CHECK, SESSY_CACHE, SESSY_CACHE_INTERVAL, SESSY_CACHE_TRACKERS, SESSY_CACHE_TRIGGERS, SESSY_DEVICE, UPDATE_TOPIC, DEFAULT_SCAN_INTERVAL
 
 async def setup_cache(hass: HomeAssistant, config_entry: ConfigEntry):
     hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE] = dict()
@@ -30,14 +30,13 @@ async def setup_cache_commands(hass, config_entry: ConfigEntry, device: SessyDev
         # Sessy will not check for updates automatically, poll at intervals
         await add_cache_command(hass, config_entry, SessyApiCommand.OTA_CHECK, SCAN_INTERVAL_OTA_CHECK)
 
-        # TODO Update more quickly 
-        await add_cache_command(hass, config_entry, SessyApiCommand.OTA_STATUS, DEFAULT_SCAN_INTERVAL)
-        await add_cache_command(hass, config_entry, SessyApiCommand.SYSTEM_INFO, DEFAULT_SCAN_INTERVAL)
+        await add_cache_command(hass, config_entry, SessyApiCommand.OTA_STATUS)
+        await add_cache_command(hass, config_entry, SessyApiCommand.SYSTEM_INFO)
         await add_cache_command(hass, config_entry, SessyApiCommand.NETWORK_STATUS)
 
         if isinstance(device, SessyBattery):
-            await add_cache_command(hass, config_entry, SessyApiCommand.SYSTEM_SETTINGS, DEFAULT_SCAN_INTERVAL)
-            await add_cache_command(hass, config_entry, SessyApiCommand.POWER_STRATEGY, DEFAULT_SCAN_INTERVAL)
+            await add_cache_command(hass, config_entry, SessyApiCommand.SYSTEM_SETTINGS)
+            await add_cache_command(hass, config_entry, SessyApiCommand.POWER_STRATEGY)
 
 
     # Get power scan interval from options flow
@@ -92,12 +91,15 @@ async def clear_cache_command(hass: HomeAssistant, config_entry: ConfigEntry, co
         tracker = trackers[command]
         tracker()
 
-async def get_cache_command(hass: HomeAssistant, config_entry: ConfigEntry, command: SessyApiCommand, key: str):
-    cache: dict = hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE]
+def get_cache_command(hass: HomeAssistant, config_entry: ConfigEntry, command: SessyApiCommand, key: str = None):
+    cache: dict = hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE][command]
     if key:
         return cache.get(key)
     else:
         return cache
+    
+def get_cache_interval(hass: HomeAssistant, config_entry: ConfigEntry, command: SessyApiCommand):
+    return hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE_INTERVAL][command]
 
 async def trigger_cache_update(hass: HomeAssistant, config_entry: ConfigEntry, command: SessyApiCommand):
     update = hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE_TRIGGERS][command]
