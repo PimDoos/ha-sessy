@@ -12,8 +12,8 @@ from sessypy.devices import SessyBattery, SessyDevice
 from sessypy.util import SessyConnectionException, SessyNotSupportedException
 
 
-from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, SESSY_DEVICE
-from .util import add_cache_command, enum_to_options_list, trigger_cache_update, status_string_power_strategy
+from .const import DOMAIN, SESSY_DEVICE
+from .util import  enum_to_options_list, trigger_cache_update, status_string_power_strategy
 from .sessyentity import SessyEntity
 
 import logging
