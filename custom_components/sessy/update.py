@@ -95,7 +95,7 @@ class SessyUpdate(SessyEntity, UpdateEntity):
                 _LOGGER.warning("Could not write OTA status to device registry")
 
         # Skip version check if Sessy reports it is up to date or has not checked yet
-        if state in [SessyOtaState.UP_TO_DATE.value, SessyOtaState.INACTIVE.value]:
+        if state in [SessyOtaState.UP_TO_DATE.value, SessyOtaState.INACTIVE.value, SessyOtaState.CHECKING]:
             self._attr_latest_version = self._attr_installed_version
         else:
             self._attr_latest_version = self.cache_value.get("available_firmware", dict()).get("version", None)   
@@ -128,6 +128,7 @@ class SessyUpdate(SessyEntity, UpdateEntity):
         device: SessyDevice = self.hass.data[DOMAIN][self.config_entry.entry_id][SESSY_DEVICE]
         try:
             await device.install_ota(self.action_target)
+            self._attr_in_progress = True
         except SessyNotSupportedException as e:
             raise HomeAssistantError(f"Starting update for {self.name} failed: Not supported by device") from e
             
