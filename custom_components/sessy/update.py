@@ -18,7 +18,7 @@ from sessypy.const import SessyApiCommand, SessyOtaTarget, SessyOtaState
 from sessypy.devices import SessyBattery, SessyDevice, SessyP1Meter, SessyCTMeter
 
 from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, SESSY_DEVICE, SCAN_INTERVAL_OTA_BUSY
-from .util import assert_cache_interval, trigger_cache_update, unit_interval_to_percentage
+from .util import assert_cache_interval, get_cache_command, trigger_cache_update, unit_interval_to_percentage
 from .sessyentity import SessyEntity
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities):
@@ -105,13 +105,19 @@ class SessyUpdate(SessyEntity, UpdateEntity):
                 self._attr_in_progress = unit_interval_to_percentage(progress)
         elif state == SessyOtaState.DONE.value:
             self._attr_in_progress = 100
+        elif self.action_target == SessyOtaTarget.ALL:
+            cache_serial = get_cache_command(self.hass, self.config_entry, SessyApiCommand.OTA_STATUS, SessyOtaTarget.SERIAL.name.lower())
+            if cache_serial.get("state") == SessyOtaState.UPDATING.value:
+                self._attr_in_progress = True
+            else:
+                self._attr_in_progress = False
         else:
             self._attr_in_progress = False
 
             # Restore scan interval
             assert_cache_interval(self.hass, self.config_entry, SessyApiCommand.OTA_STATUS, DEFAULT_SCAN_INTERVAL)
         
-    async def update_device_sw_version(self):
+    def update_device_sw_version(self):
         try:
             device_registry = dr.async_get(self.hass)
             device = device_registry.async_get_device(self.device_info[ATTR_IDENTIFIERS])
@@ -134,6 +140,6 @@ class SessyUpdate(SessyEntity, UpdateEntity):
             raise HomeAssistantError(f"Starting update for {self.name} failed: {e.__class__}") from e
         
         _LOGGER.info(f"Setting OTA status update interval to lower interval (from install action)")
-        await assert_cache_interval(self.hass, self.config_entry, SessyApiCommand.OTA_STATUS, SCAN_INTERVAL_OTA_BUSY)
+        assert_cache_interval(self.hass, self.config_entry, SessyApiCommand.OTA_STATUS, SCAN_INTERVAL_OTA_BUSY)
         await trigger_cache_update(self.hass, self.config_entry, SessyApiCommand.OTA_STATUS)
 

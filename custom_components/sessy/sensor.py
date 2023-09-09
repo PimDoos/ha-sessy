@@ -20,7 +20,7 @@ from sessypy.devices import SessyBattery, SessyDevice, SessyP1Meter, SessyCTMete
 
 
 from .const import DOMAIN, SESSY_DEVICE
-from .util import (add_cache_command, enum_to_options_list, status_string_p1, status_string_system_state, 
+from .util import (enum_to_options_list, status_string_p1, status_string_system_state, 
                    unit_interval_to_percentage, divide_by_thousand, only_negative_as_positive, only_positive)
 from .sessyentity import SessyEntity
 
