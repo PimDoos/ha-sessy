@@ -53,7 +53,7 @@ async def setup_cache_commands(hass, config_entry: ConfigEntry, device: SessyDev
         await add_cache_command(hass, config_entry, SessyApiCommand.P1_DETAILS, scan_interval_power)
         
 
-async def add_cache_command(hass: HomeAssistant, config_entry: ConfigEntry, command: SessyApiCommand, interval: timedelta = DEFAULT_SCAN_INTERVAL):
+async def add_cache_command(hass: HomeAssistant, config_entry: ConfigEntry, command: SessyApiCommand, interval: timedelta = DEFAULT_SCAN_INTERVAL, skip_update: bool = False):
     if not command in hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE]:
         hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE][command] = dict()
 
@@ -78,7 +78,8 @@ async def add_cache_command(hass: HomeAssistant, config_entry: ConfigEntry, comm
     hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE_TRACKERS][command] = async_track_time_interval(hass, update, interval)
     hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE_TRIGGERS][command] = update
     hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE_INTERVAL][command] = interval
-    await update()
+    if not skip_update:
+        await update()
 
 async def clear_cache_command(hass: HomeAssistant, config_entry: ConfigEntry, command: SessyApiCommand = None):
     trackers = hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE_TRACKERS]
@@ -100,6 +101,12 @@ def get_cache_command(hass: HomeAssistant, config_entry: ConfigEntry, command: S
     
 def get_cache_interval(hass: HomeAssistant, config_entry: ConfigEntry, command: SessyApiCommand):
     return hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE_INTERVAL][command]
+
+async def assert_cache_interval(hass: HomeAssistant, config_entry: ConfigEntry, command: SessyApiCommand, interval: timedelta = DEFAULT_SCAN_INTERVAL):
+    current_interval = get_cache_interval(hass, config_entry, command)
+    if current_interval != interval:
+        _LOGGER.debug(f"Updating cache update interval for {command}")
+        await add_cache_command(hass, config_entry, command, interval, skip_update=True)
 
 async def trigger_cache_update(hass: HomeAssistant, config_entry: ConfigEntry, command: SessyApiCommand):
     update = hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE_TRIGGERS][command]
