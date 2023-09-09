@@ -106,6 +106,7 @@ class SessyUpdate(SessyEntity, UpdateEntity):
         elif state == SessyOtaState.DONE.value:
             self._attr_in_progress = 100
         elif self.action_target == SessyOtaTarget.ALL:
+            # When OtaTarget == ALL, serial device is updated first
             cache_serial = get_cache_command(self.hass, self.config_entry, SessyApiCommand.OTA_STATUS, SessyOtaTarget.SERIAL.name.lower())
             if cache_serial.get("state") == SessyOtaState.UPDATING.value:
                 self._attr_in_progress = True
