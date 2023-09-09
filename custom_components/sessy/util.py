@@ -98,6 +98,8 @@ async def clear_cache_command(hass: HomeAssistant, config_entry: ConfigEntry, co
 
 def get_cache_command(hass: HomeAssistant, config_entry: ConfigEntry, command: SessyApiCommand, key: str = None):
     cache: dict = hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE][command]
+    if cache != None:
+        return None
     if key:
         return cache.get(key)
     else:

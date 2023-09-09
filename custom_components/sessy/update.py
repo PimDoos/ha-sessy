@@ -108,7 +108,13 @@ class SessyUpdate(SessyEntity, UpdateEntity):
         elif self.action_target == SessyOtaTarget.ALL:
             # When OtaTarget == ALL, serial device is updated first
             cache_serial = get_cache_command(self.hass, self.config_entry, SessyApiCommand.OTA_STATUS, SessyOtaTarget.SERIAL.name.lower())
-            if cache_serial.get("state") == SessyOtaState.UPDATING.value:
+            if cache_serial == None:
+                # Whoops, no data for serial available in cache. Skip until next update.
+                pass
+            elif cache_serial.get("state") == SessyOtaState.UPDATING.value:
+                # Update OTA cache more quickly during updates
+                assert_cache_interval(self.hass, self.config_entry, SessyApiCommand.OTA_STATUS, SCAN_INTERVAL_OTA_BUSY)
+
                 self._attr_in_progress = True
             else:
                 self._attr_in_progress = False
