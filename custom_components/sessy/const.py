@@ -1,6 +1,4 @@
 from datetime import timedelta
-from sessypy.api import SessyApiCommand
-from sessypy.const import SessyOtaState
 
 DOMAIN = "sessy"
 
@@ -11,8 +9,7 @@ DEFAULT_SCAN_INTERVAL = timedelta(seconds=60)
 DEFAULT_SCAN_INTERVAL_POWER = timedelta(seconds=5)
 
 # Static scan intervals
-SCAN_INTERVAL_POWER = timedelta(seconds=5)
-SCAN_INTERVAL_OTA = timedelta(seconds=15)
+SCAN_INTERVAL_OTA_BUSY = timedelta(seconds=10)
 SCAN_INTERVAL_OTA_CHECK = timedelta(hours=6)
 
 SESSY_DEVICE = "sessy_device"

@@ -19,8 +19,8 @@ from sessypy.const import SessyApiCommand, SessySystemState, SessyP1State
 from sessypy.devices import SessyBattery, SessyDevice, SessyP1Meter, SessyCTMeter
 
 
-from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, SESSY_DEVICE, SCAN_INTERVAL_POWER
-from .util import (add_cache_command, enum_to_options_list, status_string_p1, status_string_system_state, 
+from .const import DOMAIN, SESSY_DEVICE
+from .util import (enum_to_options_list, status_string_p1, status_string_system_state, 
                    unit_interval_to_percentage, divide_by_thousand, only_negative_as_positive, only_positive)
 from .sessyentity import SessyEntity
 
