@@ -28,6 +28,12 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
                     device_class=ButtonDeviceClass.RESTART, entity_category=EntityCategory.DIAGNOSTIC
                     )
     )
+    buttons.append(
+        SessyButton(hass, config_entry, "Check for updates",
+                    SessyApiCommand.OTA_STATUS, 'status', device.check_ota,
+                    entity_category=EntityCategory.DIAGNOSTIC
+                    )
+    )
 
     async_add_entities(buttons)
     
