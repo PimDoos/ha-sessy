@@ -10,7 +10,7 @@ from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 
 from sessypy.const import SessyApiCommand
-from sessypy.devices import SessyDevice, SessyBattery, SessyP1Meter, SessyCTMeter
+from sessypy.devices import SessyDevice, SessyBattery, SessyMeter, SessyP1Meter, SessyCTMeter
 
 import logging
 _LOGGER = logging.getLogger(__name__)
@@ -50,8 +50,11 @@ async def setup_cache_commands(hass, config_entry: ConfigEntry, device: SessyDev
         await setup_cache_command(hass, config_entry, SessyApiCommand.P1_DETAILS, scan_interval_power)
 
     elif isinstance(device, SessyCTMeter):
-        await setup_cache_command(hass, config_entry, SessyApiCommand.P1_DETAILS, scan_interval_power)
-        
+        await setup_cache_command(hass, config_entry, SessyApiCommand.CT_DETAILS, scan_interval_power)
+    
+    if isinstance(device, SessyMeter):
+        await setup_cache_command(hass, config_entry, SessyApiCommand.METER_GRID_TARGET)
+
 async def setup_cache_command(hass: HomeAssistant, config_entry: ConfigEntry, command: SessyApiCommand, interval: timedelta = DEFAULT_SCAN_INTERVAL):
     update = set_cache_command(hass, config_entry, command, interval)
     await update()

@@ -9,7 +9,8 @@ from homeassistant.const import (
     UnitOfElectricCurrent,
     UnitOfInformation,
     SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
-    UnitOfFrequency
+    UnitOfFrequency,
+    UnitOfEnergy
 )
 from homeassistant.components.sensor import SensorEntity, SensorDeviceClass, SensorStateClass
 from homeassistant.core import HomeAssistant
@@ -110,21 +111,6 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
 
     elif isinstance(device, SessyP1Meter):
         sensors.append(
-            SessySensor(hass, config_entry, "P1 Power",
-                        SessyApiCommand.P1_DETAILS, "total_power",
-                        SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.KILO_WATT, precision = 3)
-        )
-        sensors.append(
-            SessySensor(hass, config_entry, "P1 Consuming Power",
-                        SessyApiCommand.P1_DETAILS, "power_consumed",
-                        SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.KILO_WATT, precision = 3)
-        )
-        sensors.append(
-            SessySensor(hass, config_entry, "P1 Producing Power",
-                        SessyApiCommand.P1_DETAILS, "power_produced",
-                        SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.KILO_WATT, precision = 3)
-        )
-        sensors.append(
             SessySensor(hass, config_entry, "P1 Status",
                         SessyApiCommand.P1_DETAILS, "state",
                         SensorDeviceClass.ENUM,
@@ -132,29 +118,87 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
                         options = enum_to_options_list(SessyP1State, status_string_p1)
                         )
         )
-        for phase_id in range(1,4):
-            sensors.append(
-                SessySensor(hass, config_entry, f"Phase { phase_id } Voltage",
-                            SessyApiCommand.P1_DETAILS, f"voltage_l{ phase_id }",
-                            SensorDeviceClass.VOLTAGE, SensorStateClass.MEASUREMENT, UnitOfElectricPotential.VOLT, precision = 2)
-            )
-
-    elif isinstance(device, SessyCTMeter):
         sensors.append(
-            SessySensor(hass, config_entry, "Total Power",
-                        SessyApiCommand.P1_DETAILS, "total_power",
-                        SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.KILO_WATT, precision = 3)
+            SessySensor(hass, config_entry, "Tariff",
+                        SessyApiCommand.P1_DETAILS, "tariff_indicator")
+        )
+
+        sensors.append(
+            SessySensor(hass, config_entry, "P1 Power",
+                        SessyApiCommand.P1_DETAILS, "power_total",
+                        SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.WATT)
+        )
+        sensors.append(
+            SessySensor(hass, config_entry, "P1 Consuming Power",
+                        SessyApiCommand.P1_DETAILS, "power_consumed",
+                        SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.WATT)
+        )
+        sensors.append(
+            SessySensor(hass, config_entry, "P1 Producing Power",
+                        SessyApiCommand.P1_DETAILS, "power_produced",
+                        SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.WATT)
         )
         for phase_id in range(1,4):
             sensors.append(
                 SessySensor(hass, config_entry, f"Phase { phase_id } Voltage",
                             SessyApiCommand.P1_DETAILS, f"voltage_l{ phase_id }",
-                            SensorDeviceClass.VOLTAGE, SensorStateClass.MEASUREMENT, UnitOfElectricPotential.VOLT, precision = 2)
+                            SensorDeviceClass.VOLTAGE, SensorStateClass.MEASUREMENT, UnitOfElectricPotential.MILLIVOLT,
+                            suggested_unit_of_measurement=UnitOfElectricPotential.VOLT)
+            )
+            sensors.append(
+                SessySensor(hass, config_entry, f"Phase { phase_id } Current",
+                            SessyApiCommand.P1_DETAILS, f"current_l{ phase_id }",
+                            SensorDeviceClass.CURRENT, SensorStateClass.MEASUREMENT, UnitOfElectricCurrent.MILLIAMPERE, precision = 0,
+                            suggested_unit_of_measurement=UnitOfElectricCurrent.AMPERE)
+            )
+            sensors.append(
+            SessySensor(hass, config_entry, f"Phase { phase_id } Consuming Power",
+                        SessyApiCommand.P1_DETAILS, f"power_consumed_l{ phase_id }",
+                        SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.WATT)
+            )
+            sensors.append(
+                SessySensor(hass, config_entry, f"Phase { phase_id } Producing Power",
+                            SessyApiCommand.P1_DETAILS, f"power_produced_l{ phase_id }",
+                            SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.WATT)
+            )
+
+        for tariff_id in range(1,3):
+            sensors.append(
+                SessySensor(hass, config_entry, f"Tariff { tariff_id } Consumed Energy",
+                            SessyApiCommand.P1_DETAILS, f"power_consumed_tariff{ tariff_id }",
+                            SensorDeviceClass.ENERGY, SensorStateClass.TOTAL, UnitOfEnergy.WATT_HOUR, 
+                            suggested_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR)
+            )
+            sensors.append(
+                SessySensor(hass, config_entry, f"Tariff { tariff_id } Produced Energy",
+                            SessyApiCommand.P1_DETAILS, f"power_produced_tariff{ tariff_id }",
+                            SensorDeviceClass.ENERGY, SensorStateClass.TOTAL, UnitOfEnergy.WATT_HOUR, 
+                            suggested_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR)
+            )
+
+    elif isinstance(device, SessyCTMeter):
+        sensors.append(
+            SessySensor(hass, config_entry, "Total Power",
+                        SessyApiCommand.CT_DETAILS, "total_power",
+                        SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.KILO_WATT, precision = 3)
+        )
+        for phase_id in range(1,4):
+            sensors.append(
+                SessySensor(hass, config_entry, f"Phase { phase_id } Voltage",
+                            SessyApiCommand.CT_DETAILS, f"voltage_l{ phase_id }",
+                            SensorDeviceClass.VOLTAGE, SensorStateClass.MEASUREMENT, UnitOfElectricPotential.MILLIVOLT, precision = 3,
+                            suggested_unit_of_measurement=UnitOfElectricPotential.VOLT)
+            )
+            sensors.append(
+                SessySensor(hass, config_entry, f"Phase { phase_id } Current",
+                            SessyApiCommand.CT_DETAILS, f"current_l{ phase_id }",
+                            SensorDeviceClass.CURRENT, SensorStateClass.MEASUREMENT, UnitOfElectricCurrent.MILLIAMPERE, precision = 3,
+                            suggested_unit_of_measurement=UnitOfElectricCurrent.AMPERE)
             )
             sensors.append(
                 SessySensor(hass, config_entry, f"Phase { phase_id } Power",
-                            SessyApiCommand.P1_DETAILS, f"power_l{ phase_id }",
-                            SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.KILO_WATT, precision = 3)
+                            SessyApiCommand.CT_DETAILS, f"power_l{ phase_id }",
+                            SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.WATT)
             )
 
     async_add_entities(sensors)

@@ -11,7 +11,7 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity import EntityCategory
 
 from sessypy.const import SessyApiCommand
-from sessypy.devices import SessyBattery, SessyDevice
+from sessypy.devices import SessyBattery, SessyDevice, SessyMeter
 from sessypy.util import SessyNotSupportedException, SessyConnectionException
 
 
@@ -77,6 +77,15 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
         except Exception as e:
             _LOGGER.warning(f"Error setting up noise control: {e}")
 
+    elif isinstance(device, SessyMeter):
+         numbers.append(
+            SessyNumber(hass, config_entry, "Grid Target",
+                        SessyApiCommand.METER_GRID_TARGET, "grid_target",
+                        SessyApiCommand.METER_GRID_TARGET, "grid_target",
+                        NumberDeviceClass.POWER, UnitOfPower.WATT, -20000, 20000,
+                        entity_category=EntityCategory.CONFIG)
+            
+        )
 
     async_add_entities(numbers)
     
