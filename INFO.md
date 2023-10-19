@@ -3,19 +3,20 @@ Sessy Custom Component for Home Assistant.
 
 Currently supported features:
 
-Sessy Battery
--------------
-- Power Status
-  - System State
-  - Output Power (W)
-  - Power Setpoint (W)
-  - Renewable Energy Meter
-    - Power (W)
-	- Current (A)
-	- Voltage (mV)
+## All devices
+- Firmware updates
+- Dongle network status
+- Dongle reboot
 
-- Network Status
-  - WiFi RSSI (dBm)
+## Sessy Battery
+- Power Status
+- System State
+- Output Power (W)
+- Power Setpoint (W)
+- Renewable Energy Meter
+  - Power (W)
+  - Current (A)
+  - Voltage (V)
 
 - Power Strategy
   - Get and set strategy via select entity
@@ -23,16 +24,29 @@ Sessy Battery
 - Power Setpoint
   - Get and set via number entity
 
-- Firmware updates
+- Configuration
+  - Min/max power
+  - Start/stop times
 
-- Configuration (Min/max power)
+## Sessy Meter
 
-Sessy P1 Dongle
----------------
+### Sessy P1 Dongle
 - P1 Status
-  - Net power flow (kW)
+  - Net power flow
+  - Per phase current, voltage, power (consumption/production)
+  - Active tariff
+  - Tariff energy meters (consumption/production)
+
+- NOM Coordinator controls
+  - Grid Target via number entity (X on the meter)
 
 - Network Status
   - WiFi RSSI (dBm)
 
 - Firmware updates
+
+### Sessy CT Dongle
+- Net power flow
+- Per phase current, voltage, power (consumption/production)
+- NOM Coordinator controls
+  - Grid Target via number entity (X on the meter)

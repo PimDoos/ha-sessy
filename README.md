@@ -4,6 +4,11 @@
 
 Home Assistant integration for Sessy home battery system.
 
+Supported devices:
+- Sessy Dongle (Battery)
+- Sessy P1 Meter
+- Sessy CT Meter
+
 Currently supported:
 - Autodiscovery
 - Battery status sensors
@@ -11,14 +16,12 @@ Currently supported:
 - Set power strategy (select entity)
 - Set power setpoint (number entity)
 - Wifi RSSI sensor
-- P1 Grid Status sensors (P1 Dongle only)
+- Meter sensors (voltage/current/power)
+- Sessy NOM Coordinator controls (X on the meter)
+- P1 energy tariff counters (P1 Dongle only)
 - Firmware updates
-- Change configuration (min/max power)
+- Change configuration (min/max power, start/stop time)
 
-Supported devices:
-- Sessy Dongle (Battery)
-- Sessy P1 Meter
-- Sessy CT Meter
 
 TODO:
 - [X] Add Power Status sensors
@@ -38,7 +41,7 @@ HACS
 ----
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/integration)
 
-Install this repository via HACS (recommended):
+Install this repository via [HACS](https://hacs.xyz/) (recommended):
 
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=PimDoos&category=integration&repository=ha-sessy)
 
