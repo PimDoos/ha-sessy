@@ -180,7 +180,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
         sensors.append(
             SessySensor(hass, config_entry, "Total Power",
                         SessyApiCommand.CT_DETAILS, "total_power",
-                        SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.KILO_WATT, precision = 3)
+                        SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.WATT)
         )
         for phase_id in range(1,4):
             sensors.append(
