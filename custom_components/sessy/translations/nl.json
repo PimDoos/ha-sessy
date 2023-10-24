@@ -47,10 +47,11 @@
           "override_overfrequency": "Netondersteuning: Frequentie te hoog",
           "override_underfrequency": "Netondersteuning: Frequentie te laag",
           "disconnect": "Verbinding verbroken",
-          "reconnect":"Opnieuw verbinden",
+          "reconnect": "Opnieuw verbinden",
           "battery_empty_or_full": "Batterij vol/leeg",
           "battery_full": "Batterij vol",
-          "battery_empty": "Batterij leeg"
+          "battery_empty": "Batterij leeg",
+          "override_battery_undervoltage": "Overschrijving: Batterij ondervoltage"
         }
       },
       "p1_state":{

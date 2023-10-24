@@ -50,7 +50,8 @@
           "reconnect":"Reconnect",
           "battery_empty_or_full": "Battery full/empty",
           "battery_full": "Battery full",
-          "battery_empty": "Battery empty"
+          "battery_empty": "Battery empty",
+          "override_battery_undervoltage": "Override: Battery undervoltage"
         }
       },
       "p1_state":{
