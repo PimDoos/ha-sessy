@@ -16,7 +16,7 @@ from sessypy.util import SessyNotSupportedException, SessyConnectionException
 
 
 from .const import DOMAIN, SESSY_CACHE, SESSY_DEVICE
-from .util import trigger_cache_update
+from .util import get_cache_command, trigger_cache_update
 from .sessyentity import SessyEntity
 
 import logging
@@ -63,7 +63,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
 
         # Detect if Sessy has noise level control enabled
         try:
-            settings: dict = hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE][SessyApiCommand.SYSTEM_SETTINGS]
+            settings: dict = get_cache_command(hass, config_entry, SessyApiCommand.SYSTEM_SETTINGS)
             if settings.get("disable_noise_level", True) == False:
                 numbers.append(
                     SessyNumber(hass, config_entry, "Noise Level",
