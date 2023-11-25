@@ -10,7 +10,8 @@ from homeassistant.const import (
     UnitOfInformation,
     SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
     UnitOfFrequency,
-    UnitOfEnergy
+    UnitOfEnergy,
+    UnitOfVolume
 )
 from homeassistant.components.sensor import SensorEntity, SensorDeviceClass, SensorStateClass
 from homeassistant.core import HomeAssistant
@@ -21,9 +22,12 @@ from sessypy.devices import SessyBattery, SessyDevice, SessyP1Meter, SessyCTMete
 
 
 from .const import DOMAIN, SESSY_DEVICE
-from .util import (enum_to_options_list, status_string_p1, status_string_system_state, 
+from .util import (enum_to_options_list, get_cache_command, status_string_p1, status_string_system_state, 
                    unit_interval_to_percentage, divide_by_thousand, only_negative_as_positive, only_positive)
 from .sessyentity import SessyEntity
+
+import logging
+_LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities):
     """Set up the Sessy sensors"""
@@ -138,6 +142,19 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
                         SessyApiCommand.P1_DETAILS, "power_produced",
                         SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.WATT)
         )
+        try:
+            settings: dict = get_cache_command(hass, config_entry, SessyApiCommand.P1_DETAILS)
+            gas_meter_present = settings.get("gas_meter_value", 0) != 0
+            sensors.append(
+                SessySensor(hass, config_entry, f"Gas Consumption",
+                            SessyApiCommand.P1_DETAILS, f"gas_meter_value",
+                            SensorDeviceClass.GAS, SensorStateClass.TOTAL, UnitOfVolume.CUBIC_METERS, 
+                            transform_function=divide_by_thousand, precision = 3, enabled_default = gas_meter_present)
+            )
+        except Exception as e:
+            _LOGGER.warning(f"Error setting up gas meter: {e}")
+
+        
         for phase_id in range(1,4):
             sensors.append(
                 SessySensor(hass, config_entry, f"Phase { phase_id } Voltage",
@@ -176,6 +193,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
                             suggested_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR)
             )
 
+
     elif isinstance(device, SessyCTMeter):
         sensors.append(
             SessySensor(hass, config_entry, "Total Power",
@@ -208,7 +226,8 @@ class SessySensor(SessyEntity, SensorEntity):
                  cache_command: SessyApiCommand, cache_key,
                  device_class: SensorDeviceClass = None, state_class: SensorStateClass = None, unit_of_measurement = None,
                  transform_function: function = None, translation_key: str = None,
-                 options = None, entity_category: EntityCategory = None, precision: int = None, suggested_unit_of_measurement = None):
+                 options = None, entity_category: EntityCategory = None, precision: int = None, 
+                 suggested_unit_of_measurement = None, enabled_default: bool = True):
 
         super().__init__(hass=hass, config_entry=config_entry, name=name,
                        cache_command=cache_command, cache_key=cache_key,
@@ -223,6 +242,8 @@ class SessySensor(SessyEntity, SensorEntity):
         self._attr_suggested_unit_of_measurement = suggested_unit_of_measurement
 
         self._attr_options = options
+
+        self._attr_entity_registry_enabled_default = enabled_default
 
     def update_from_cache(self):
         self._attr_available = self.cache_value != None
