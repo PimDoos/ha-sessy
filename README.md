@@ -63,3 +63,4 @@ Add Sessy via the Integrations menu:
 
 - The integration will discover the device type and add it to Home Assistant
 
+- Manually add  [Riemann sum helpers](https://github.com/PimDoos/ha-sessy/issues/8#issuecomment-1476742866) to start collecting Energy statistics
