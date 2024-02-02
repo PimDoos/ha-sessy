@@ -62,7 +62,7 @@ class SessyUpdate(SessyEntity, UpdateEntity):
         
         self._attr_entity_registry_enabled_default = enabled_default
         self._attr_device_class = UpdateDeviceClass.FIRMWARE
-        self._attr_supported_features = UpdateEntityFeature.INSTALL + UpdateEntityFeature.PROGRESS
+        self._attr_supported_features = UpdateEntityFeature.INSTALL | UpdateEntityFeature.PROGRESS
 
         self.cache_target = cache_target
         if action_target:
