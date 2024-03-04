@@ -67,10 +67,11 @@
     "select":{
       "battery_strategy":{
         "state":{
-          "api":"API",
-          "nom":"Nul op de meter",
-          "roi":"Dynamisch",
-          "idle":"Inactief"
+          "api": "API",
+          "nom": "Nul op de meter",
+          "roi": "Dynamisch",
+          "idle": "Inactief",
+          "sessy_connect": "SessyConnect"
         }
       }
     }
