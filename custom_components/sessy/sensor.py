@@ -35,12 +35,20 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
     device = hass.data[DOMAIN][config_entry.entry_id][SESSY_DEVICE]
     sensors = []
 
-    sensors.append(
-        SessySensor(hass, config_entry, "WiFi RSSI",
-                    SessyApiCommand.NETWORK_STATUS, "wifi_sta.rssi",
-                    SensorDeviceClass.SIGNAL_STRENGTH, SensorStateClass.MEASUREMENT, SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
-                    entity_category=EntityCategory.DIAGNOSTIC)
-    )
+    try:
+        # Disable WiFi RSSI sensor if WiFi is not connected on discovery
+        network_status: dict = get_cache_command(hass, config_entry, SessyApiCommand.NETWORK_STATUS)
+        wifi_rssi_present = network_status.get("wifi_sta", dict()).get("rssi", None) != None
+        if wifi_rssi_present:
+            sensors.append(
+                SessySensor(hass, config_entry, "WiFi RSSI",
+                            SessyApiCommand.NETWORK_STATUS, "wifi_sta.rssi",
+                            SensorDeviceClass.SIGNAL_STRENGTH, SensorStateClass.MEASUREMENT, SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
+                            entity_category=EntityCategory.DIAGNOSTIC)
+            )
+    except Exception as e:
+        _LOGGER.warning(f"Error setting up WiFi RSSI sensor: {e}")
+
 
     for memory_type in ("internal","external"):
         sensors.append(
