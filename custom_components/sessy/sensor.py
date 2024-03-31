@@ -300,7 +300,7 @@ class SessyScheduleSensor(SessySensor):
     def update_from_cache(self):
         now = datetime.now()
 
-        schedule_today = self.day_schedule(0)
+        schedule_today = self.day_schedule()
         schedule_today_values = schedule_today.get(self.schedule_key, list())
         current_value = schedule_today_values[now.hour]
         if self.schedule_transform_function:
@@ -322,7 +322,7 @@ class SessyScheduleSensor(SessySensor):
         self._attr_available = self._attr_native_value != None
         
 
-    def day_schedule(self, offset: int) -> dict:
+    def day_schedule(self, offset: int = 0) -> dict:
         schedule_date = datetime.now()
         schedule_date += timedelta(days=offset)
         date_key = schedule_date.strftime("%Y-%m-%d")
