@@ -301,31 +301,24 @@ class SessyScheduleSensor(SessySensor):
         now = datetime.now()
 
         schedule_today = self.day_schedule(0)
-        schedule_tomorrow = self.day_schedule(1)
-
         schedule_today_values = schedule_today.get(self.schedule_key, list())
-        
         current_value = schedule_today_values[now.hour]
         if self.schedule_transform_function:
-            self._attr_native_value = self.schedule_transform_function(current_value)
-            self._attr_extra_state_attributes = {
-                "today": transform_on_list(
-                    schedule_today.get(self.schedule_key, None),
-                    self.schedule_transform_function
-                ),
-                "tomorrow": transform_on_list(
-                    schedule_tomorrow.get(self.schedule_key, None),
+            current_value = self.schedule_transform_function(
+                schedule_today_values[now.hour]
+            )
+
+        self._attr_extra_state_attributes = {}
+        for schedule in self.cache_value:
+            if self.schedule_transform_function:
+                self._attr_extra_state_attributes[schedule.get("date")] = transform_on_list(
+                    schedule.get(self.schedule_key),
                     self.schedule_transform_function
                 )
-            }
-        else:
-            self._attr_native_value = current_value
+            else:
+                self._attr_extra_state_attributes[schedule.get("date")] = schedule.get(self.schedule_key)
 
-            self._attr_extra_state_attributes = {
-                "today": schedule_today.get(self.schedule_key, None),
-                "tomorrow": schedule_tomorrow.get(self.schedule_key, None)
-            }
-
+        self._attr_native_value = current_value
         self._attr_available = self._attr_native_value != None
         
 
