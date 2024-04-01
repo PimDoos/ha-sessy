@@ -59,12 +59,12 @@ async def setup_cache_commands(hass, config_entry: ConfigEntry, device: SessyDev
     if isinstance(device, SessyMeter):
         await setup_cache_command(hass, config_entry, SessyApiCommand.METER_GRID_TARGET)
 
-async def setup_cache_command(hass: HomeAssistant, config_entry: ConfigEntry, command: SessyApiCommand, interval: timedelta = DEFAULT_SCAN_INTERVAL):
+async def setup_cache_command(hass: HomeAssistant, config_entry: ConfigEntry, command: SessyApiCommand, interval: timedelta | dict = DEFAULT_SCAN_INTERVAL):
     update = set_cache_command(hass, config_entry, command, interval)
     await update()
 
 
-def set_cache_command(hass: HomeAssistant, config_entry: ConfigEntry, command: SessyApiCommand, interval: timedelta = DEFAULT_SCAN_INTERVAL, skip_update: bool = False) -> function:
+def set_cache_command(hass: HomeAssistant, config_entry: ConfigEntry, command: SessyApiCommand, interval: timedelta | dict = DEFAULT_SCAN_INTERVAL, skip_update: bool = False) -> function:
     if not command in hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE]:
         hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE][command] = dict()
 
@@ -88,7 +88,7 @@ def set_cache_command(hass: HomeAssistant, config_entry: ConfigEntry, command: S
 
     if type(interval) == timedelta:
         hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE_TRACKERS][command] = async_track_time_interval(hass, update, interval)
-    elif type(interval) == dict():
+    elif type(interval) == dict:
         hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE_TRACKERS][command] = async_track_time_change(hass, update, **interval)
     hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE_TRIGGERS][command] = update
     hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE_INTERVAL][command] = interval
