@@ -1,8 +1,10 @@
 """Sensor to read data from Sessy"""
 from __future__ import annotations
+from datetime import datetime, timedelta
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
+    CURRENCY_EURO,
     UnitOfPower,
     PERCENTAGE,
     UnitOfElectricPotential,
@@ -22,7 +24,7 @@ from sessypy.devices import SessyBattery, SessyDevice, SessyP1Meter, SessyCTMete
 
 
 from .const import DOMAIN, SESSY_DEVICE
-from .util import (enum_to_options_list, get_cache_command, status_string_p1, status_string_system_state, 
+from .util import (divide_by_hundred_thousand, enum_to_options_list, get_cache_command, status_string_p1, status_string_system_state, transform_on_list, 
                    unit_interval_to_percentage, divide_by_thousand, only_negative_as_positive, only_positive)
 from .sessyentity import SessyEntity
 
@@ -60,6 +62,37 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
         )
 
     if isinstance(device, SessyBattery):
+
+        # Dynamic Schedule
+        try:
+            # Disable sensors if no schedule is present on discovery
+            dynamic_schedule: dict = get_cache_command(hass, config_entry, SessyApiCommand.DYNAMIC_SCHEDULE)
+            
+            power_schedule_available = dynamic_schedule.get("power_strategy", None) != None
+            if power_schedule_available:
+                sensors.append(
+                    SessyScheduleSensor(hass, config_entry, "Power Schedule",
+                                SessyApiCommand.DYNAMIC_SCHEDULE, "power_strategy",
+                                SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.WATT,
+                                schedule_key="power"
+                    )
+                )
+
+            energy_prices_available = dynamic_schedule.get("energy_prices", None) != None
+            if energy_prices_available:
+                sensors.append(
+                    SessyScheduleSensor(hass, config_entry, "Energy Price",
+                                SessyApiCommand.DYNAMIC_SCHEDULE, "energy_prices",
+                                None, SensorStateClass.MEASUREMENT, f"{CURRENCY_EURO}/{UnitOfEnergy.KILO_WATT_HOUR}",
+                                schedule_key="price", transform_function=divide_by_hundred_thousand                
+                    )
+                )
+
+        except Exception as e:
+            _LOGGER.warning(f"Error setting up schedule sensors: {e}")
+
+
+        # Power Status
         sensors.append(
             SessySensor(hass, config_entry, "System State",
                         SessyApiCommand.POWER_STATUS, "sessy.system_state",
@@ -101,6 +134,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
                         SensorDeviceClass.FREQUENCY, SensorStateClass.MEASUREMENT, UnitOfFrequency.HERTZ,
                         transform_function=divide_by_thousand, precision = 3)
         )
+        
         for phase_id in range(1,4):
             sensors.append(
                 SessySensor(hass, config_entry, f"Renewable Energy Phase { phase_id } Voltage",
@@ -256,3 +290,59 @@ class SessySensor(SessyEntity, SensorEntity):
     def update_from_cache(self):
         self._attr_available = self.cache_value != None
         self._attr_native_value = self.cache_value
+
+class SessyScheduleSensor(SessySensor):
+
+    def __init__(self, hass: HomeAssistant, config_entry: ConfigEntry, name: str,
+                 cache_command: SessyApiCommand, cache_key,
+                 device_class: SensorDeviceClass = None, state_class: SensorStateClass = None, unit_of_measurement = None,
+                 transform_function: function = None, schedule_key: str = None,
+                 precision: int = None, enabled_default: bool = True):
+
+        self.schedule_transform_function = transform_function
+        super().__init__(hass=hass, config_entry=config_entry, name=name,
+                       cache_command=cache_command, cache_key=cache_key,
+                       transform_function=None,
+                       device_class=device_class, state_class=state_class, unit_of_measurement=unit_of_measurement,
+                       precision=precision, enabled_default=enabled_default)
+        
+        self.schedule_key = schedule_key
+        
+    def update_from_cache(self):
+        now = datetime.now()
+
+        schedule_today = self.day_schedule()
+        schedule_today_values = schedule_today.get(self.schedule_key, list())
+        current_value = schedule_today_values[now.hour]
+        if self.schedule_transform_function:
+            current_value = self.schedule_transform_function(
+                schedule_today_values[now.hour]
+            )
+
+        self._attr_extra_state_attributes = {}
+        for schedule in self.cache_value:
+            if self.schedule_transform_function:
+                self._attr_extra_state_attributes[schedule.get("date")] = transform_on_list(
+                    schedule.get(self.schedule_key),
+                    self.schedule_transform_function
+                )
+            else:
+                self._attr_extra_state_attributes[schedule.get("date")] = schedule.get(self.schedule_key)
+
+        self._attr_native_value = current_value
+        self._attr_available = self._attr_native_value != None
+        
+
+    def day_schedule(self, offset: int = 0) -> dict:
+        schedule_date = datetime.now()
+        schedule_date += timedelta(days=offset)
+        date_key = schedule_date.strftime("%Y-%m-%d")
+        
+        if len(self.cache_value) > 1:
+            for day_schedule in self.cache_value:
+                if day_schedule.get("date") == date_key:
+                    return day_schedule
+                else:
+                    continue
+        
+        return None
