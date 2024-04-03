@@ -62,24 +62,35 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
         )
 
     if isinstance(device, SessyBattery):
-        # Dynamic Schedule
-        sensors.append(
-            SessyScheduleSensor(hass, config_entry, "Power Schedule",
-                        SessyApiCommand.DYNAMIC_SCHEDULE, "power_strategy",
-                        SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.WATT,
-                        schedule_key="power",
-                        enabled_default=False
-            )
-        )
 
-        sensors.append(
-            SessyScheduleSensor(hass, config_entry, "Energy Price",
-                        SessyApiCommand.DYNAMIC_SCHEDULE, "energy_prices",
-                        None, SensorStateClass.MEASUREMENT, f"{CURRENCY_EURO}/{UnitOfEnergy.KILO_WATT_HOUR}",
-                        schedule_key="price", transform_function=divide_by_hundred_thousand,
-                        enabled_default=False                   
-            )
-        )
+        # Dynamic Schedule
+        try:
+            # Disable sensors if no schedule is present on discovery
+            dynamic_schedule: dict = get_cache_command(hass, config_entry, SessyApiCommand.DYNAMIC_SCHEDULE)
+            
+            power_schedule_available = dynamic_schedule.get("power_strategy", None) != None
+            if power_schedule_available:
+                sensors.append(
+                    SessyScheduleSensor(hass, config_entry, "Power Schedule",
+                                SessyApiCommand.DYNAMIC_SCHEDULE, "power_strategy",
+                                SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.WATT,
+                                schedule_key="power"
+                    )
+                )
+
+            energy_prices_available = dynamic_schedule.get("energy_prices", None) != None
+            if energy_prices_available:
+                sensors.append(
+                    SessyScheduleSensor(hass, config_entry, "Energy Price",
+                                SessyApiCommand.DYNAMIC_SCHEDULE, "energy_prices",
+                                None, SensorStateClass.MEASUREMENT, f"{CURRENCY_EURO}/{UnitOfEnergy.KILO_WATT_HOUR}",
+                                schedule_key="price", transform_function=divide_by_hundred_thousand                
+                    )
+                )
+
+        except Exception as e:
+            _LOGGER.warning(f"Error setting up schedule sensors: {e}")
+
 
         # Power Status
         sensors.append(
