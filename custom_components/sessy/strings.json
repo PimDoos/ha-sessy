@@ -71,6 +71,7 @@
           "nom": "Null on the meter",
           "roi": "Dynamic",
           "idle": "Idle",
+          "eco": "Eco",
           "sessy_connect": "SessyConnect"
         }
       }
