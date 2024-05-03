@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
-    UnitOfPower
+    UnitOfPower, UnitOfTime
 )
 from homeassistant.components.number import NumberEntity, NumberDeviceClass
 from homeassistant.core import HomeAssistant
@@ -61,9 +61,11 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
             
         )
 
-        # Detect if Sessy has noise level control enabled
+        # Firmware or hardware-revision specific settings
         try:
             settings: dict = get_cache_command(hass, config_entry, SessyApiCommand.SYSTEM_SETTINGS)
+        
+            # Noise controls
             if settings.get("disable_noise_level", True) == False:
                 numbers.append(
                     SessyNumber(hass, config_entry, "Noise Level",
@@ -74,8 +76,31 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
                                 action_function=partial_update_settings)
                     
                 )
+            
+            # Eco mode controls (fw 1.6.8+)
+            if settings.get("eco_charge_power", None) != None:
+                numbers.append(
+                    SessyNumber(hass, config_entry, "Eco Charge Power",
+                                SessyApiCommand.SYSTEM_SETTINGS, "eco_charge_power",
+                                SessyApiCommand.SYSTEM_SETTINGS, "eco_charge_power",
+                                NumberDeviceClass.POWER, UnitOfPower.WATT, 50, 2200,
+                                entity_category=EntityCategory.CONFIG,
+                                action_function=partial_update_settings)
+                    
+                )
+            if settings.get("eco_charge_hours", None) != None:
+                numbers.append(
+                    SessyNumber(hass, config_entry, "Eco Charge Hours",
+                                SessyApiCommand.SYSTEM_SETTINGS, "eco_charge_hours",
+                                SessyApiCommand.SYSTEM_SETTINGS, "eco_charge_hours",
+                                NumberDeviceClass.DURATION, UnitOfTime.HOURS, 0, 24,
+                                entity_category=EntityCategory.CONFIG,
+                                action_function=partial_update_settings)
+                    
+                )
         except Exception as e:
-            _LOGGER.warning(f"Error setting up noise control: {e}")
+            _LOGGER.warning(f"Error setting firmware specific settings: {e}")
+        
 
     elif isinstance(device, SessyMeter):
          numbers.append(
