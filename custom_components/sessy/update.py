@@ -17,7 +17,7 @@ from homeassistant.helpers import device_registry as dr
 from sessypy.const import SessyApiCommand, SessyOtaTarget, SessyOtaState
 from sessypy.devices import SessyBattery, SessyDevice, SessyP1Meter, SessyCTMeter
 
-from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, SESSY_DEVICE, SCAN_INTERVAL_OTA_BUSY
+from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, SESSY_DEVICE, SCAN_INTERVAL_OTA_BUSY, SESSY_RELEASE_NOTES_URL
 from .util import assert_cache_interval, get_cache_command, trigger_cache_update, unit_interval_to_percentage
 from .sessyentity import SessyEntity
 
@@ -63,6 +63,7 @@ class SessyUpdate(SessyEntity, UpdateEntity):
         self._attr_entity_registry_enabled_default = enabled_default
         self._attr_device_class = UpdateDeviceClass.FIRMWARE
         self._attr_supported_features = UpdateEntityFeature.INSTALL | UpdateEntityFeature.PROGRESS
+        self._attr_release_url = SESSY_RELEASE_NOTES_URL
 
         self.cache_target = cache_target
         if action_target:
