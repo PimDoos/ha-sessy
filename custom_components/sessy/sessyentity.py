@@ -6,7 +6,6 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import Entity
-from homeassistant.helpers.typing import StateType
 
 from sessypy.const import SessyApiCommand
 from sessypy.devices import SessyDevice

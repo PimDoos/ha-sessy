@@ -71,6 +71,7 @@
           "nom": "Nul op de meter",
           "roi": "Dynamisch",
           "idle": "Inactief",
+          "eco": "Eco",
           "sessy_connect": "SessyConnect"
         }
       }

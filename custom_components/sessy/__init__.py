@@ -13,12 +13,12 @@ from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from sessypy.devices import get_sessy_device
 from sessypy.util import SessyLoginException, SessyConnectionException, SessyNotSupportedException
 
-from .const import DOMAIN, SERIAL_NUMBER, SESSY_CACHE, SESSY_CACHE_INTERVAL, SESSY_CACHE_TRACKERS, SESSY_CACHE_TRIGGERS, SESSY_DEVICE, SESSY_DEVICE_INFO
+from .const import DOMAIN, SERIAL_NUMBER, SESSY_DEVICE, SESSY_DEVICE_INFO
 from .util import clear_cache_command, generate_device_info, setup_cache, setup_cache_commands
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS: list[Platform] = [Platform.BUTTON, Platform.SENSOR, Platform.SELECT, Platform.NUMBER, Platform.TIME, Platform.UPDATE]
+PLATFORMS: list[Platform] = [Platform.BUTTON, Platform.SENSOR, Platform.SELECT, Platform.NUMBER, Platform.SWITCH, Platform.TIME, Platform.UPDATE]
 
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
@@ -73,7 +73,8 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     hass.data[DOMAIN][config_entry.entry_id][SESSY_DEVICE_INFO] = await generate_device_info(hass, config_entry, device)
 
     for platform in PLATFORMS:
-        hass.async_create_task(
+        config_entry.async_create_task(
+            hass,
             hass.config_entries.async_forward_entry_setup(config_entry, platform)
         )
 

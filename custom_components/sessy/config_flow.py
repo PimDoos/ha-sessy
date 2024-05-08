@@ -18,7 +18,6 @@ from homeassistant.const import (
     CONF_NAME,
     CONF_SCAN_INTERVAL
 )
-from homeassistant.helpers import device_registry as dr
 
 from sessypy.devices import get_sessy_device, SessyBattery, SessyP1Meter, SessyCTMeter
 from sessypy.util import SessyConnectionException, SessyLoginException
