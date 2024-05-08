@@ -74,12 +74,11 @@ class SessySwitch(SessyEntity, SwitchEntity):
         self._attr_available = self.cache_value != None
         self._attr_is_on = self.cache_value
         
-
     async def async_turn_on(self):
-        self._set_value(True)
+        await self._set_value(True)
             
     async def async_turn_off(self):
-        self._set_value(False)
+        await self._set_value(False)
     
     async def _set_value(self, value: bool):
         device: SessyDevice = self.hass.data[DOMAIN][self.config_entry.entry_id][SESSY_DEVICE]
