@@ -13,7 +13,7 @@ from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from sessypy.devices import get_sessy_device
 from sessypy.util import SessyLoginException, SessyConnectionException, SessyNotSupportedException
 
-from .const import DOMAIN, SERIAL_NUMBER, SESSY_CACHE, SESSY_CACHE_INTERVAL, SESSY_CACHE_TRACKERS, SESSY_CACHE_TRIGGERS, SESSY_DEVICE, SESSY_DEVICE_INFO
+from .const import DOMAIN, SERIAL_NUMBER, SESSY_DEVICE, SESSY_DEVICE_INFO
 from .util import clear_cache_command, generate_device_info, setup_cache, setup_cache_commands
 
 _LOGGER = logging.getLogger(__name__)

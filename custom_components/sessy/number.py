@@ -15,7 +15,7 @@ from sessypy.devices import SessyBattery, SessyDevice, SessyMeter
 from sessypy.util import SessyNotSupportedException, SessyConnectionException
 
 
-from .const import DOMAIN, SESSY_CACHE, SESSY_DEVICE
+from .const import DOMAIN, SESSY_DEVICE
 from .util import get_cache_command, trigger_cache_update
 from .sessyentity import SessyEntity
 
