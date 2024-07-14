@@ -1,0 +1,77 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "data": {
+          "username": "Utilizador",
+          "password": "Senha",
+          "host": "Endereço"
+        }
+      },
+      "zeroconf": {
+        "data": {
+          "username": "Utilizador",
+          "password": "Senha",
+          "host": "Endereço"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Falha na ligação",
+      "invalid_auth": "Falha na autenticação",
+      "unknown": "Erro desconhecido"
+    },
+    "flow_title": "{name}"
+  },
+  "options": {
+    "step": {
+      "init": {
+        "description": "Com que frequencia atualiza os dadods",
+        "data":{
+          "scan_interval": "Invervalo de pequisa"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor":{
+      "battery_system_state":{
+        "state":{
+          "running_safe": "Em Funcionamento",
+          "standby": "Standby",
+          "waiting_for_safe_situation": "A espera de estado seguro",
+          "waiting_in_safe_situation": "A espera de estado seguro",
+          "wait_for_peripherals": "A aguardar equipamentos",
+          "error": "Erro",
+          "init": "Inicializando",
+          "override_overfrequency": "Frequencia a cima",
+          "override_underfrequency": "Frequencia a baixo",
+          "disconnect": "Deligado",
+          "reconnect":"Ligar",
+          "battery_empty_or_full": "Bateria Cheia ou Vazia",
+          "battery_full": "Bateria Cheia",
+          "battery_empty": "Bateria Vazia"
+        }
+      },
+      "p1_state":{
+        "state":{
+          "not_connected": "Não ligado",
+          "datavalidity_err": "Validade dos dados expirada",
+          "version_err": "Erro de versão",
+          "parse_err": "Erro na fase",
+          "ok": "OK"
+        }
+      }
+    },
+    "select":{
+      "battery_strategy":{
+        "state":{
+          "api":"API",
+          "nom":"Sem dados para medir",
+          "roi":"Dinamico",
+          "idle":"Aguardar"
+        }
+      }
+    }
+  }
+}
