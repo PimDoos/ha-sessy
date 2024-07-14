@@ -68,7 +68,7 @@
       "battery_strategy":{
         "state":{
           "api": "API",
-          "nom": "Null on the meter",
+          "nom": "Net zero",
           "roi": "Dynamic",
           "idle": "Idle",
           "eco": "Eco",
