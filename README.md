@@ -23,6 +23,7 @@ Currently supported:
 - Change configuration (min/max power, start/stop time)
 - Dynamic mode schedule per hour
 - EPEX Energy prices
+- Energy meters for integration with Energy Dashboard
 
 TODO:
 - [X] Add Power Status sensors
@@ -63,7 +64,5 @@ Add Sessy via the Integrations menu:
 - Enter the local username and password found on the sticker on the device
 
 - The integration will discover the device type and add it to Home Assistant
-
-- Manually add  [Riemann sum helpers](https://github.com/PimDoos/ha-sessy/issues/8#issuecomment-1476742866) to start collecting Energy statistics
 
 - See [ha-sessy-examples](https://github.com/PimDoos/ha-sessy-examples/tree/main) for blueprints and configuration examples using this integration
