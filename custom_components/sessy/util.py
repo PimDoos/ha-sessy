@@ -59,6 +59,9 @@ async def setup_cache_commands(hass, config_entry: ConfigEntry, device: SessyDev
     if isinstance(device, SessyMeter):
         await setup_cache_command(hass, config_entry, SessyApiCommand.METER_GRID_TARGET)
 
+    if isinstance(device, SessyBattery) or isinstance(device, SessyCTMeter):
+        await setup_cache_command(hass, config_entry, SessyApiCommand.ENERGY_STATUS)
+
 async def setup_cache_command(hass: HomeAssistant, config_entry: ConfigEntry, command: SessyApiCommand, interval: timedelta | dict = DEFAULT_SCAN_INTERVAL):
     update = set_cache_command(hass, config_entry, command, interval)
     await update()

@@ -33,7 +33,7 @@ TODO:
 - [X] Add logo to home-assistant/brands
 - [X] Add HACS configuration
 - [X] Add to HACS Default repository
-- [ ] Add Energy sensors
+- [X] Add Energy sensors
 
 Installation
 ============
