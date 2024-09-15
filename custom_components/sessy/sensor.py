@@ -134,6 +134,26 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
                         SensorDeviceClass.FREQUENCY, SensorStateClass.MEASUREMENT, UnitOfFrequency.HERTZ,
                         transform_function=divide_by_thousand, precision = 3)
         )
+
+        # Sessy Energy sensors
+        try:
+            # Fetch API content to check compatibility
+            energy_status: dict = get_cache_command(hass, config_entry, SessyApiCommand.ENERGY_STATUS)
+            if energy_status != None:
+                sensors.append(
+                    SessySensor(hass, config_entry, f"Charged Energy",
+                                SessyApiCommand.ENERGY_STATUS, f"sessy_energy.import_wh",
+                                SensorDeviceClass.ENERGY, SensorStateClass.TOTAL_INCREASING, UnitOfEnergy.WATT_HOUR, 
+                                suggested_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR)
+                )
+                sensors.append(
+                    SessySensor(hass, config_entry, f"Discharged Energy",
+                                SessyApiCommand.ENERGY_STATUS, f"sessy_energy.export_wh",
+                                SensorDeviceClass.ENERGY, SensorStateClass.TOTAL_INCREASING, UnitOfEnergy.WATT_HOUR, 
+                                suggested_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR)
+                )
+        except Exception as e:
+            _LOGGER.warning(f"Error setting up battery energy sensors: {e}")
         
         for phase_id in range(1,4):
             sensors.append(
@@ -153,6 +173,24 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
                             SessyApiCommand.POWER_STATUS, f"renewable_energy_phase{ phase_id }.power",
                             SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.WATT)
             )
+
+            # Metered phase energy sensors
+            try:
+                if energy_status != None:
+                    sensors.append(
+                        SessySensor(hass, config_entry, f"Renewable Energy Phase { phase_id } Imported Energy",
+                                    SessyApiCommand.ENERGY_STATUS, f"energy_phase{ phase_id }.import_wh",
+                                    SensorDeviceClass.ENERGY, SensorStateClass.TOTAL_INCREASING, UnitOfEnergy.WATT_HOUR, 
+                                    suggested_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR)
+                    )
+                    sensors.append(
+                        SessySensor(hass, config_entry, f"Renewable Energy Phase { phase_id } Exported Energy",
+                                    SessyApiCommand.ENERGY_STATUS, f"energy_phase{ phase_id }.export_wh",
+                                    SensorDeviceClass.ENERGY, SensorStateClass.TOTAL_INCREASING, UnitOfEnergy.WATT_HOUR, 
+                                    suggested_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR)
+                    )
+            except Exception as e:
+                _LOGGER.warning(f"Error setting up battery metered phase energy sensors: {e}")
 
 
     elif isinstance(device, SessyP1Meter):
@@ -260,6 +298,26 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
                             SessyApiCommand.CT_DETAILS, f"power_l{ phase_id }",
                             SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.WATT)
             )
+
+            # Metered phase energy sensors
+            try:
+                # Fetch API content to check compatibility
+                energy_status: dict = get_cache_command(hass, config_entry, SessyApiCommand.ENERGY_STATUS)
+                if energy_status != None:
+                    sensors.append(
+                        SessySensor(hass, config_entry, f"Phase { phase_id } Imported Energy",
+                                    SessyApiCommand.ENERGY_STATUS, f"energy_phase{ phase_id }.import_wh",
+                                    SensorDeviceClass.ENERGY, SensorStateClass.TOTAL_INCREASING, UnitOfEnergy.WATT_HOUR, 
+                                    suggested_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR)
+                    )
+                    sensors.append(
+                        SessySensor(hass, config_entry, f"Phase { phase_id } Exported Energy",
+                                    SessyApiCommand.ENERGY_STATUS, f"energy_phase{ phase_id }.export_wh",
+                                    SensorDeviceClass.ENERGY, SensorStateClass.TOTAL_INCREASING, UnitOfEnergy.WATT_HOUR, 
+                                    suggested_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR)
+                    )
+            except Exception as e:
+                _LOGGER.warning(f"Error setting up CT meter energy sensors: {e}")
 
     async_add_entities(sensors)
 
