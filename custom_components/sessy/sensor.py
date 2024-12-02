@@ -93,47 +93,62 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
 
 
         # Power Status
-        sensors.append(
-            SessySensor(hass, config_entry, "System State",
-                        SessyApiCommand.POWER_STATUS, "sessy.system_state",
-                        SensorDeviceClass.ENUM,
-                        translation_key = "battery_system_state", transform_function=status_string_system_state,
-                        options = enum_to_options_list(SessySystemState, status_string_system_state))
-        )
-        sensors.append(
-            SessySensor(hass, config_entry, "System State Details",
-                        SessyApiCommand.POWER_STATUS, "sessy.system_state_details",
-                        entity_category=EntityCategory.DIAGNOSTIC)
-        )
-        sensors.append(
-            SessySensor(hass, config_entry, "State of Charge",
-                        SessyApiCommand.POWER_STATUS, "sessy.state_of_charge",
-                        SensorDeviceClass.BATTERY, SensorStateClass.MEASUREMENT, PERCENTAGE,
-                        transform_function=unit_interval_to_percentage, precision = 1)
-        )
-        sensors.append(
-            SessySensor(hass, config_entry, "Power",
-                        SessyApiCommand.POWER_STATUS, "sessy.power",
-                        SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.WATT)
-        )
-        sensors.append(
-            SessySensor(hass, config_entry, "Charge Power",
-                        SessyApiCommand.POWER_STATUS, "sessy.power",
-                        SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.WATT,
-                        transform_function=only_negative_as_positive)
-        )
-        sensors.append(
-            SessySensor(hass, config_entry, "Discharge Power",
-                        SessyApiCommand.POWER_STATUS, "sessy.power",
-                        SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.WATT,
-                        transform_function=only_positive)
-        )
-        sensors.append(
-            SessySensor(hass, config_entry, "Frequency",
-                        SessyApiCommand.POWER_STATUS, "sessy.frequency",
-                        SensorDeviceClass.FREQUENCY, SensorStateClass.MEASUREMENT, UnitOfFrequency.HERTZ,
-                        transform_function=divide_by_thousand, precision = 3)
-        )
+        try:
+            power_status: dict = get_cache_command(hass, config_entry, SessyApiCommand.POWER_STATUS)
+
+            sensors.append(
+                SessySensor(hass, config_entry, "System State",
+                            SessyApiCommand.POWER_STATUS, "sessy.system_state",
+                            SensorDeviceClass.ENUM,
+                            translation_key = "battery_system_state", transform_function=status_string_system_state,
+                            options = enum_to_options_list(SessySystemState, status_string_system_state))
+            )
+            sensors.append(
+                SessySensor(hass, config_entry, "System State Details",
+                            SessyApiCommand.POWER_STATUS, "sessy.system_state_details",
+                            entity_category=EntityCategory.DIAGNOSTIC)
+            )
+            sensors.append(
+                SessySensor(hass, config_entry, "State of Charge",
+                            SessyApiCommand.POWER_STATUS, "sessy.state_of_charge",
+                            SensorDeviceClass.BATTERY, SensorStateClass.MEASUREMENT, PERCENTAGE,
+                            transform_function=unit_interval_to_percentage, precision = 1)
+            )
+            sensors.append(
+                SessySensor(hass, config_entry, "Power",
+                            SessyApiCommand.POWER_STATUS, "sessy.power",
+                            SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.WATT)
+            )
+            sensors.append(
+                SessySensor(hass, config_entry, "Charge Power",
+                            SessyApiCommand.POWER_STATUS, "sessy.power",
+                            SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.WATT,
+                            transform_function=only_negative_as_positive)
+            )
+            sensors.append(
+                SessySensor(hass, config_entry, "Discharge Power",
+                            SessyApiCommand.POWER_STATUS, "sessy.power",
+                            SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.WATT,
+                            transform_function=only_positive)
+            )
+            sensors.append(
+                SessySensor(hass, config_entry, "Frequency",
+                            SessyApiCommand.POWER_STATUS, "sessy.frequency",
+                            SensorDeviceClass.FREQUENCY, SensorStateClass.MEASUREMENT, UnitOfFrequency.HERTZ,
+                            transform_function=divide_by_thousand, precision = 3)
+            )
+
+        
+            if power_status.get("sessy", dict()).get("inverter_current_ma"):
+                sensors.append(
+                    SessySensor(hass, config_entry, "Inverter Current",
+                                SessyApiCommand.POWER_STATUS, "sessy.inverter_current_ma",
+                                SensorDeviceClass.CURRENT, SensorStateClass.MEASUREMENT, UnitOfElectricCurrent.MILLIAMPERE,
+                                suggested_unit_of_measurement=UnitOfElectricCurrent.AMPERE)
+                )
+        except Exception as e:
+            _LOGGER.warning(f"Error setting up power status sensors: {e}")
+
 
         # Sessy Energy sensors
         try:
