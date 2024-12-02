@@ -139,7 +139,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
             )
 
         
-            if power_status.get("sessy", dict()).get("inverter_current_ma"):
+            if power_status.get("sessy", dict()).get("inverter_current_ma", None) != None:
                 sensors.append(
                     SessySensor(hass, config_entry, "Inverter Current",
                                 SessyApiCommand.POWER_STATUS, "sessy.inverter_current_ma",
