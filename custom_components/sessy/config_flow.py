@@ -7,7 +7,6 @@ from typing import Any
 import voluptuous as vol
 
 from homeassistant import config_entries
-from homeassistant.components import zeroconf
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.exceptions import HomeAssistantError
@@ -18,6 +17,7 @@ from homeassistant.const import (
     CONF_NAME,
     CONF_SCAN_INTERVAL
 )
+from homeassistant.helpers.service_info.zeroconf import ZeroconfServiceInfo
 
 from sessypy.devices import get_sessy_device, SessyBattery, SessyP1Meter, SessyCTMeter
 from sessypy.util import SessyConnectionException, SessyLoginException
@@ -116,7 +116,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self.context["title_placeholders"] = {"name": self._name}
 
     async def async_step_zeroconf(
-        self, discovery_info: zeroconf.ZeroconfServiceInfo
+        self, discovery_info: ZeroconfServiceInfo
     ) -> FlowResult:
         """Handle zeroconf discovery."""
 
