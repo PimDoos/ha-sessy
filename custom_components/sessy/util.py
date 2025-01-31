@@ -76,8 +76,10 @@ def set_cache_command(hass: HomeAssistant, config_entry: ConfigEntry, command: S
         cache: dict = hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE]
 
         try:
-            result = await device.api.get(command)
+            result: dict = await device.api.get(command)
             cache[command] = result
+            if "error" in result:
+                _LOGGER.debug(f"Sessy api returned an error while updating cache for {command}: {result.get("error")}")
         except Exception as e:
             result = None
             cache[command] = None
