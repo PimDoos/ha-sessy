@@ -1,11 +1,11 @@
 """API Data Update Coordinator for Sessy"""
+from __future__ import annotations
 
 from datetime import timedelta
 import logging
 
 import async_timeout
 
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_SCAN_INTERVAL
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed
@@ -17,9 +17,9 @@ from homeassistant.helpers.update_coordinator import (
 from sessypy.devices import SessyBattery, SessyCTMeter, SessyDevice, SessyMeter, SessyP1Meter
 from sessypy.util import SessyConnectionException, SessyLoginException, SessyNotSupportedException
 
-from .const import DEFAULT_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL_POWER, DOMAIN, ENTITY_ERROR_THRESHOLD, SCAN_INTERVAL_OTA_CHECK, SCAN_INTERVAL_SCHEDULE, SESSY_DEVICE, SESSY_DEVICE_INFO
+from .const import DEFAULT_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL_POWER, ENTITY_ERROR_THRESHOLD, SCAN_INTERVAL_OTA_CHECK, SCAN_INTERVAL_SCHEDULE
 from .models import SessyConfigEntry
-from .util import SessyRuntimeData, get_nested_key
+from .util import get_nested_key
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -33,21 +33,21 @@ async def setup_coordinators(hass, config_entry: SessyConfigEntry, device: Sessy
     else: scan_interval_power = DEFAULT_SCAN_INTERVAL_POWER
 
     # Device independent functions
-    coordinators.append(
+    coordinators.extend([
         SessyCoordinator(hass, config_entry, device.get_ota_status),
         SessyCoordinator(hass, config_entry, device.check_ota, SCAN_INTERVAL_OTA_CHECK), # Sessy will not check for updates automatically, poll at intervals
         SessyCoordinator(hass, config_entry, device.get_system_info),
         SessyCoordinator(hass, config_entry, device.get_network_status)
-    )
+    ])
     
 
     if isinstance(device, SessyBattery):
-        coordinators.append(
-            SessyCoordinator(hass, config_entry, device.get_dynamic_schedule, SCAN_INTERVAL_SCHEDULE),
+        coordinators.extend([
+            SessyCoordinator(hass, config_entry, device.get_dynamic_schedule), # TODO align to hour, only poll once every hour
             SessyCoordinator(hass, config_entry, device.get_power_status, scan_interval_power),
             SessyCoordinator(hass, config_entry, device.get_power_strategy),
             SessyCoordinator(hass, config_entry, device.get_system_settings),    
-        )
+        ])
 
 
     elif isinstance(device, SessyP1Meter):
@@ -71,8 +71,10 @@ async def setup_coordinators(hass, config_entry: SessyConfigEntry, device: Sessy
         )
 
     coordinators_dict = dict()
+    coordinator: SessyCoordinator
     for coordinator in coordinators:
-        coordinators_dict[coordinator.name] = coordinator
+        await coordinator.async_config_entry_first_refresh()
+        coordinators_dict[coordinator._device_function] = coordinator
     
     return coordinators_dict
 
@@ -112,6 +114,7 @@ class SessyCoordinator(DataUpdateCoordinator):
             always_update=False
         )
         self._device_function = device_function
+        self._raw_data = dict()
 
     async def _async_setup(self):
         """Set up the coordinator
@@ -122,7 +125,7 @@ class SessyCoordinator(DataUpdateCoordinator):
         This method will be called automatically during
         coordinator.async_config_entry_first_refresh.
         """
-        await self._async_update_data(self)
+        await self._async_update_data()
 
     async def _async_update_data(self):
         """Fetch data from API endpoint.
@@ -133,10 +136,10 @@ class SessyCoordinator(DataUpdateCoordinator):
         try:
             # Note: asyncio.TimeoutError and aiohttp.ClientError are already
             # handled by the data update coordinator.
-            async with async_timeout.timeout(10):
-                data = await self._device_function
+            async with async_timeout.timeout(self.update_interval.seconds / 2):
+                data = await self._device_function()
 
-            contexts: list[SessyEntityContext] = set(self.async_contexts)
+            contexts: list[SessyEntityContext] = set(self.async_contexts())
             flattened_data = dict()
             for context in contexts:
                 flattened_data[context.data_key] = context.apply(data)

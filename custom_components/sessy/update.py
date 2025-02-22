@@ -7,24 +7,24 @@ import logging
 from sessypy.util import SessyConnectionException, SessyNotSupportedException
 _LOGGER = logging.getLogger(__name__)
 
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.components.update import UpdateEntity, UpdateDeviceClass, UpdateEntityFeature
 from homeassistant.const import ATTR_IDENTIFIERS
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import device_registry as dr
 
-from sessypy.const import SessyApiCommand, SessyOtaTarget, SessyOtaState
+from sessypy.const import SessyOtaTarget, SessyOtaState
 from sessypy.devices import SessyBattery, SessyDevice, SessyP1Meter, SessyCTMeter
 
-from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, SESSY_DEVICE, SCAN_INTERVAL_OTA_BUSY, SESSY_RELEASE_NOTES_URL
-from .util import assert_cache_interval, get_cache_command, trigger_cache_update, unit_interval_to_percentage
-from .sessyentity import SessyEntity
+from .const import DEFAULT_SCAN_INTERVAL, SCAN_INTERVAL_OTA_BUSY, SESSY_RELEASE_NOTES_URL
+from .coordinator import SessyCoordinator, SessyCoordinatorEntity
+from .models import SessyConfigEntry
+from .util import unit_interval_to_percentage
 
-async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities):
+async def async_setup_entry(hass: HomeAssistant, config_entry: SessyConfigEntry, async_add_entities):
     """Set up the Sessy updates"""
 
-    device = hass.data[DOMAIN][config_entry.entry_id][SESSY_DEVICE]
+    device = config_entry.runtime_data.device
     updates = []
 
 
@@ -49,15 +49,18 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
 
     async_add_entities(updates)
     
-class SessyUpdate(SessyEntity, UpdateEntity):
-    def __init__(self, hass: HomeAssistant, config_entry: ConfigEntry, name: str,
+class SessyUpdate(SessyCoordinatorEntity, UpdateEntity):
+    def __init__(self, hass: HomeAssistant, config_entry: SessyConfigEntry, name: str,
                  cache_target: SessyOtaTarget, action_target: SessyOtaTarget = None,
                  transform_function: function = None, enabled_default: bool = True):
         
-        cache_command = SessyApiCommand.OTA_STATUS
-        cache_key = cache_target.name.lower()
+        self.device = config_entry.runtime_data.device
+        coordinator: SessyCoordinator = config_entry.runtime_data.coordinators[self.device.get_ota_status]
+        self.coordinator = coordinator
+        
+        data_key = cache_target.name.lower()
         super().__init__(hass=hass, config_entry=config_entry, name=name, 
-                       cache_command=cache_command, cache_key=cache_key, 
+                       coordinator=coordinator, data_key=data_key, 
                        transform_function=transform_function)
         
         self._attr_entity_registry_enabled_default = enabled_default
@@ -96,8 +99,7 @@ class SessyUpdate(SessyEntity, UpdateEntity):
             self._attr_latest_version = self.cache_value.get("available_firmware", dict()).get("version", None)   
         
         if state == SessyOtaState.UPDATING.value:
-            # Update OTA cache more quickly during updates
-            assert_cache_interval(self.hass, self.config_entry, SessyApiCommand.OTA_STATUS, SCAN_INTERVAL_OTA_BUSY)
+            self.coordinator.update_interval = SCAN_INTERVAL_OTA_BUSY
 
             progress: int = self.cache_value.get("update_progress", None)
             if not progress:
@@ -108,13 +110,14 @@ class SessyUpdate(SessyEntity, UpdateEntity):
             self._attr_in_progress = 100
         elif self.action_target == SessyOtaTarget.ALL:
             # When OtaTarget == ALL, serial device is updated first
-            cache_serial = get_cache_command(self.hass, self.config_entry, SessyApiCommand.OTA_STATUS, SessyOtaTarget.SERIAL.name.lower())
+            ota_data: dict = self.coordinator.get_data()
+
+            cache_serial = ota_data.get(SessyOtaTarget.SERIAL.name.lower())
             if cache_serial == None:
                 # Whoops, no data for serial available in cache. Skip until next update.
                 pass
             elif cache_serial.get("state") == SessyOtaState.UPDATING.value:
-                # Update OTA cache more quickly during updates
-                assert_cache_interval(self.hass, self.config_entry, SessyApiCommand.OTA_STATUS, SCAN_INTERVAL_OTA_BUSY)
+                self.coordinator.update_interval = SCAN_INTERVAL_OTA_BUSY
 
                 self._attr_in_progress = True
             else:
@@ -123,7 +126,8 @@ class SessyUpdate(SessyEntity, UpdateEntity):
             self._attr_in_progress = False
 
             # Restore scan interval
-            assert_cache_interval(self.hass, self.config_entry, SessyApiCommand.OTA_STATUS, DEFAULT_SCAN_INTERVAL)
+            self.coordinator.update_interval = DEFAULT_SCAN_INTERVAL
+
         
     def update_device_sw_version(self):
         try:
@@ -134,7 +138,7 @@ class SessyUpdate(SessyEntity, UpdateEntity):
             _LOGGER.warning("Could not write OTA status to device registry")
 
     async def async_install(self, version: str | None, backup: bool, **kwargs: Any) -> None:
-        device: SessyDevice = self.hass.data[DOMAIN][self.config_entry.entry_id][SESSY_DEVICE]
+        device: SessyDevice = self.config_entry.runtime_data.device
         try:
             await device.install_ota(self.action_target)
             self._attr_in_progress = True
@@ -148,6 +152,7 @@ class SessyUpdate(SessyEntity, UpdateEntity):
             raise HomeAssistantError(f"Starting update for {self.name} failed: {e.__class__}") from e
         
         _LOGGER.info(f"Setting OTA status update interval to lower interval (from install action)")
-        assert_cache_interval(self.hass, self.config_entry, SessyApiCommand.OTA_STATUS, SCAN_INTERVAL_OTA_BUSY)
-        await trigger_cache_update(self.hass, self.config_entry, SessyApiCommand.OTA_STATUS)
+
+        self.coordinator.update_interval = SCAN_INTERVAL_OTA_BUSY
+        await self.coordinator.async_request_refresh()
 

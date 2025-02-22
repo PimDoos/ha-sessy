@@ -13,26 +13,17 @@ from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from sessypy.devices import get_sessy_device
 from sessypy.util import SessyLoginException, SessyConnectionException, SessyNotSupportedException
 
-from .const import DOMAIN, SERIAL_NUMBER, SESSY_DEVICE, SESSY_DEVICE_INFO
-from .util import clear_cache_command, generate_device_info, setup_cache, setup_cache_commands
+from .coordinator import setup_coordinators, update_coordinator_options
+from .models import SessyConfigEntry, SessyRuntimeData
+from .util import generate_device_info
 
 _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS: list[Platform] = [Platform.BINARY_SENSOR, Platform.BUTTON, Platform.SENSOR, Platform.SELECT, Platform.NUMBER, Platform.SWITCH, Platform.TIME, Platform.UPDATE]
 
-
-async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
+async def async_setup_entry(hass: HomeAssistant, config_entry: SessyConfigEntry) -> bool:
     """Set up Sessy from a config entry."""
-
-    hass.data.setdefault(DOMAIN, {})
-    hass.data[DOMAIN][config_entry.entry_id] = {}
-
-    hass.data[DOMAIN][config_entry.entry_id][SERIAL_NUMBER] = config_entry.data.get(CONF_USERNAME).upper()
-    
-    # Prevent duplicate entries in older setups
-    if not config_entry.unique_id:
-        config_entry.unique_id = hass.data[DOMAIN][config_entry.entry_id][SERIAL_NUMBER]
-
+   
     host = config_entry.data.get(CONF_HOST)
 
     _LOGGER.debug(f"Connecting to Sessy device at {host}")
@@ -42,7 +33,11 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
             username = config_entry.data.get(CONF_USERNAME),
             password = config_entry.data.get(CONF_PASSWORD),
         )
-        
+
+        # Prevent duplicate entries in older setups
+        if not config_entry.unique_id:
+            config_entry.unique_id = device.serial_number
+
     except SessyLoginException as e:
         raise ConfigEntryAuthFailed(f"Failed to connect to Sessy device at {host}: Authentication failed") from e
     except SessyNotSupportedException as e:
@@ -55,22 +50,17 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     else:
         _LOGGER.info(f"Connection to {device.__class__} at {device.host} successful")
 
-    hass.data[DOMAIN][config_entry.entry_id][SESSY_DEVICE] = device
-
-    # Setup caching
-    await setup_cache(hass, config_entry)
-    await setup_cache_commands(hass, config_entry, device)
-
-    # Update cache command on options flow update
-    async def update_cache_commands(hass, config_entry):
-        await setup_cache_commands(hass, config_entry, device, setup=False)
-
-    config_entry.add_update_listener(
-        listener=update_cache_commands
-    )
+    config_entry.runtime_data = SessyRuntimeData(device = device)
 
     # Generate Device Info
-    hass.data[DOMAIN][config_entry.entry_id][SESSY_DEVICE_INFO] = await generate_device_info(hass, config_entry, device)
+    config_entry.runtime_data.device_info = await generate_device_info(hass, config_entry, device)
+    config_entry.runtime_data.coordinators = await setup_coordinators(hass, config_entry, device)
+
+    config_entry.add_update_listener(
+        listener=update_coordinator_options
+    )
+
+    
 
     await hass.config_entries.async_forward_entry_setups(config_entry, PLATFORMS)
 
@@ -79,10 +69,5 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
-    if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
-        await clear_cache_command(hass, entry)
-        await hass.data[DOMAIN][entry.entry_id][SESSY_DEVICE].close()
-        if entry.entry_id in hass.data[DOMAIN]:
-            hass.data[DOMAIN].pop(entry.entry_id)
-            
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     return unload_ok

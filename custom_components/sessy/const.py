@@ -11,7 +11,7 @@ DEFAULT_SCAN_INTERVAL_POWER = timedelta(seconds=5)
 # Static scan intervals
 SCAN_INTERVAL_OTA_BUSY = timedelta(seconds=10)
 SCAN_INTERVAL_OTA_CHECK = timedelta(hours=6)
-SCAN_INTERVAL_SCHEDULE = {"minute":0,"second":0}
+SCAN_INTERVAL_SCHEDULE = timedelta(hours=1)
 
 SESSY_DEVICE = "sessy_device"
 SERIAL_NUMBER = "serial_number"

@@ -2,7 +2,6 @@
 from __future__ import annotations
 from datetime import datetime, timedelta
 
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     CURRENCY_EURO,
     UnitOfPower,
@@ -19,32 +18,33 @@ from homeassistant.components.sensor import SensorEntity, SensorDeviceClass, Sen
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 
-from sessypy.const import SessyApiCommand, SessySystemState, SessyP1State
+from sessypy.const import SessySystemState, SessyP1State
 from sessypy.devices import SessyBattery, SessyDevice, SessyP1Meter, SessyCTMeter
 
-
-from .const import DOMAIN, SESSY_DEVICE
-from .util import (divide_by_hundred_thousand, enum_to_options_list, get_cache_command, status_string_p1, status_string_system_state, transform_on_list, 
+from .coordinator import SessyCoordinator, SessyCoordinatorEntity
+from .models import SessyConfigEntry
+from .util import (divide_by_hundred_thousand, enum_to_options_list, get_nested_key, status_string_p1, status_string_system_state, transform_on_list, 
                    unit_interval_to_percentage, divide_by_thousand, only_negative_as_positive, only_positive)
-from .sessyentity import SessyEntity
 
 import logging
 _LOGGER = logging.getLogger(__name__)
 
-async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities):
+async def async_setup_entry(hass: HomeAssistant, config_entry: SessyConfigEntry, async_add_entities):
     """Set up the Sessy sensors"""
 
-    device = hass.data[DOMAIN][config_entry.entry_id][SESSY_DEVICE]
+    device = config_entry.runtime_data.device
+    coordinators = config_entry.runtime_data.coordinators
     sensors = []
 
     try:
         # Disable WiFi RSSI sensor if WiFi is not connected on discovery
-        network_status: dict = get_cache_command(hass, config_entry, SessyApiCommand.NETWORK_STATUS)
-        wifi_rssi_present = network_status.get("wifi_sta", dict()).get("rssi", None) != None
-        if wifi_rssi_present:
+        network_status_coordinator: SessyCoordinator = coordinators[device.get_network_status]
+        network_status: dict = network_status_coordinator.raw_data
+
+        if get_nested_key(network_status,"wifi_sta.rssi") != None:
             sensors.append(
                 SessySensor(hass, config_entry, "WiFi RSSI",
-                            SessyApiCommand.NETWORK_STATUS, "wifi_sta.rssi",
+                            network_status_coordinator, "wifi_sta.rssi",
                             SensorDeviceClass.SIGNAL_STRENGTH, SensorStateClass.MEASUREMENT, SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
                             entity_category=EntityCategory.DIAGNOSTIC)
             )
@@ -55,7 +55,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
     for memory_type in ("internal","external"):
         sensors.append(
             SessySensor(hass, config_entry, f"{ memory_type.title() } Memory Available",
-                        SessyApiCommand.SYSTEM_INFO, f"{ memory_type }_mem_available",
+                        coordinators[device.get_system_info], f"{ memory_type }_mem_available",
                         SensorDeviceClass.DATA_SIZE, SensorStateClass.MEASUREMENT, UnitOfInformation.BYTES,
                         entity_category=EntityCategory.DIAGNOSTIC)
 
@@ -66,23 +66,22 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
         # Dynamic Schedule
         try:
             # Disable sensors if no schedule is present on discovery
-            dynamic_schedule: dict = get_cache_command(hass, config_entry, SessyApiCommand.DYNAMIC_SCHEDULE)
-            
-            power_schedule_available = dynamic_schedule.get("power_strategy", None) != None
-            if power_schedule_available:
+            dynamic_schedule_coordinator: SessyCoordinator = coordinators[device.get_dynamic_schedule]
+            dynamic_schedule: dict = dynamic_schedule_coordinator.raw_data
+
+            if dynamic_schedule.get("power_strategy", None) != None:
                 sensors.append(
                     SessyScheduleSensor(hass, config_entry, "Power Schedule",
-                                SessyApiCommand.DYNAMIC_SCHEDULE, "power_strategy",
+                                dynamic_schedule_coordinator, "power_strategy",
                                 SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.WATT,
                                 schedule_key="power"
                     )
                 )
 
-            energy_prices_available = dynamic_schedule.get("energy_prices", None) != None
-            if energy_prices_available:
+            if dynamic_schedule.get("energy_prices", None) != None:
                 sensors.append(
                     SessyScheduleSensor(hass, config_entry, "Energy Price",
-                                SessyApiCommand.DYNAMIC_SCHEDULE, "energy_prices",
+                                dynamic_schedule_coordinator, "energy_prices",
                                 None, SensorStateClass.MEASUREMENT, f"{CURRENCY_EURO}/{UnitOfEnergy.KILO_WATT_HOUR}",
                                 schedule_key="price", transform_function=divide_by_hundred_thousand                
                     )
@@ -94,55 +93,56 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
 
         # Power Status
         try:
-            power_status: dict = get_cache_command(hass, config_entry, SessyApiCommand.POWER_STATUS)
+            power_status_coordinator: SessyCoordinator = coordinators[device.get_power_status]
+            power_status: dict = power_status_coordinator.raw_data
 
             sensors.append(
                 SessySensor(hass, config_entry, "System State",
-                            SessyApiCommand.POWER_STATUS, "sessy.system_state",
+                            power_status_coordinator, "sessy.system_state",
                             SensorDeviceClass.ENUM,
                             translation_key = "battery_system_state", transform_function=status_string_system_state,
                             options = enum_to_options_list(SessySystemState, status_string_system_state))
             )
             sensors.append(
                 SessySensor(hass, config_entry, "System State Details",
-                            SessyApiCommand.POWER_STATUS, "sessy.system_state_details",
+                            power_status_coordinator, "sessy.system_state_details",
                             entity_category=EntityCategory.DIAGNOSTIC)
             )
             sensors.append(
                 SessySensor(hass, config_entry, "State of Charge",
-                            SessyApiCommand.POWER_STATUS, "sessy.state_of_charge",
+                            power_status_coordinator, "sessy.state_of_charge",
                             SensorDeviceClass.BATTERY, SensorStateClass.MEASUREMENT, PERCENTAGE,
                             transform_function=unit_interval_to_percentage, precision = 1)
             )
             sensors.append(
                 SessySensor(hass, config_entry, "Power",
-                            SessyApiCommand.POWER_STATUS, "sessy.power",
+                            power_status_coordinator, "sessy.power",
                             SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.WATT)
             )
             sensors.append(
                 SessySensor(hass, config_entry, "Charge Power",
-                            SessyApiCommand.POWER_STATUS, "sessy.power",
+                            power_status_coordinator, "sessy.power",
                             SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.WATT,
                             transform_function=only_negative_as_positive)
             )
             sensors.append(
                 SessySensor(hass, config_entry, "Discharge Power",
-                            SessyApiCommand.POWER_STATUS, "sessy.power",
+                            power_status_coordinator, "sessy.power",
                             SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.WATT,
                             transform_function=only_positive)
             )
             sensors.append(
                 SessySensor(hass, config_entry, "Frequency",
-                            SessyApiCommand.POWER_STATUS, "sessy.frequency",
+                            power_status_coordinator, "sessy.frequency",
                             SensorDeviceClass.FREQUENCY, SensorStateClass.MEASUREMENT, UnitOfFrequency.HERTZ,
                             transform_function=divide_by_thousand, precision = 3)
             )
 
         
-            if power_status.get("sessy", dict()).get("inverter_current_ma", None) != None:
+            if get_nested_key(power_status, "sessy.inverter_current_ma") != None:
                 sensors.append(
                     SessySensor(hass, config_entry, "Inverter Current",
-                                SessyApiCommand.POWER_STATUS, "sessy.inverter_current_ma",
+                                power_status_coordinator, "sessy.inverter_current_ma",
                                 SensorDeviceClass.CURRENT, SensorStateClass.MEASUREMENT, UnitOfElectricCurrent.MILLIAMPERE,
                                 suggested_unit_of_measurement=UnitOfElectricCurrent.AMPERE)
                 )
@@ -153,17 +153,18 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
         # Sessy Energy sensors
         try:
             # Fetch API content to check compatibility
-            energy_status: dict = get_cache_command(hass, config_entry, SessyApiCommand.ENERGY_STATUS)
+            energy_status_coordinator: SessyCoordinator = coordinators[device.get_energy_status]
+            energy_status: dict = energy_status_coordinator.raw_data
             if energy_status != None:
                 sensors.append(
                     SessySensor(hass, config_entry, f"Charged Energy",
-                                SessyApiCommand.ENERGY_STATUS, f"sessy_energy.import_wh",
+                                energy_status_coordinator, f"sessy_energy.import_wh",
                                 SensorDeviceClass.ENERGY, SensorStateClass.TOTAL_INCREASING, UnitOfEnergy.WATT_HOUR, 
                                 suggested_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR)
                 )
                 sensors.append(
                     SessySensor(hass, config_entry, f"Discharged Energy",
-                                SessyApiCommand.ENERGY_STATUS, f"sessy_energy.export_wh",
+                                energy_status_coordinator, f"sessy_energy.export_wh",
                                 SensorDeviceClass.ENERGY, SensorStateClass.TOTAL_INCREASING, UnitOfEnergy.WATT_HOUR, 
                                 suggested_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR)
                 )
@@ -173,19 +174,19 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
         for phase_id in range(1,4):
             sensors.append(
                 SessySensor(hass, config_entry, f"Renewable Energy Phase { phase_id } Voltage",
-                            SessyApiCommand.POWER_STATUS, f"renewable_energy_phase{ phase_id }.voltage_rms",
+                            power_status_coordinator, f"renewable_energy_phase{ phase_id }.voltage_rms",
                             SensorDeviceClass.VOLTAGE, SensorStateClass.MEASUREMENT, UnitOfElectricPotential.MILLIVOLT,
                             suggested_unit_of_measurement=UnitOfElectricPotential.VOLT)
             )
             sensors.append(
                 SessySensor(hass, config_entry, f"Renewable Energy Phase { phase_id } Current",
-                            SessyApiCommand.POWER_STATUS, f"renewable_energy_phase{ phase_id }.current_rms",
+                            power_status_coordinator, f"renewable_energy_phase{ phase_id }.current_rms",
                             SensorDeviceClass.CURRENT, SensorStateClass.MEASUREMENT, UnitOfElectricCurrent.MILLIAMPERE,
                             suggested_unit_of_measurement=UnitOfElectricCurrent.AMPERE)
             )
             sensors.append(
                 SessySensor(hass, config_entry, f"Renewable Energy Phase { phase_id } Power",
-                            SessyApiCommand.POWER_STATUS, f"renewable_energy_phase{ phase_id }.power",
+                            power_status_coordinator, f"renewable_energy_phase{ phase_id }.power",
                             SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.WATT)
             )
 
@@ -194,13 +195,13 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
                 if energy_status != None:
                     sensors.append(
                         SessySensor(hass, config_entry, f"Renewable Energy Phase { phase_id } Imported Energy",
-                                    SessyApiCommand.ENERGY_STATUS, f"energy_phase{ phase_id }.import_wh",
+                                    energy_status_coordinator, f"energy_phase{ phase_id }.import_wh",
                                     SensorDeviceClass.ENERGY, SensorStateClass.TOTAL_INCREASING, UnitOfEnergy.WATT_HOUR, 
                                     suggested_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR)
                     )
                     sensors.append(
                         SessySensor(hass, config_entry, f"Renewable Energy Phase { phase_id } Exported Energy",
-                                    SessyApiCommand.ENERGY_STATUS, f"energy_phase{ phase_id }.export_wh",
+                                    energy_status_coordinator, f"energy_phase{ phase_id }.export_wh",
                                     SensorDeviceClass.ENERGY, SensorStateClass.TOTAL_INCREASING, UnitOfEnergy.WATT_HOUR, 
                                     suggested_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR)
                     )
@@ -209,9 +210,10 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
 
 
     elif isinstance(device, SessyP1Meter):
+        p1_details_coordinator: SessyCoordinator = coordinators[device.get_p1_details]
         sensors.append(
             SessySensor(hass, config_entry, "P1 Status",
-                        SessyApiCommand.P1_DETAILS, "state",
+                        p1_details_coordinator, "state",
                         SensorDeviceClass.ENUM,
                         translation_key = "p1_state", transform_function=status_string_p1,
                         options = enum_to_options_list(SessyP1State, status_string_p1)
@@ -219,30 +221,30 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
         )
         sensors.append(
             SessySensor(hass, config_entry, "Tariff",
-                        SessyApiCommand.P1_DETAILS, "tariff_indicator")
+                        p1_details_coordinator, "tariff_indicator")
         )
 
         sensors.append(
             SessySensor(hass, config_entry, "P1 Power",
-                        SessyApiCommand.P1_DETAILS, "power_total",
+                        p1_details_coordinator, "power_total",
                         SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.WATT)
         )
         sensors.append(
             SessySensor(hass, config_entry, "P1 Consuming Power",
-                        SessyApiCommand.P1_DETAILS, "power_consumed",
+                        p1_details_coordinator, "power_consumed",
                         SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.WATT)
         )
         sensors.append(
             SessySensor(hass, config_entry, "P1 Producing Power",
-                        SessyApiCommand.P1_DETAILS, "power_produced",
+                        p1_details_coordinator, "power_produced",
                         SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.WATT)
         )
         try:
-            settings: dict = get_cache_command(hass, config_entry, SessyApiCommand.P1_DETAILS)
-            gas_meter_present = settings.get("gas_meter_value", 0) != 0
+            p1_details: dict = p1_details_coordinator.raw_data
+            gas_meter_present = p1_details.get("gas_meter_value", 0) != 0
             sensors.append(
                 SessySensor(hass, config_entry, f"Gas Consumption",
-                            SessyApiCommand.P1_DETAILS, f"gas_meter_value",
+                            p1_details_coordinator, f"gas_meter_value",
                             SensorDeviceClass.GAS, SensorStateClass.TOTAL, UnitOfVolume.CUBIC_METERS, 
                             transform_function=divide_by_thousand, precision = 3, enabled_default = gas_meter_present)
             )
@@ -253,81 +255,83 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
         for phase_id in range(1,4):
             sensors.append(
                 SessySensor(hass, config_entry, f"Phase { phase_id } Voltage",
-                            SessyApiCommand.P1_DETAILS, f"voltage_l{ phase_id }",
+                            p1_details_coordinator, f"voltage_l{ phase_id }",
                             SensorDeviceClass.VOLTAGE, SensorStateClass.MEASUREMENT, UnitOfElectricPotential.MILLIVOLT,
                             suggested_unit_of_measurement=UnitOfElectricPotential.VOLT)
             )
             sensors.append(
                 SessySensor(hass, config_entry, f"Phase { phase_id } Current",
-                            SessyApiCommand.P1_DETAILS, f"current_l{ phase_id }",
+                            p1_details_coordinator, f"current_l{ phase_id }",
                             SensorDeviceClass.CURRENT, SensorStateClass.MEASUREMENT, UnitOfElectricCurrent.MILLIAMPERE, precision = 0,
                             suggested_unit_of_measurement=UnitOfElectricCurrent.AMPERE)
             )
             sensors.append(
             SessySensor(hass, config_entry, f"Phase { phase_id } Consuming Power",
-                        SessyApiCommand.P1_DETAILS, f"power_consumed_l{ phase_id }",
+                        p1_details_coordinator, f"power_consumed_l{ phase_id }",
                         SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.WATT)
             )
             sensors.append(
                 SessySensor(hass, config_entry, f"Phase { phase_id } Producing Power",
-                            SessyApiCommand.P1_DETAILS, f"power_produced_l{ phase_id }",
+                            p1_details_coordinator, f"power_produced_l{ phase_id }",
                             SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.WATT)
             )
 
         for tariff_id in range(1,3):
             sensors.append(
                 SessySensor(hass, config_entry, f"Tariff { tariff_id } Consumed Energy",
-                            SessyApiCommand.P1_DETAILS, f"power_consumed_tariff{ tariff_id }",
+                            p1_details_coordinator, f"power_consumed_tariff{ tariff_id }",
                             SensorDeviceClass.ENERGY, SensorStateClass.TOTAL, UnitOfEnergy.WATT_HOUR, 
                             suggested_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR)
             )
             sensors.append(
                 SessySensor(hass, config_entry, f"Tariff { tariff_id } Produced Energy",
-                            SessyApiCommand.P1_DETAILS, f"power_produced_tariff{ tariff_id }",
+                            p1_details_coordinator, f"power_produced_tariff{ tariff_id }",
                             SensorDeviceClass.ENERGY, SensorStateClass.TOTAL, UnitOfEnergy.WATT_HOUR, 
                             suggested_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR)
             )
 
 
     elif isinstance(device, SessyCTMeter):
+        ct_details_coordinator: SessyCoordinator = coordinators[device.get_ct_details]
         sensors.append(
             SessySensor(hass, config_entry, "Total Power",
-                        SessyApiCommand.CT_DETAILS, "total_power",
+                        ct_details_coordinator, "total_power",
                         SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.WATT)
         )
         for phase_id in range(1,4):
             sensors.append(
                 SessySensor(hass, config_entry, f"Phase { phase_id } Voltage",
-                            SessyApiCommand.CT_DETAILS, f"voltage_l{ phase_id }",
+                            ct_details_coordinator, f"voltage_l{ phase_id }",
                             SensorDeviceClass.VOLTAGE, SensorStateClass.MEASUREMENT, UnitOfElectricPotential.MILLIVOLT, precision = 3,
                             suggested_unit_of_measurement=UnitOfElectricPotential.VOLT)
             )
             sensors.append(
                 SessySensor(hass, config_entry, f"Phase { phase_id } Current",
-                            SessyApiCommand.CT_DETAILS, f"current_l{ phase_id }",
+                            ct_details_coordinator, f"current_l{ phase_id }",
                             SensorDeviceClass.CURRENT, SensorStateClass.MEASUREMENT, UnitOfElectricCurrent.MILLIAMPERE, precision = 3,
                             suggested_unit_of_measurement=UnitOfElectricCurrent.AMPERE)
             )
             sensors.append(
                 SessySensor(hass, config_entry, f"Phase { phase_id } Power",
-                            SessyApiCommand.CT_DETAILS, f"power_l{ phase_id }",
+                            ct_details_coordinator, f"power_l{ phase_id }",
                             SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.WATT)
             )
 
             # Metered phase energy sensors
             try:
                 # Fetch API content to check compatibility
-                energy_status: dict = get_cache_command(hass, config_entry, SessyApiCommand.ENERGY_STATUS)
+                energy_status_coordinator: SessyCoordinator = coordinators[device.get_energy_status]
+                energy_status: dict = energy_status_coordinator.raw_data
                 if energy_status != None:
                     sensors.append(
                         SessySensor(hass, config_entry, f"Phase { phase_id } Imported Energy",
-                                    SessyApiCommand.ENERGY_STATUS, f"energy_phase{ phase_id }.import_wh",
+                                    energy_status_coordinator, f"energy_phase{ phase_id }.import_wh",
                                     SensorDeviceClass.ENERGY, SensorStateClass.TOTAL_INCREASING, UnitOfEnergy.WATT_HOUR, 
                                     suggested_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR)
                     )
                     sensors.append(
                         SessySensor(hass, config_entry, f"Phase { phase_id } Exported Energy",
-                                    SessyApiCommand.ENERGY_STATUS, f"energy_phase{ phase_id }.export_wh",
+                                    energy_status_coordinator, f"energy_phase{ phase_id }.export_wh",
                                     SensorDeviceClass.ENERGY, SensorStateClass.TOTAL_INCREASING, UnitOfEnergy.WATT_HOUR, 
                                     suggested_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR)
                     )
@@ -336,16 +340,16 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
 
     async_add_entities(sensors)
 
-class SessySensor(SessyEntity, SensorEntity):
-    def __init__(self, hass: HomeAssistant, config_entry: ConfigEntry, name: str,
-                 cache_command: SessyApiCommand, cache_key,
+class SessySensor(SessyCoordinatorEntity, SensorEntity):
+    def __init__(self, hass: HomeAssistant, config_entry: SessyConfigEntry, name: str,
+                 coordinator: SessyCoordinator, data_key,
                  device_class: SensorDeviceClass = None, state_class: SensorStateClass = None, unit_of_measurement = None,
                  transform_function: function = None, translation_key: str = None,
                  options = None, entity_category: EntityCategory = None, precision: int = None, 
                  suggested_unit_of_measurement = None, enabled_default: bool = True):
 
         super().__init__(hass=hass, config_entry=config_entry, name=name,
-                       cache_command=cache_command, cache_key=cache_key,
+                       coordinator=coordinator, data_key=data_key,
                        transform_function=transform_function, translation_key=translation_key)
 
         self._attr_device_class = device_class
@@ -366,15 +370,15 @@ class SessySensor(SessyEntity, SensorEntity):
 
 class SessyScheduleSensor(SessySensor):
 
-    def __init__(self, hass: HomeAssistant, config_entry: ConfigEntry, name: str,
-                 cache_command: SessyApiCommand, cache_key,
+    def __init__(self, hass: HomeAssistant, config_entry: SessyConfigEntry, name: str,
+                 coordinator: SessyCoordinator, data_key,
                  device_class: SensorDeviceClass = None, state_class: SensorStateClass = None, unit_of_measurement = None,
                  transform_function: function = None, schedule_key: str = None,
                  precision: int = None, enabled_default: bool = True):
 
         self.schedule_transform_function = transform_function
         super().__init__(hass=hass, config_entry=config_entry, name=name,
-                       cache_command=cache_command, cache_key=cache_key,
+                       coordinator=coordinator, data_key=data_key,
                        transform_function=None,
                        device_class=device_class, state_class=state_class, unit_of_measurement=unit_of_measurement,
                        precision=precision, enabled_default=enabled_default)

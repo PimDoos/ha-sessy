@@ -222,7 +222,7 @@ async def generate_device_info(hass: HomeAssistant, config_entry: ConfigEntry, d
 def get_nested_key(data, key):
     if data == None:
         return None
-    elif len(value) == 0:
+    elif len(data) == 0:
         return None
     elif key == None or len(key) == 0:
         return data
