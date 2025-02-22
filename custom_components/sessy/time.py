@@ -38,7 +38,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: SessyConfigEntry,
                 stop_time = time_from_string(settings_enabled_time[1])
 
             settings_enabled_time = f"{start_time.strftime('%H:%M')}-{stop_time.strftime('%H:%M')}"
-            return await device.set_system_settings("enabled_time", settings_enabled_time)
+            return await device.set_system_setting("enabled_time", settings_enabled_time)
         
         async def update_start_time(value: time):
             return await partial_update_enabled_time(start_time = value)
@@ -73,15 +73,18 @@ class SessyTimeEntity(SessyCoordinatorEntity, TimeEntity):
                  transform_function: function = None):
         
         super().__init__(hass=hass, config_entry=config_entry, name=name, 
-                       coordinator=coordinator, data_key=data_key, 
-                       transform_function=transform_function)
-
+                       coordinator=coordinator, data_key=data_key)
+        self.pre_transform_function = transform_function
         self._attr_entity_category = entity_category
+        self._attr_native_value = None
         self.action_function: function = action_function
     
     def update_from_cache(self):
         self._attr_available = self.cache_value != None
-        self._attr_native_value = self.cache_value
+        if self.pre_transform_function: 
+            self._attr_native_value = self.pre_transform_function(self.cache_value)
+        else: 
+            self._attr_native_value = self.cache_value
         
     async def async_set_value(self, value: time):
         try:
@@ -95,4 +98,4 @@ class SessyTimeEntity(SessyCoordinatorEntity, TimeEntity):
         except Exception as e:
             raise HomeAssistantError(f"Setting value for {self.name} failed: {e.__class__}") from e
             
-        await self.coordinator.async_refresh
+        await self.coordinator.async_refresh()
