@@ -13,7 +13,7 @@ from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from sessypy.devices import get_sessy_device
 from sessypy.util import SessyLoginException, SessyConnectionException, SessyNotSupportedException
 
-from .coordinator import setup_coordinators, update_coordinator_options
+from .coordinator import refresh_coordinators, setup_coordinators, update_coordinator_options
 from .models import SessyConfigEntry, SessyRuntimeData
 from .util import generate_device_info
 
@@ -60,14 +60,16 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: SessyConfigEntry)
         listener=update_coordinator_options
     )
 
-    
-
     await hass.config_entries.async_forward_entry_setups(config_entry, PLATFORMS)
+
+    # Refresh data once more to populate flattened data
+    await refresh_coordinators(config_entry)
 
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_unload_entry(hass: HomeAssistant, config_entry: SessyConfigEntry) -> bool:
     """Unload a config entry."""
-    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    unload_ok = await hass.config_entries.async_unload_platforms(config_entry, PLATFORMS)
+    await config_entry.runtime_data.device.close()
     return unload_ok

@@ -46,7 +46,7 @@ async def setup_coordinators(hass, config_entry: SessyConfigEntry, device: Sessy
             SessyCoordinator(hass, config_entry, device.get_dynamic_schedule), # TODO align to hour, only poll once every hour
             SessyCoordinator(hass, config_entry, device.get_power_status, scan_interval_power),
             SessyCoordinator(hass, config_entry, device.get_power_strategy),
-            SessyCoordinator(hass, config_entry, device.get_system_settings),    
+            SessyCoordinator(hass, config_entry, device.get_system_settings),
         ])
 
 
@@ -94,6 +94,11 @@ async def update_coordinator_options(hass, config_entry: SessyConfigEntry):
     for coordinator in config_entry.runtime_data.coordinators:
         if coordinator._device_function in update_coordinator_functions:
             coordinator.update_interval = scan_interval_power
+
+async def refresh_coordinators(config_entry: SessyConfigEntry):
+    coordinators = config_entry.runtime_data.coordinators
+    for coordinator in coordinators:
+        await coordinators[coordinator].async_refresh()
 
 class SessyCoordinator(DataUpdateCoordinator):
     """Sessy API coordinator"""
@@ -182,15 +187,11 @@ class SessyCoordinatorEntity(CoordinatorEntity):
 
         self._update_failed_count = 0
 
-
     @callback
     def _handle_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
         try:
-            self.cache_value = self.coordinator.data.get(self.data_key, None)
-            if self.cache_value is None:
-                raise TypeError(f"Key {self.data_key} has no value in coordinator {self.coordinator.name}")
-
+            self.copy_from_cache()
             self._update_failed_count = 0
         except Exception as e:
             self._update_failed_count += 1
@@ -206,6 +207,11 @@ class SessyCoordinatorEntity(CoordinatorEntity):
             self.update_from_cache()
             self.async_write_ha_state()
         
+    def copy_from_cache(self):
+        self.cache_value = self.coordinator.data.get(self.data_key, None)
+        if self.cache_value is None:
+            raise TypeError(f"Key {self.data_key} has no value in coordinator {self.coordinator.name}")
+         
     def update_from_cache(self):
         """Entity function to write the latest cache value to the proper attributes. Implemented on platform level."""
         raise NotImplementedError()
