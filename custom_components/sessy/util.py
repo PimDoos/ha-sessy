@@ -20,6 +20,7 @@ from .const import (
 	SESSY_CACHE_TRIGGERS, SESSY_DEVICE, UPDATE_TOPIC, DEFAULT_SCAN_INTERVAL, SCAN_INTERVAL_SCHEDULE
 )
 
+# START legacy caching system
 async def setup_cache(hass: HomeAssistant, config_entry: ConfigEntry):
     hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE] = dict()
     hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE_TRACKERS] = dict()
@@ -61,6 +62,7 @@ async def setup_cache_commands(hass, config_entry: ConfigEntry, device: SessyDev
 
     if isinstance(device, SessyBattery) or isinstance(device, SessyCTMeter):
         await setup_cache_command(hass, config_entry, SessyApiCommand.ENERGY_STATUS)
+
 
 async def setup_cache_command(hass: HomeAssistant, config_entry: ConfigEntry, command: SessyApiCommand, interval: timedelta | dict = DEFAULT_SCAN_INTERVAL):
     update = set_cache_command(hass, config_entry, command, interval)
@@ -133,6 +135,10 @@ async def trigger_cache_update(hass: HomeAssistant, config_entry: ConfigEntry, c
     update = hass.data[DOMAIN][config_entry.entry_id][SESSY_CACHE_TRIGGERS][command]
     await update()
 
+# END Legacy caching system
+
+# Transform functions
+
 def backend_status_string(status_string: str, prefix: str = "") -> str:
     return status_string.removeprefix(prefix).lower()
 
@@ -189,6 +195,9 @@ def enum_to_options_list(options: Enum, transform_function: function = None) -> 
 def unit_interval_to_percentage(input: float) -> float:
     return round(input * 100,1)
 
+# End transform functions
+
+
 async def generate_device_info(hass: HomeAssistant, config_entry: ConfigEntry, device: SessyDevice) -> DeviceInfo:
     
     model = "Sessy Device"
@@ -209,3 +218,25 @@ async def generate_device_info(hass: HomeAssistant, config_entry: ConfigEntry, d
     )
 
     return device_info
+
+def get_nested_key(data, key):
+    if data == None:
+        return None
+    elif len(value) == 0:
+        return None
+    elif key == None or len(key) == 0:
+        return data
+    else:
+        value = data
+        node: str
+        for node in key.split("."):
+            if node.isdigit():
+                node = int(node)
+            if value == None:
+                return None
+            elif node in value:
+                value = value[node]
+                continue
+            else:
+                value = None
+    return value
