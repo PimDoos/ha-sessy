@@ -147,7 +147,7 @@ class SessyCoordinator(DataUpdateCoordinator):
             contexts: list[SessyEntityContext] = set(self.async_contexts())
             flattened_data = dict()
             for context in contexts:
-                flattened_data[context.data_key] = context.apply(data)
+                flattened_data[context] = context.apply(data)
 
             self._raw_data = data
             return flattened_data
@@ -170,7 +170,8 @@ class SessyCoordinatorEntity(CoordinatorEntity):
     """Base Sessy Entity, coordinated by SessyCoordinator"""
     def __init__(self, hass: HomeAssistant, config_entry: SessyConfigEntry, name: str,
                  coordinator: SessyCoordinator, data_key: str, transform_function: function = None, translation_key: str = None):
-        super().__init__(coordinator, SessyEntityContext(data_key, transform_function))
+        self.context = SessyEntityContext(data_key, transform_function)
+        super().__init__(coordinator, self.context)
         self.hass = hass
         self.config_entry = config_entry
         
@@ -208,7 +209,7 @@ class SessyCoordinatorEntity(CoordinatorEntity):
             self.async_write_ha_state()
         
     def copy_from_cache(self):
-        self.cache_value = self.coordinator.data.get(self.data_key, None)
+        self.cache_value = self.coordinator.data.get(self.context, None)
         if self.cache_value is None:
             raise TypeError(f"Key {self.data_key} has no value in coordinator {self.coordinator.name}")
          

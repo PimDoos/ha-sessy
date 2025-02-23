@@ -73,18 +73,14 @@ class SessyTimeEntity(SessyCoordinatorEntity, TimeEntity):
                  transform_function: function = None):
         
         super().__init__(hass=hass, config_entry=config_entry, name=name, 
-                       coordinator=coordinator, data_key=data_key)
-        self.pre_transform_function = transform_function
+                       coordinator=coordinator, data_key=data_key, transform_function=transform_function)
         self._attr_entity_category = entity_category
         self._attr_native_value = None
         self.action_function: function = action_function
     
     def update_from_cache(self):
         self._attr_available = self.cache_value != None
-        if self.pre_transform_function: 
-            self._attr_native_value = self.pre_transform_function(self.cache_value)
-        else: 
-            self._attr_native_value = self.cache_value
+        self._attr_native_value = self.cache_value
         
     async def async_set_value(self, value: time):
         try:
