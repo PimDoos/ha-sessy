@@ -43,7 +43,7 @@ async def setup_coordinators(hass, config_entry: SessyConfigEntry, device: Sessy
 
     if isinstance(device, SessyBattery):
         coordinators.extend([
-            SessyCoordinator(hass, config_entry, device.get_dynamic_schedule), # TODO align to hour, only poll once every hour
+            SessyCoordinator(hass, config_entry, device.get_dynamic_schedule, SCAN_INTERVAL_SCHEDULE),
             SessyCoordinator(hass, config_entry, device.get_power_status, scan_interval_power),
             SessyCoordinator(hass, config_entry, device.get_power_strategy),
             SessyCoordinator(hass, config_entry, device.get_system_settings),

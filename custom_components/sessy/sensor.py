@@ -17,6 +17,7 @@ from homeassistant.const import (
 from homeassistant.components.sensor import SensorEntity, SensorDeviceClass, SensorStateClass
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
+from homeassistant.helpers.event import async_track_time_change
 
 from sessypy.const import SessySystemState, SessyP1State
 from sessypy.devices import SessyBattery, SessyDevice, SessyP1Meter, SessyCTMeter
@@ -384,6 +385,12 @@ class SessyScheduleSensor(SessySensor):
                        precision=precision, enabled_default=enabled_default)
         
         self.schedule_key = schedule_key
+
+        async def update_schedule(event_time_utc: datetime = None):
+            self.update_from_cache()
+
+        # Update on top of hour
+        self.tracker = async_track_time_change(hass, update_schedule, None, 0, 0)
         
     def update_from_cache(self):
         now = datetime.now()
