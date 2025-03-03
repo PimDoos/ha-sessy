@@ -27,5 +27,7 @@ SESSY_CACHE_TRIGGERS = "sessy_cache_triggers"
 SESSY_CACHE_INTERVAL = "sessy_cache_interval"
 
 ENTITY_ERROR_THRESHOLD = 5
+COORDINATOR_RETRIES = 5
+COORDINATOR_RETRY_DELAY = 1
 
 SESSY_RELEASE_NOTES_URL = "https://www.sessy.nl/firmware-updates"

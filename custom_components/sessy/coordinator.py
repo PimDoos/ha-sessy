@@ -1,6 +1,7 @@
 """API Data Update Coordinator for Sessy"""
 from __future__ import annotations
 
+import asyncio
 from datetime import timedelta
 import logging
 
@@ -17,7 +18,7 @@ from homeassistant.helpers.update_coordinator import (
 from sessypy.devices import SessyBattery, SessyCTMeter, SessyDevice, SessyMeter, SessyP1Meter
 from sessypy.util import SessyConnectionException, SessyLoginException, SessyNotSupportedException
 
-from .const import DEFAULT_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL_POWER, ENTITY_ERROR_THRESHOLD, SCAN_INTERVAL_OTA_CHECK, SCAN_INTERVAL_SCHEDULE
+from .const import COORDINATOR_RETRIES, COORDINATOR_RETRY_DELAY, DEFAULT_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL_POWER, ENTITY_ERROR_THRESHOLD, SCAN_INTERVAL_OTA_CHECK, SCAN_INTERVAL_SCHEDULE
 from .models import SessyConfigEntry
 from .util import get_nested_key
 
@@ -138,26 +139,30 @@ class SessyCoordinator(DataUpdateCoordinator):
         This is the place to pre-process the data to lookup tables
         so entities can quickly look up their data.
         """
-        try:
-            # Note: asyncio.TimeoutError and aiohttp.ClientError are already
-            # handled by the data update coordinator.
-            async with async_timeout.timeout(self.update_interval.seconds / 2):
-                data = await self._device_function()
+        for retry in range(COORDINATOR_RETRIES):
+            try:
+                # Note: asyncio.TimeoutError and aiohttp.ClientError are already
+                # handled by the data update coordinator.
+                async with async_timeout.timeout(self.update_interval.seconds / 2):
+                    data = await self._device_function()
 
-            contexts: list[SessyEntityContext] = set(self.async_contexts())
-            flattened_data = dict()
-            for context in contexts:
-                flattened_data[context] = context.apply(data)
+                contexts: list[SessyEntityContext] = set(self.async_contexts())
+                flattened_data = dict()
+                for context in contexts:
+                    flattened_data[context] = context.apply(data)
 
-            self._raw_data = data
-            return flattened_data
+                self._raw_data = data
+                return flattened_data
 
-        except SessyLoginException as err:
-            # Raising ConfigEntryAuthFailed will cancel future updates
-            # and start a config flow with SOURCE_REAUTH (async_step_reauth)
-            raise ConfigEntryAuthFailed from err
-        except SessyConnectionException as err:
-            raise UpdateFailed(f"Error communicating with Sessy API: {err}")
+            except SessyLoginException as err:
+                # Raising ConfigEntryAuthFailed will cancel future updates
+                # and start a config flow with SOURCE_REAUTH (async_step_reauth)
+                raise ConfigEntryAuthFailed from err
+            except SessyConnectionException as err:
+                await asyncio.sleep(COORDINATOR_RETRY_DELAY)
+                continue
+
+        raise UpdateFailed(f"Error communicating with Sessy API after {COORDINATOR_RETRIES} retries: {err}")
     
     def get_data(self):
         return self.data
