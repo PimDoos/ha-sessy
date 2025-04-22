@@ -388,6 +388,7 @@ class SessyScheduleSensor(SessySensor):
 
         async def update_schedule(event_time_utc: datetime = None):
             self.update_from_cache()
+            self.async_write_ha_state()
 
         # Update on top of hour
         self.tracker = async_track_time_change(hass, update_schedule, None, 0, 0)
@@ -397,11 +398,16 @@ class SessyScheduleSensor(SessySensor):
 
         schedule_today = self.day_schedule()
         schedule_today_values = schedule_today.get(self.schedule_key, list())
-        current_value = schedule_today_values[now.hour]
+        
         if self.schedule_transform_function:
             current_value = self.schedule_transform_function(
                 schedule_today_values[now.hour]
             )
+        else:
+            current_value = schedule_today_values[now.hour]
+        
+        self._attr_native_value = current_value
+        self._attr_available = self._attr_native_value != None
 
         self._attr_extra_state_attributes = {}
         for schedule in self.cache_value:
@@ -412,10 +418,6 @@ class SessyScheduleSensor(SessySensor):
                 )
             else:
                 self._attr_extra_state_attributes[schedule.get("date")] = schedule.get(self.schedule_key)
-
-        self._attr_native_value = current_value
-        self._attr_available = self._attr_native_value != None
-        
 
     def day_schedule(self, offset: int = 0) -> dict:
         schedule_date = datetime.now()
