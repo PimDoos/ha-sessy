@@ -1,50 +1,49 @@
 """Button entities to control Sessy"""
 from __future__ import annotations
-from enum import Enum
 
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.components.button import ButtonEntity, ButtonDeviceClass
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity import EntityCategory
 
-from sessypy.const import SessyApiCommand
 from sessypy.devices import SessyDevice
 from sessypy.util import SessyConnectionException, SessyNotSupportedException
 
+from .coordinator import SessyCoordinator, SessyCoordinatorEntity
+from .models import SessyConfigEntry
 
-from .const import DOMAIN, SESSY_DEVICE
-from .sessyentity import SessyEntity
-
-async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities):
+async def async_setup_entry(hass: HomeAssistant, config_entry: SessyConfigEntry, async_add_entities):
     """Set up the Sessy buttons"""
 
-    device: SessyDevice = hass.data[DOMAIN][config_entry.entry_id][SESSY_DEVICE]
+    device: SessyDevice = config_entry.runtime_data.device
+    coordinators = config_entry.runtime_data.coordinators
+
     buttons = []
 
+    
     buttons.append(
         SessyButton(hass, config_entry, "Dongle Restart",
-                    SessyApiCommand.SYSTEM_INFO, 'status', device.restart,
+                    coordinators[device.get_system_info], 'status', device.restart,
                     device_class=ButtonDeviceClass.RESTART, entity_category=EntityCategory.DIAGNOSTIC
                     )
     )
     buttons.append(
         SessyButton(hass, config_entry, "Check for updates",
-                    SessyApiCommand.OTA_STATUS, 'status', device.check_ota,
+                    coordinators[device.get_ota_status], 'status', device.check_ota,
                     entity_category=EntityCategory.DIAGNOSTIC
                     )
     )
 
     async_add_entities(buttons)
     
-class SessyButton(SessyEntity, ButtonEntity):
-    def __init__(self, hass: HomeAssistant, config_entry: ConfigEntry, name: str,
-                 cache_command: SessyApiCommand, cache_key: str, action_function: function,
+class SessyButton(SessyCoordinatorEntity, ButtonEntity):
+    def __init__(self, hass: HomeAssistant, config_entry: SessyConfigEntry, name: str,
+                 coordinator: SessyCoordinator, data_key: str, action_function: function,
                  device_class: ButtonDeviceClass = None, entity_category: EntityCategory = None, 
                  transform_function: function = None, translation_key: str = None):
         
         super().__init__(hass=hass, config_entry=config_entry, name=name, 
-                       cache_command=cache_command, cache_key=cache_key, 
+                       coordinator=coordinator, data_key=data_key, 
                        transform_function=transform_function, translation_key=translation_key)
         
         self.action_function = action_function
