@@ -180,6 +180,7 @@ class SessyCoordinatorEntity(CoordinatorEntity):
         self.hass = hass
         self.config_entry = config_entry
         
+        self.transform_function = transform_function
         self.data_key = data_key
         self.cache_value = None
 
