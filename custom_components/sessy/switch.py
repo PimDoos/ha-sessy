@@ -34,7 +34,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: SessyConfigEntry,
                 switches.append(
                     SessySettingSwitchEntity(hass, config_entry, "Eco NOM Charging Enabled",
                                 system_settings_coordinator, "eco_nom_charge",
-                                device.set_system_settings,
+                                device.set_system_setting,
                                 entity_category=EntityCategory.CONFIG)
                 )
         except Exception as e:

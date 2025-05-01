@@ -154,7 +154,7 @@ class SessySettingNumberEntity(SessyNumberEntity):
                  transform_function: function = None):
         
         device: SessyBattery = config_entry.runtime_data.device
-        action_function = device.set_system_settings
+        action_function = device.set_system_setting
 
         super().__init__(hass, config_entry, name,
                  coordinator, data_key,
