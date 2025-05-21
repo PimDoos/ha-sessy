@@ -147,6 +147,22 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: SessyConfigEntry,
                                 SensorDeviceClass.CURRENT, SensorStateClass.MEASUREMENT, UnitOfElectricCurrent.MILLIAMPERE,
                                 suggested_unit_of_measurement=UnitOfElectricCurrent.AMPERE)
                 )
+
+            if get_nested_key(power_status, "sessy.pack_voltage") != None:
+                sensors.append(
+                    SessySensor(hass, config_entry, "Pack Voltage",
+                                power_status_coordinator, "sessy.pack_voltage",
+                                SensorDeviceClass.VOLTAGE, SensorStateClass.MEASUREMENT, UnitOfElectricPotential.MILLIVOLT,
+                                suggested_unit_of_measurement=UnitOfElectricPotential.VOLT)
+                )
+                
+            if get_nested_key(power_status, "sessy.external_power") != None:
+                sensors.append(
+                    SessySensor(hass, config_entry, "External Power",
+                                power_status_coordinator, "sessy.external_power",
+                                SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.WATT)
+                )
+
         except Exception as e:
             _LOGGER.warning(f"Error setting up power status sensors: {e}")
 
