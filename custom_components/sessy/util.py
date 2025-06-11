@@ -90,7 +90,8 @@ async def generate_device_info(hass: HomeAssistant, config_entry: ConfigEntry, d
         manufacturer="Charged B.V.",
         identifiers={(DOMAIN, device.serial_number)},
         configuration_url=f"http://{device.host}/",
-        model=model
+        model=model,
+        serial_number=device.serial_number,
     )
 
     return device_info

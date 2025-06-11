@@ -16,7 +16,7 @@ from homeassistant.helpers.update_coordinator import (
     UpdateFailed,
 )
 from sessypy.devices import SessyBattery, SessyCTMeter, SessyDevice, SessyMeter, SessyP1Meter
-from sessypy.util import SessyConnectionException, SessyLoginException, SessyNotSupportedException
+from sessypy.util import SessyException, SessyLoginException
 
 from .const import COORDINATOR_RETRIES, COORDINATOR_RETRY_DELAY, DEFAULT_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL_POWER, ENTITY_ERROR_THRESHOLD, SCAN_INTERVAL_OTA_CHECK, SCAN_INTERVAL_SCHEDULE
 from .models import SessyConfigEntry
@@ -158,7 +158,7 @@ class SessyCoordinator(DataUpdateCoordinator):
                 # Raising ConfigEntryAuthFailed will cancel future updates
                 # and start a config flow with SOURCE_REAUTH (async_step_reauth)
                 raise ConfigEntryAuthFailed from err
-            except SessyConnectionException as err:
+            except SessyException as err:
                 await asyncio.sleep(COORDINATOR_RETRY_DELAY)
                 continue
 
