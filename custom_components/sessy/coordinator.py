@@ -158,11 +158,14 @@ class SessyCoordinator(DataUpdateCoordinator):
                 # Raising ConfigEntryAuthFailed will cancel future updates
                 # and start a config flow with SOURCE_REAUTH (async_step_reauth)
                 raise ConfigEntryAuthFailed from err
-            except SessyException as err:
-                await asyncio.sleep(COORDINATOR_RETRY_DELAY)
-                continue
+            except Exception as err:
+                if retry == COORDINATOR_RETRIES - 1:
+                    raise UpdateFailed(f"Error communicating with Sessy API after { COORDINATOR_RETRIES } retries. {err}") from err
+                else:
+                    _LOGGER.debug(f"Error communicating with Sessy API, retrying in { COORDINATOR_RETRY_DELAY } seconds. {err}")
+                    await asyncio.sleep(COORDINATOR_RETRY_DELAY)
+                    continue
 
-        raise UpdateFailed(f"Error communicating with Sessy API after {COORDINATOR_RETRIES} retries: {err}")
     
     def get_data(self):
         return self.data
