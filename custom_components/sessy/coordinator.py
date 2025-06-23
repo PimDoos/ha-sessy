@@ -18,7 +18,7 @@ from homeassistant.helpers.update_coordinator import (
 from sessypy.devices import SessyBattery, SessyCTMeter, SessyDevice, SessyMeter, SessyP1Meter
 from sessypy.util import SessyException, SessyLoginException
 
-from .const import COORDINATOR_RETRIES, COORDINATOR_RETRY_DELAY, DEFAULT_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL_POWER, ENTITY_ERROR_THRESHOLD, SCAN_INTERVAL_OTA_CHECK, SCAN_INTERVAL_SCHEDULE
+from .const import COORDINATOR_RETRIES, COORDINATOR_RETRY_DELAY, COORDINATOR_TIMEOUT, DEFAULT_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL_POWER, ENTITY_ERROR_THRESHOLD, SCAN_INTERVAL_OTA_CHECK, SCAN_INTERVAL_SCHEDULE
 from .models import SessyConfigEntry
 from .util import get_nested_key
 
@@ -143,7 +143,7 @@ class SessyCoordinator(DataUpdateCoordinator):
             try:
                 # Note: asyncio.TimeoutError and aiohttp.ClientError are already
                 # handled by the data update coordinator.
-                async with async_timeout.timeout(self.update_interval.seconds / 2):
+                async with async_timeout.timeout(COORDINATOR_TIMEOUT):
                     data = await self._device_function()
 
                 contexts: list[SessyEntityContext] = set(self.async_contexts())
