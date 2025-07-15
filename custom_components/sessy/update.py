@@ -27,21 +27,6 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: SessyConfigEntry,
     device = config_entry.runtime_data.device
     updates = []
 
-
-    # TODO Disabled by default for now, remove later
-    if isinstance(device, SessyBattery):
-        updates.append(
-            SessyUpdate(hass, config_entry, "Battery Dongle", SessyOtaTarget.SELF, enabled_default=False)
-        )
-        updates.append(
-            SessyUpdate(hass, config_entry, "Battery", SessyOtaTarget.SERIAL, enabled_default=False)
-		)
-    
-    elif isinstance(device, SessyP1Meter) or isinstance(device, SessyCTMeter):
-        updates.append(
-            SessyUpdate(hass, config_entry, "Dongle", SessyOtaTarget.SELF, enabled_default=False)
-        )
-
     # Treat Sessy Dongle and serial device (AC board) as one unit
     updates.append(
         SessyUpdate(hass, config_entry, "Firmware", SessyOtaTarget.SELF, action_target=SessyOtaTarget.ALL)
