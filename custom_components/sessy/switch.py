@@ -37,6 +37,16 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: SessyConfigEntry,
                                 device.set_system_setting,
                                 entity_category=EntityCategory.CONFIG)
                 )
+
+            # Temperature limit controls (fw 1.9.0+)
+            if settings.get("pack_temp_limit_enabled", None) != None:
+                switches.append(
+                    SessySettingSwitchEntity(hass, config_entry, "Temperature Limit Enabled",
+                                system_settings_coordinator, "pack_temp_limit_enabled",
+                                device.set_system_setting,
+                                entity_category=EntityCategory.CONFIG)
+                )
+
         except Exception as e:
             _LOGGER.warning(f"Error setting firmware specific settings: {e}")
 
