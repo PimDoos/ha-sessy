@@ -54,7 +54,9 @@ async def setup_coordinators(hass, config_entry: SessyConfigEntry, device: Sessy
                 SessyCoordinator(hass, config_entry, device.get_dynamic_schedule, SCAN_INTERVAL_SCHEDULE)
             )
         except SessyNotSupportedException as e:
+            _LOGGER.warning(f"{ device.name } is not using the latest dynamic schedule API, falling back to legacy schedule sensors. Update Sessy to firmware 1.9.2 or later to use the new dynamic schedule API.") 
             try:
+                # Fallback to legacy dynamic schedule if the new one is not supported
                 await device.get_dynamic_schedule_legacy()
                 coordinators.append(
                     SessyCoordinator(hass, config_entry, device.get_dynamic_schedule_legacy, SCAN_INTERVAL_SCHEDULE)

@@ -92,7 +92,6 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: SessyConfigEntry,
                 # Fallback to legacy schedule if dynamic schedule is not supported
                 # TODO remove this when legacy schedule is no longer supported
 
-                _LOGGER.warning(f"{ device.name } is not using the latest dynamic schedule API, falling back to legacy schedule sensors. Update Sessy to firmware 1.9.2 or later to use the new dynamic schedule API.")
                 dynamic_schedule_coordinator: SessyCoordinator = coordinators.get(device.get_dynamic_schedule_legacy, None)
                 if dynamic_schedule_coordinator != None:
                     dynamic_schedule: dict = dynamic_schedule_coordinator.raw_data
@@ -114,7 +113,6 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: SessyConfigEntry,
                                         schedule_key="price", transform_function=divide_by_hundred_thousand            
                             )
                         )
-
 
         except Exception as e:
             _LOGGER.warning(f"Error setting up schedule sensors: {e}")
