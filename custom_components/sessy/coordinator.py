@@ -16,7 +16,7 @@ from homeassistant.helpers.update_coordinator import (
     UpdateFailed,
 )
 from sessypy.devices import SessyBattery, SessyCTMeter, SessyDevice, SessyMeter, SessyP1Meter
-from sessypy.util import SessyException, SessyLoginException
+from sessypy.util import SessyException, SessyLoginException, SessyNotSupportedException
 
 from .const import COORDINATOR_RETRIES, COORDINATOR_RETRY_DELAY, COORDINATOR_TIMEOUT, DEFAULT_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL_POWER, ENTITY_ERROR_THRESHOLD, SCAN_INTERVAL_OTA_CHECK, SCAN_INTERVAL_SCHEDULE
 from .models import SessyConfigEntry
@@ -44,11 +44,28 @@ async def setup_coordinators(hass, config_entry: SessyConfigEntry, device: Sessy
 
     if isinstance(device, SessyBattery):
         coordinators.extend([
-            SessyCoordinator(hass, config_entry, device.get_dynamic_schedule, SCAN_INTERVAL_SCHEDULE),
             SessyCoordinator(hass, config_entry, device.get_power_status, scan_interval_power),
             SessyCoordinator(hass, config_entry, device.get_power_strategy),
             SessyCoordinator(hass, config_entry, device.get_system_settings),
         ])
+        try:
+            await device.get_dynamic_schedule()
+            coordinators.append(
+                SessyCoordinator(hass, config_entry, device.get_dynamic_schedule, SCAN_INTERVAL_SCHEDULE)
+            )
+        except SessyNotSupportedException as e:
+            _LOGGER.warning(f"{ device.name } is not using the latest dynamic schedule API, falling back to legacy schedule sensors. Update Sessy to firmware 1.9.2 or later to use the new dynamic schedule API.") 
+            try:
+                # Fallback to legacy dynamic schedule if the new one is not supported
+                await device.get_dynamic_schedule_legacy()
+                coordinators.append(
+                    SessyCoordinator(hass, config_entry, device.get_dynamic_schedule_legacy, SCAN_INTERVAL_SCHEDULE)
+                )
+            except SessyNotSupportedException as e:
+                _LOGGER.warning(f"Dynamic schedule not supported by Sessy device {device.serial_number}. Error: {e}")
+        except Exception as e:
+            _LOGGER.error(f"Error while fetching dynamic schedule for Sessy device {device.serial_number}. Error: {e}")
+            
 
 
     elif isinstance(device, SessyP1Meter):
