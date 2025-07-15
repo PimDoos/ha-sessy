@@ -67,26 +67,54 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: SessyConfigEntry,
         # Dynamic Schedule
         try:
             # Disable sensors if no schedule is present on discovery
-            dynamic_schedule_coordinator: SessyCoordinator = coordinators[device.get_dynamic_schedule]
-            dynamic_schedule: dict = dynamic_schedule_coordinator.raw_data
+            dynamic_schedule_coordinator: SessyCoordinator = coordinators.get(device.get_dynamic_schedule, None)
+            if dynamic_schedule_coordinator != None:
+                dynamic_schedule: dict = dynamic_schedule_coordinator.raw_data
 
-            if dynamic_schedule.get("power_strategy", None) != None:
-                sensors.append(
-                    SessyScheduleSensor(hass, config_entry, "Power Schedule",
+                if dynamic_schedule.get("dynamic_schedule", None) != None:
+                    sensors.append(
+                        SessyScheduleSensor(hass, config_entry, "Power Schedule",
+                                    dynamic_schedule_coordinator, "dynamic_schedule",
+                                    SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.WATT,
+                                    schedule_key="power"
+                        )
+                    )
+
+                if dynamic_schedule.get("energy_prices", None) != None:
+                    sensors.append(
+                        SessyScheduleSensor(hass, config_entry, "Energy Price",
+                                    dynamic_schedule_coordinator, "energy_prices",
+                                    None, SensorStateClass.MEASUREMENT, f"{CURRENCY_EURO}/{UnitOfEnergy.KILO_WATT_HOUR}",
+                                    schedule_key="price", transform_function=divide_by_hundred_thousand                
+                        )
+                    )
+            else:
+                # Fallback to legacy schedule if dynamic schedule is not supported
+                # TODO remove this when legacy schedule is no longer supported
+
+                _LOGGER.warning(f"{ device.name } is not using the latest dynamic schedule API, falling back to legacy schedule sensors. Update Sessy to firmware 1.9.2 or later to use the new dynamic schedule API.")
+                dynamic_schedule_coordinator: SessyCoordinator = coordinators.get(device.get_dynamic_schedule_legacy, None)
+                if dynamic_schedule_coordinator != None:
+                    dynamic_schedule: dict = dynamic_schedule_coordinator.raw_data
+
+                    if dynamic_schedule.get("power_strategy", None) != None:
+                        sensors.append(
+                            SessyLegacyScheduleSensor(hass, config_entry, "Power Schedule",
                                 dynamic_schedule_coordinator, "power_strategy",
                                 SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, UnitOfPower.WATT,
                                 schedule_key="power"
-                    )
-                )
+                            )
+                        )
 
-            if dynamic_schedule.get("energy_prices", None) != None:
-                sensors.append(
-                    SessyScheduleSensor(hass, config_entry, "Energy Price",
-                                dynamic_schedule_coordinator, "energy_prices",
-                                None, SensorStateClass.MEASUREMENT, f"{CURRENCY_EURO}/{UnitOfEnergy.KILO_WATT_HOUR}",
-                                schedule_key="price", transform_function=divide_by_hundred_thousand                
-                    )
-                )
+                    if dynamic_schedule.get("energy_prices", None) != None:
+                        sensors.append(
+                            SessyLegacyScheduleSensor(hass, config_entry, "Energy Price",
+                                        dynamic_schedule_coordinator, "energy_prices",
+                                        None, SensorStateClass.MEASUREMENT, f"{CURRENCY_EURO}/{UnitOfEnergy.KILO_WATT_HOUR}",
+                                        schedule_key="price", transform_function=divide_by_hundred_thousand            
+                            )
+                        )
+
 
         except Exception as e:
             _LOGGER.warning(f"Error setting up schedule sensors: {e}")
@@ -386,6 +414,74 @@ class SessySensor(SessyCoordinatorEntity, SensorEntity):
         self._attr_native_value = self.cache_value
 
 class SessyScheduleSensor(SessySensor):
+
+    def __init__(self, hass: HomeAssistant, config_entry: SessyConfigEntry, name: str,
+                 coordinator: SessyCoordinator, data_key,
+                 device_class: SensorDeviceClass = None, state_class: SensorStateClass = None, unit_of_measurement = None,
+                 transform_function: function = None, schedule_key: str = None,
+                 precision: int = None, enabled_default: bool = True):
+
+        self.schedule_transform_function = transform_function
+        super().__init__(hass=hass, config_entry=config_entry, name=name,
+                       coordinator=coordinator, data_key=data_key,
+                       transform_function=None,
+                       device_class=device_class, state_class=state_class, unit_of_measurement=unit_of_measurement,
+                       precision=precision, enabled_default=enabled_default)
+        
+        self.schedule_key = schedule_key
+
+        async def update_schedule(event_time_utc: datetime = None):
+            self.update_from_cache()
+            self.async_write_ha_state()
+
+        # Update on top of hour
+        self.tracker = async_track_time_change(hass, update_schedule, None, 0, 0)
+        
+    def update_from_cache(self):
+        now = datetime.now()
+
+        schedule: list = self.cache_value
+
+        schedule_entries_now = list(
+            filter(
+                lambda i: i.get('start_time') <= now.timestamp()
+                and i.get('end_time') > now.timestamp(), schedule
+            )
+        )
+
+        current_schedule_entry = schedule_entries_now.pop(0) if len(schedule_entries_now) > 0 else None
+        if current_schedule_entry == None:
+            current_value = None
+        else:
+            current_value = current_schedule_entry.get(self.schedule_key, None)
+
+        
+        if self.schedule_transform_function:
+            current_value = self.schedule_transform_function(
+                current_value
+            )
+        
+        self._attr_native_value = current_value
+        self._attr_available = self._attr_native_value != None
+
+        self._attr_extra_state_attributes = {}
+
+        schedule_entry: dict
+
+        prices_attribute = dict()
+
+        for schedule_entry in schedule:
+            start_date = datetime.fromtimestamp(schedule_entry.get("start_time"))
+            if self.schedule_transform_function:
+                prices_attribute[start_date] = self.schedule_transform_function(
+                    schedule_entry.get(self.schedule_key)
+                )
+            else:
+                prices_attribute[start_date] = schedule_entry.get(self.schedule_key)
+
+        self._attr_extra_state_attributes[self.data_key] = prices_attribute
+
+class SessyLegacyScheduleSensor(SessySensor):
 
     def __init__(self, hass: HomeAssistant, config_entry: SessyConfigEntry, name: str,
                  coordinator: SessyCoordinator, data_key,
