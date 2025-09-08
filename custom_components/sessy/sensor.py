@@ -20,7 +20,7 @@ from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.event import async_track_time_change
 
 from sessypy.const import SessySystemState, SessyP1State
-from sessypy.devices import SessyBattery, SessyDevice, SessyP1Meter, SessyCTMeter
+from sessypy.devices import SessyBattery, SessyP1Meter, SessyCTMeter
 
 from typing import Callable, Optional
 

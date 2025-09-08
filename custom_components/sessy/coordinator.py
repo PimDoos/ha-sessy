@@ -16,7 +16,7 @@ from homeassistant.helpers.update_coordinator import (
     UpdateFailed,
 )
 from sessypy.devices import SessyBattery, SessyCTMeter, SessyDevice, SessyMeter, SessyP1Meter
-from sessypy.util import SessyException, SessyLoginException, SessyNotSupportedException
+from sessypy.util import SessyLoginException, SessyNotSupportedException
 
 from typing import Callable, Optional
 

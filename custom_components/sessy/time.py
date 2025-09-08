@@ -7,7 +7,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity import EntityCategory
 
-from sessypy.devices import SessyBattery, SessyDevice
+from sessypy.devices import SessyBattery
 from sessypy.util import SessyConnectionException, SessyNotSupportedException
 
 from typing import Callable, Optional

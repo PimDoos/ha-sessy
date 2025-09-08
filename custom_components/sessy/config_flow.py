@@ -22,7 +22,7 @@ from homeassistant.helpers.service_info.zeroconf import ZeroconfServiceInfo
 from sessypy.devices import get_sessy_device, SessyBattery, SessyP1Meter, SessyCTMeter
 from sessypy.util import SessyConnectionException, SessyLoginException
 
-from .const import DEFAULT_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL_POWER, DOMAIN
+from .const import DEFAULT_SCAN_INTERVAL_POWER, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
