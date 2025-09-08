@@ -23,17 +23,16 @@ import logging
 _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: SessyConfigEntry, async_add_entities):
-    """Set up the Sessy updates"""
+    """Set up the Sessy update_entities"""
 
-    device = config_entry.runtime_data.device
-    updates = []
+    update_entities = []
 
     # Treat Sessy Dongle and serial device (AC board) as one unit
-    updates.append(
+    update_entities.append(
         SessyUpdate(hass, config_entry, "Firmware", SessyOtaTarget.SELF, action_target=SessyOtaTarget.ALL)
     )
 
-    async_add_entities(updates)
+    async_add_entities(update_entities)
     
 class SessyUpdate(SessyCoordinatorEntity, UpdateEntity):
     def __init__(self, hass: HomeAssistant, config_entry: SessyConfigEntry, name: str,
