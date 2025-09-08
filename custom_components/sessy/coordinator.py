@@ -33,7 +33,8 @@ async def setup_coordinators(hass, config_entry: SessyConfigEntry, device: Sessy
     # Get power scan interval from options flow
     if CONF_SCAN_INTERVAL in config_entry.options:
         scan_interval_power = timedelta(seconds = config_entry.options.get(CONF_SCAN_INTERVAL))
-    else: scan_interval_power = DEFAULT_SCAN_INTERVAL_POWER
+    else: 
+        scan_interval_power = DEFAULT_SCAN_INTERVAL_POWER
 
     # Device independent functions
     coordinators.extend([
@@ -55,7 +56,7 @@ async def setup_coordinators(hass, config_entry: SessyConfigEntry, device: Sessy
             coordinators.append(
                 SessyCoordinator(hass, config_entry, device.get_dynamic_schedule, SCAN_INTERVAL_SCHEDULE)
             )
-        except SessyNotSupportedException as e:
+        except SessyNotSupportedException:
             _LOGGER.warning(f"{ device.name } is not using the latest dynamic schedule API, falling back to legacy schedule sensors. Update Sessy to firmware 1.9.2 or later to use the new dynamic schedule API.") 
             try:
                 # Fallback to legacy dynamic schedule if the new one is not supported
@@ -109,7 +110,8 @@ async def update_coordinator_options(hass, config_entry: SessyConfigEntry):
     # Get power scan interval from options flow
     if CONF_SCAN_INTERVAL in config_entry.options:
         scan_interval_power = timedelta(seconds = config_entry.options.get(CONF_SCAN_INTERVAL))
-    else: scan_interval_power = DEFAULT_SCAN_INTERVAL_POWER
+    else: 
+        scan_interval_power = DEFAULT_SCAN_INTERVAL_POWER
 
     for coordinator in config_entry.runtime_data.coordinators:
         if coordinator._device_function in update_coordinator_functions:
@@ -252,5 +254,6 @@ class SessyEntityContext():
     
     def apply(self, data):
         value = get_nested_key(data, self.data_key)
-        if self.transform_function: value = self.transform_function(value)
+        if self.transform_function:             
+            value = self.transform_function(value)
         return value
