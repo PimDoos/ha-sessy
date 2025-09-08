@@ -2,10 +2,7 @@
 from __future__ import annotations
 from typing import Any, Callable, Optional
 
-import logging
 
-from sessypy.util import SessyConnectionException, SessyNotSupportedException
-_LOGGER = logging.getLogger(__name__)
 
 from homeassistant.core import HomeAssistant
 from homeassistant.components.update import UpdateEntity, UpdateDeviceClass, UpdateEntityFeature
@@ -14,12 +11,16 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import device_registry as dr
 
 from sessypy.const import SessyOtaTarget, SessyOtaState
-from sessypy.devices import SessyBattery, SessyDevice, SessyP1Meter, SessyCTMeter
+from sessypy.devices import SessyDevice
+from sessypy.util import SessyConnectionException, SessyNotSupportedException
 
 from .const import DEFAULT_SCAN_INTERVAL, SCAN_INTERVAL_OTA_BUSY, SESSY_RELEASE_NOTES_URL
 from .coordinator import SessyCoordinator, SessyCoordinatorEntity
 from .models import SessyConfigEntry
 from .util import unit_interval_to_percentage
+
+import logging
+_LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: SessyConfigEntry, async_add_entities):
     """Set up the Sessy updates"""
