@@ -1,4 +1,5 @@
 """API Data Update Coordinator for Sessy"""
+
 from __future__ import annotations
 
 import asyncio
@@ -15,72 +16,114 @@ from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
     UpdateFailed,
 )
-from sessypy.devices import SessyBattery, SessyCTMeter, SessyDevice, SessyMeter, SessyP1Meter
+from sessypy.devices import (
+    SessyBattery,
+    SessyCTMeter,
+    SessyDevice,
+    SessyMeter,
+    SessyP1Meter,
+)
 from sessypy.util import SessyLoginException, SessyNotSupportedException
 
 from typing import Callable, Optional
 
-from .const import COORDINATOR_RETRIES, COORDINATOR_RETRY_DELAY, COORDINATOR_TIMEOUT, DEFAULT_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL_POWER, ENTITY_ERROR_THRESHOLD, SCAN_INTERVAL_OTA_CHECK, SCAN_INTERVAL_SCHEDULE
+from .const import (
+    COORDINATOR_RETRIES,
+    COORDINATOR_RETRY_DELAY,
+    COORDINATOR_TIMEOUT,
+    DEFAULT_SCAN_INTERVAL,
+    DEFAULT_SCAN_INTERVAL_POWER,
+    ENTITY_ERROR_THRESHOLD,
+    SCAN_INTERVAL_OTA_CHECK,
+    SCAN_INTERVAL_SCHEDULE,
+)
 from .models import SessyConfigEntry
 from .util import get_nested_key
 
 _LOGGER = logging.getLogger(__name__)
 
+
 async def setup_coordinators(hass, config_entry: SessyConfigEntry, device: SessyDevice):
-    
     coordinators = list()
 
     # Get power scan interval from options flow
     if CONF_SCAN_INTERVAL in config_entry.options:
-        scan_interval_power = timedelta(seconds = config_entry.options.get(CONF_SCAN_INTERVAL))
-    else: 
+        scan_interval_power = timedelta(
+            seconds=config_entry.options.get(CONF_SCAN_INTERVAL)
+        )
+    else:
         scan_interval_power = DEFAULT_SCAN_INTERVAL_POWER
 
     # Device independent functions
-    coordinators.extend([
-        SessyCoordinator(hass, config_entry, device.get_ota_status),
-        SessyCoordinator(hass, config_entry, device.check_ota, SCAN_INTERVAL_OTA_CHECK), # Sessy will not check for updates automatically, poll at intervals
-        SessyCoordinator(hass, config_entry, device.get_system_info),
-        SessyCoordinator(hass, config_entry, device.get_network_status)
-    ])
-    
+    coordinators.extend(
+        [
+            SessyCoordinator(hass, config_entry, device.get_ota_status),
+            SessyCoordinator(
+                hass, config_entry, device.check_ota, SCAN_INTERVAL_OTA_CHECK
+            ),  # Sessy will not check for updates automatically, poll at intervals
+            SessyCoordinator(hass, config_entry, device.get_system_info),
+            SessyCoordinator(hass, config_entry, device.get_network_status),
+        ]
+    )
 
     if isinstance(device, SessyBattery):
-        coordinators.extend([
-            SessyCoordinator(hass, config_entry, device.get_power_status, scan_interval_power),
-            SessyCoordinator(hass, config_entry, device.get_power_strategy),
-            SessyCoordinator(hass, config_entry, device.get_system_settings),
-        ])
+        coordinators.extend(
+            [
+                SessyCoordinator(
+                    hass, config_entry, device.get_power_status, scan_interval_power
+                ),
+                SessyCoordinator(hass, config_entry, device.get_power_strategy),
+                SessyCoordinator(hass, config_entry, device.get_system_settings),
+            ]
+        )
         try:
             await device.get_dynamic_schedule()
             coordinators.append(
-                SessyCoordinator(hass, config_entry, device.get_dynamic_schedule, SCAN_INTERVAL_SCHEDULE)
+                SessyCoordinator(
+                    hass,
+                    config_entry,
+                    device.get_dynamic_schedule,
+                    SCAN_INTERVAL_SCHEDULE,
+                )
             )
         except SessyNotSupportedException:
-            _LOGGER.warning(f"{ device.name } is not using the latest dynamic schedule API, falling back to legacy schedule sensors. Update Sessy to firmware 1.9.2 or later to use the new dynamic schedule API.") 
+            _LOGGER.warning(
+                f"{device.name} is not using the latest dynamic schedule API, falling back to legacy schedule sensors. Update Sessy to firmware 1.9.2 or later to use the new dynamic schedule API."
+            )
             try:
                 # Fallback to legacy dynamic schedule if the new one is not supported
                 await device.get_dynamic_schedule_legacy()
                 coordinators.append(
-                    SessyCoordinator(hass, config_entry, device.get_dynamic_schedule_legacy, SCAN_INTERVAL_SCHEDULE)
+                    SessyCoordinator(
+                        hass,
+                        config_entry,
+                        device.get_dynamic_schedule_legacy,
+                        SCAN_INTERVAL_SCHEDULE,
+                    )
                 )
             except SessyNotSupportedException as e:
-                _LOGGER.warning(f"Dynamic schedule not supported by Sessy device {device.serial_number}. Error: {e}")
+                _LOGGER.warning(
+                    f"Dynamic schedule not supported by Sessy device {device.serial_number}. Error: {e}"
+                )
         except Exception as e:
-            _LOGGER.error(f"Error while fetching dynamic schedule for Sessy device {device.serial_number}. Error: {e}")
-            
-
+            _LOGGER.error(
+                f"Error while fetching dynamic schedule for Sessy device {device.serial_number}. Error: {e}"
+            )
 
     elif isinstance(device, SessyP1Meter):
         coordinators.append(
-            SessyCoordinator(hass, config_entry, device.get_p1_details, scan_interval_power)
+            SessyCoordinator(
+                hass, config_entry, device.get_p1_details, scan_interval_power
+            )
         )
 
     elif isinstance(device, SessyCTMeter):
         coordinators.append(
-            SessyCoordinator(hass, config_entry, device.get_ct_details, scan_interval_power)
+            SessyCoordinator(
+                hass, config_entry, device.get_ct_details, scan_interval_power
+            )
         )
-    
+
     if isinstance(device, SessyMeter):
         coordinators.append(
             SessyCoordinator(hass, config_entry, device.get_grid_target)
@@ -96,36 +139,47 @@ async def setup_coordinators(hass, config_entry: SessyConfigEntry, device: Sessy
     for coordinator in coordinators:
         await coordinator.async_config_entry_first_refresh()
         coordinators_dict[coordinator._device_function] = coordinator
-    
+
     return coordinators_dict
+
 
 async def update_coordinator_options(hass, config_entry: SessyConfigEntry):
     device = config_entry.runtime_data.device
     update_coordinator_functions: list[Callable] = [
         device.get_power_status,
         device.get_ct_details,
-        device.get_p1_details
+        device.get_p1_details,
     ]
 
     # Get power scan interval from options flow
     if CONF_SCAN_INTERVAL in config_entry.options:
-        scan_interval_power = timedelta(seconds = config_entry.options.get(CONF_SCAN_INTERVAL))
-    else: 
+        scan_interval_power = timedelta(
+            seconds=config_entry.options.get(CONF_SCAN_INTERVAL)
+        )
+    else:
         scan_interval_power = DEFAULT_SCAN_INTERVAL_POWER
 
     for coordinator in config_entry.runtime_data.coordinators:
         if coordinator._device_function in update_coordinator_functions:
             coordinator.update_interval = scan_interval_power
 
+
 async def refresh_coordinators(config_entry: SessyConfigEntry):
     coordinators = config_entry.runtime_data.coordinators
     for coordinator in coordinators:
         await coordinators[coordinator].async_refresh()
 
+
 class SessyCoordinator(DataUpdateCoordinator):
     """Sessy API coordinator"""
 
-    def __init__(self, hass, config_entry, device_function: Callable, update_interval: timedelta | dict = DEFAULT_SCAN_INTERVAL):
+    def __init__(
+        self,
+        hass,
+        config_entry,
+        device_function: Callable,
+        update_interval: timedelta | dict = DEFAULT_SCAN_INTERVAL,
+    ):
         """Initialize coordinator"""
         super().__init__(
             hass,
@@ -138,7 +192,7 @@ class SessyCoordinator(DataUpdateCoordinator):
             # Set always_update to `False` if the data returned from the
             # api can be compared via `__eq__` to avoid duplicate updates
             # being dispatched to listeners
-            always_update=False
+            always_update=False,
         )
         self._device_function = device_function
         self._raw_data = dict()
@@ -181,29 +235,42 @@ class SessyCoordinator(DataUpdateCoordinator):
                 raise ConfigEntryAuthFailed from err
             except Exception as err:
                 if retry == COORDINATOR_RETRIES - 1:
-                    raise UpdateFailed(f"Error communicating with Sessy API after { COORDINATOR_RETRIES } retries. {err}") from err
+                    raise UpdateFailed(
+                        f"Error communicating with Sessy API after {COORDINATOR_RETRIES} retries. {err}"
+                    ) from err
                 else:
-                    _LOGGER.debug(f"Error communicating with Sessy API, retrying in { COORDINATOR_RETRY_DELAY } seconds. {err}")
+                    _LOGGER.debug(
+                        f"Error communicating with Sessy API, retrying in {COORDINATOR_RETRY_DELAY} seconds. {err}"
+                    )
                     await asyncio.sleep(COORDINATOR_RETRY_DELAY)
                     continue
 
-    
     def get_data(self):
         return self.data
-    
+
     @property
     def raw_data(self):
         return self._raw_data
-    
+
+
 class SessyCoordinatorEntity(CoordinatorEntity):
     """Base Sessy Entity, coordinated by SessyCoordinator"""
-    def __init__(self, hass: HomeAssistant, config_entry: SessyConfigEntry, name: str,
-                 coordinator: SessyCoordinator, data_key: str, transform_function: Optional[Callable] = None,translation_key: str = None):
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        config_entry: SessyConfigEntry,
+        name: str,
+        coordinator: SessyCoordinator,
+        data_key: str,
+        transform_function: Optional[Callable] = None,
+        translation_key: str = None,
+    ):
         self.context = SessyEntityContext(data_key, transform_function)
         super().__init__(coordinator, self.context)
         self.hass = hass
         self.config_entry = config_entry
-        
+
         self.transform_function = transform_function
         self.data_key = data_key
         self.cache_value = None
@@ -212,7 +279,7 @@ class SessyCoordinatorEntity(CoordinatorEntity):
 
         self._attr_name = name
         self._attr_has_entity_name = True
-        self._attr_unique_id = f"sessy-{ device.serial_number }-sensor-{ name.replace(' ','') }".lower() #TODO Technical dept, this will cause issues if we ever need to change entity names
+        self._attr_unique_id = f"sessy-{device.serial_number}-sensor-{name.replace(' ', '')}".lower()  # TODO Technical dept, this will cause issues if we ever need to change entity names
         self._attr_device_info = config_entry.runtime_data.device_info
         self._attr_translation_key = translation_key
 
@@ -226,7 +293,7 @@ class SessyCoordinatorEntity(CoordinatorEntity):
             self._update_failed_count = 0
         except Exception as e:
             self._update_failed_count += 1
-            message = f"Updating entity '{self.name}' failed for {self._update_failed_count} consecutive attempts. Exception occured: '{ e }'"
+            message = f"Updating entity '{self.name}' failed for {self._update_failed_count} consecutive attempts. Exception occured: '{e}'"
             self.cache_value = None
             if self._update_failed_count == ENTITY_ERROR_THRESHOLD:
                 # Log as warning once attempts exceed threshold
@@ -237,23 +304,26 @@ class SessyCoordinatorEntity(CoordinatorEntity):
         finally:
             self.update_from_cache()
             self.async_write_ha_state()
-        
+
     def copy_from_cache(self):
         self.cache_value = self.coordinator.data.get(self.context, None)
         if self.cache_value is None:
-            raise TypeError(f"Key {self.data_key} has no value in coordinator {self.coordinator.name}")
-         
+            raise TypeError(
+                f"Key {self.data_key} has no value in coordinator {self.coordinator.name}"
+            )
+
     def update_from_cache(self):
         """Entity function to write the latest cache value to the proper attributes. Implemented on platform level."""
         raise NotImplementedError()
 
-class SessyEntityContext():
+
+class SessyEntityContext:
     def __init__(self, data_key: str, transform_function: Optional[Callable] = None):
         self.data_key = data_key
         self.transform_function = transform_function
-    
+
     def apply(self, data):
         value = get_nested_key(data, self.data_key)
-        if self.transform_function:             
+        if self.transform_function:
             value = self.transform_function(value)
         return value
