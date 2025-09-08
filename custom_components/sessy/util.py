@@ -6,14 +6,16 @@ from homeassistant.config_entries import ConfigEntry
 
 from homeassistant.helpers.entity import DeviceInfo
 
-from sessypy.devices import SessyDevice, SessyBattery, SessyMeter, SessyP1Meter, SessyCTMeter
+from sessypy.devices import SessyDevice, SessyBattery, SessyP1Meter, SessyCTMeter
 
 from typing import Callable, Optional
+
+from .const import DOMAIN
 
 import logging
 _LOGGER = logging.getLogger(__name__)
 
-from .const import DOMAIN
+
 
 # Transform functions
 
