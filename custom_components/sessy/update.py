@@ -137,7 +137,7 @@ class SessyUpdate(SessyCoordinatorEntity, UpdateEntity):
         except Exception as e:
             raise HomeAssistantError(f"Starting update for {self.name} failed: {e.__class__}") from e
         
-        _LOGGER.info(f"Setting OTA status update interval to lower interval (from install action)")
+        _LOGGER.info("Setting OTA status update interval to lower interval (from install action)")
 
         self.coordinator.update_interval = SCAN_INTERVAL_OTA_BUSY
         await self.coordinator.async_request_refresh()
