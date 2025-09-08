@@ -101,11 +101,11 @@ async def generate_device_info(hass: HomeAssistant, config_entry: ConfigEntry, d
     return device_info
 
 def get_nested_key(data, key):
-    if data == None:
+    if data is None:
         return None
     elif len(data) == 0:
         return None
-    elif key == None or len(key) == 0:
+    elif key is None or len(key) == 0:
         return data
     else:
         value = data
@@ -113,7 +113,7 @@ def get_nested_key(data, key):
         for node in key.split("."):
             if node.isdigit():
                 node = int(node)
-            if value == None:
+            if value is None:
                 return None
             elif node in value:
                 value = value[node]
