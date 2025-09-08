@@ -47,7 +47,7 @@ class SessySelectEntity(SessyCoordinatorEntity, SelectEntity):
         self._attr_current_option = None
 
     def update_from_cache(self):
-        self._attr_available = self.cache_value != None
+        self._attr_available = self.cache_value is not None
         self._attr_current_option = self.cache_value
         
     async def async_select_option(self, option: str) -> None:

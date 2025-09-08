@@ -30,7 +30,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: SessyConfigEntry,
             settings: dict = system_settings_coordinator.raw_data
         
             # Eco mode controls (fw 1.6.8+)
-            if settings.get("eco_nom_charge", None) != None:
+            if settings.get("eco_nom_charge", None) is not None:
                 switches.append(
                     SessySettingSwitchEntity(hass, config_entry, "Eco NOM Charging Enabled",
                                 system_settings_coordinator, "eco_nom_charge",
@@ -39,7 +39,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: SessyConfigEntry,
                 )
 
             # Temperature limit controls (fw 1.9.0+)
-            if settings.get("pack_temp_limit_enabled", None) != None:
+            if settings.get("pack_temp_limit_enabled", None) is not None:
                 switches.append(
                     SessySettingSwitchEntity(hass, config_entry, "Temperature Limit Enabled",
                                 system_settings_coordinator, "pack_temp_limit_enabled",
@@ -71,7 +71,7 @@ class SessySettingSwitchEntity(SessyCoordinatorEntity, SwitchEntity):
         self.action_function: function = action_function
     
     def update_from_cache(self):
-        self._attr_available = self.cache_value != None
+        self._attr_available = self.cache_value is not None
         self._attr_is_on = self.cache_value
         
     async def async_turn_on(self):

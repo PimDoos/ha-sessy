@@ -51,7 +51,7 @@ class SessyButton(SessyCoordinatorEntity, ButtonEntity):
         self._attr_entity_category = entity_category
         
     def update_from_cache(self):
-        self._attr_available = self.cache_value != None
+        self._attr_available = self.cache_value is not None
         
     async def async_press(self):
         try:

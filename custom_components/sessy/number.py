@@ -70,7 +70,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: SessyConfigEntry,
                 )
             
             # Eco mode controls (fw 1.6.8+)
-            if settings.get("eco_charge_power", None) != None:
+            if settings.get("eco_charge_power", None) is not None:
                 numbers.append(
                     SessySettingNumberEntity(hass, config_entry, "Eco Charge Power",
                                 system_settings_coordinator, "eco_charge_power",
@@ -78,7 +78,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: SessyConfigEntry,
                                 entity_category=EntityCategory.CONFIG)
                     
                 )
-            if settings.get("eco_charge_hours", None) != None:
+            if settings.get("eco_charge_hours", None) is not None:
                 numbers.append(
                     SessySettingNumberEntity(hass, config_entry, "Eco Charge Hours",
                                 system_settings_coordinator, "eco_charge_hours",
@@ -127,7 +127,7 @@ class SessyNumberEntity(SessyCoordinatorEntity, NumberEntity):
         self.action_function: function = action_function
     
     def update_from_cache(self):
-        self._attr_available = self.cache_value != None
+        self._attr_available = self.cache_value is not None
         self._attr_native_value = self.cache_value
         
     async def async_set_native_value(self, value: float):
