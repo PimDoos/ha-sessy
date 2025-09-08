@@ -1,6 +1,6 @@
 """Update entities to control Sessy"""
 from __future__ import annotations
-from typing import Any
+from typing import Any, Callable, Optional
 
 import logging
 
@@ -37,7 +37,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: SessyConfigEntry,
 class SessyUpdate(SessyCoordinatorEntity, UpdateEntity):
     def __init__(self, hass: HomeAssistant, config_entry: SessyConfigEntry, name: str,
                  cache_target: SessyOtaTarget, action_target: SessyOtaTarget = None,
-                 transform_function: function = None, enabled_default: bool = True):
+                 transform_function: Optional[Callable] = None, enabled_default: bool = True):
         
         self.device = config_entry.runtime_data.device
         coordinator: SessyCoordinator = config_entry.runtime_data.coordinators[self.device.get_ota_status]

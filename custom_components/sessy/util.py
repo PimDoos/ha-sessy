@@ -8,6 +8,8 @@ from homeassistant.helpers.entity import DeviceInfo
 
 from sessypy.devices import SessyDevice, SessyBattery, SessyMeter, SessyP1Meter, SessyCTMeter
 
+from typing import Callable, Optional
+
 import logging
 _LOGGER = logging.getLogger(__name__)
 
@@ -48,7 +50,7 @@ def start_time_from_string(input: str) -> time:
 def stop_time_from_string(input: str) -> time:
     return time_from_string(input.split("-")[1])
 
-def transform_on_list(transform_list: list, transform_function: function) -> list:
+def transform_on_list(transform_list: list, transform_function: Callable) -> list:
     transformed = []
     for i in transform_list:
         transformed.append(
@@ -57,7 +59,7 @@ def transform_on_list(transform_list: list, transform_function: function) -> lis
     return transformed
 
 
-def enum_to_options_list(options: Enum, transform_function: function = None) -> list[str]:
+def enum_to_options_list(options: Enum, transform_function: Optional[Callable] = None) -> list[str]:
     output = list()
     for option in options:
         value = option.value
