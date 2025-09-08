@@ -99,7 +99,7 @@ class SessyUpdate(SessyCoordinatorEntity, UpdateEntity):
             ota_data: dict = self.coordinator.get_data()
 
             cache_serial = ota_data.get(SessyOtaTarget.SERIAL.name.lower())
-            if cache_serial == None:
+            if cache_serial is None:
                 # Whoops, no data for serial available in cache. Skip until next update.
                 pass
             elif cache_serial.get("state") == SessyOtaState.UPDATING.value:
