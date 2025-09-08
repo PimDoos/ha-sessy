@@ -18,6 +18,8 @@ from homeassistant.helpers.update_coordinator import (
 from sessypy.devices import SessyBattery, SessyCTMeter, SessyDevice, SessyMeter, SessyP1Meter
 from sessypy.util import SessyException, SessyLoginException, SessyNotSupportedException
 
+from typing import Callable, Optional
+
 from .const import COORDINATOR_RETRIES, COORDINATOR_RETRY_DELAY, COORDINATOR_TIMEOUT, DEFAULT_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL_POWER, ENTITY_ERROR_THRESHOLD, SCAN_INTERVAL_OTA_CHECK, SCAN_INTERVAL_SCHEDULE
 from .models import SessyConfigEntry
 from .util import get_nested_key
@@ -98,7 +100,7 @@ async def setup_coordinators(hass, config_entry: SessyConfigEntry, device: Sessy
 
 async def update_coordinator_options(hass, config_entry: SessyConfigEntry):
     device = config_entry.runtime_data.device
-    update_coordinator_functions: list[function] = [
+    update_coordinator_functions: list[Callable] = [
         device.get_power_status,
         device.get_ct_details,
         device.get_p1_details
@@ -121,7 +123,7 @@ async def refresh_coordinators(config_entry: SessyConfigEntry):
 class SessyCoordinator(DataUpdateCoordinator):
     """Sessy API coordinator"""
 
-    def __init__(self, hass, config_entry, device_function: function, update_interval: timedelta | dict = DEFAULT_SCAN_INTERVAL):
+    def __init__(self, hass, config_entry, device_function: Callable, update_interval: timedelta | dict = DEFAULT_SCAN_INTERVAL):
         """Initialize coordinator"""
         super().__init__(
             hass,
@@ -194,7 +196,7 @@ class SessyCoordinator(DataUpdateCoordinator):
 class SessyCoordinatorEntity(CoordinatorEntity):
     """Base Sessy Entity, coordinated by SessyCoordinator"""
     def __init__(self, hass: HomeAssistant, config_entry: SessyConfigEntry, name: str,
-                 coordinator: SessyCoordinator, data_key: str, transform_function: function = None, translation_key: str = None):
+                 coordinator: SessyCoordinator, data_key: str, transform_function: Optional[Callable] = None,translation_key: str = None):
         self.context = SessyEntityContext(data_key, transform_function)
         super().__init__(coordinator, self.context)
         self.hass = hass
@@ -244,7 +246,7 @@ class SessyCoordinatorEntity(CoordinatorEntity):
         raise NotImplementedError()
 
 class SessyEntityContext():
-    def __init__(self, data_key: str, transform_function: function):
+    def __init__(self, data_key: str, transform_function: Optional[Callable] = None):
         self.data_key = data_key
         self.transform_function = transform_function
     

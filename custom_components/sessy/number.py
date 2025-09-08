@@ -12,6 +12,8 @@ from homeassistant.helpers.entity import EntityCategory
 from sessypy.devices import SessyBattery, SessyDevice, SessyMeter
 from sessypy.util import SessyNotSupportedException, SessyConnectionException
 
+from typing import Callable, Optional
+
 from .coordinator import SessyCoordinator, SessyCoordinatorEntity
 from .models import SessyConfigEntry
 
@@ -107,11 +109,11 @@ class SessyNumberEntity(SessyCoordinatorEntity, NumberEntity):
     """Simple Number entity passing the value along to action_function"""
     def __init__(self, hass: HomeAssistant, config_entry: SessyConfigEntry, name: str,
                  coordinator: SessyCoordinator, data_key,
-                 action_function: function,
+                 action_function: Callable,
                  device_class: NumberDeviceClass = None, unit_of_measurement = None,
                  min_value: float = None, max_value: float = None, 
                  entity_category: EntityCategory = None,
-                 transform_function: function = None):
+                 transform_function: Optional[Callable] = None):
         
         super().__init__(hass=hass, config_entry=config_entry, name=name, 
                        coordinator=coordinator, data_key=data_key, 
@@ -124,7 +126,7 @@ class SessyNumberEntity(SessyCoordinatorEntity, NumberEntity):
         self._attr_native_max_value = max_value
         self._attr_entity_category = entity_category
         
-        self.action_function: function = action_function
+        self.action_function: Callable = action_function
     
     def update_from_cache(self):
         self._attr_available = self.cache_value is not None
@@ -151,7 +153,7 @@ class SessySettingNumberEntity(SessyNumberEntity):
                  device_class: NumberDeviceClass = None, unit_of_measurement = None,
                  min_value: float = None, max_value: float = None, 
                  entity_category: EntityCategory = None,
-                 transform_function: function = None):
+                 transform_function: Optional[Callable] = None):
         
         device: SessyBattery = config_entry.runtime_data.device
         action_function = device.set_system_setting

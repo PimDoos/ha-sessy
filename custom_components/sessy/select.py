@@ -10,6 +10,8 @@ from sessypy.const import SessyPowerStrategy
 from sessypy.devices import SessyBattery, SessyDevice
 from sessypy.util import SessyConnectionException, SessyNotSupportedException
 
+from typing import Callable, Optional
+
 from .coordinator import SessyCoordinator, SessyCoordinatorEntity
 from .models import SessyConfigEntry
 from .util import  enum_to_options_list, status_string_power_strategy
@@ -35,8 +37,8 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: SessyConfigEntry,
     
 class SessySelectEntity(SessyCoordinatorEntity, SelectEntity):
     def __init__(self, hass: HomeAssistant, config_entry: SessyConfigEntry, name: str,
-                 coordinator: SessyCoordinator, data_key, action_function: function,
-                 options: Enum, transform_function: function = None, translation_key: str = None):
+                 coordinator: SessyCoordinator, data_key, action_function: Callable,
+                 options: Enum, transform_function: Optional[Callable],translation_key: str = None):
         
         super().__init__(hass=hass, config_entry=config_entry, name=name, 
                        coordinator=coordinator, data_key=data_key, 

@@ -9,6 +9,8 @@ from homeassistant.helpers.entity import EntityCategory
 from sessypy.devices import SessyBattery, SessyDevice, SessyMeter
 from sessypy.util import SessyNotSupportedException, SessyConnectionException
 
+from typing import Callable, Optional
+
 from .coordinator import SessyCoordinator, SessyCoordinatorEntity
 from .models import SessyConfigEntry
 
@@ -55,10 +57,10 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: SessyConfigEntry,
 class SessySettingSwitchEntity(SessyCoordinatorEntity, SwitchEntity):
     def __init__(self, hass: HomeAssistant, config_entry: SessyConfigEntry, name: str,
                  coordinator: SessyCoordinator, data_key,
-                 action_function: function,
+                 action_function: Callable,
                  device_class: SwitchDeviceClass = None, 
                  entity_category: EntityCategory = None,
-                 transform_function: function = None):
+                 transform_function: Optional[Callable] = None):
         
         super().__init__(hass=hass, config_entry=config_entry, name=name, 
                        coordinator=coordinator, data_key=data_key, 
@@ -68,7 +70,7 @@ class SessySettingSwitchEntity(SessyCoordinatorEntity, SwitchEntity):
         self._attr_device_class = device_class
         self._attr_entity_category = entity_category
         
-        self.action_function: function = action_function
+        self.action_function: Callable = action_function
     
     def update_from_cache(self):
         self._attr_available = self.cache_value is not None

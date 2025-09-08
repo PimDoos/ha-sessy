@@ -10,6 +10,8 @@ from homeassistant.helpers.entity import EntityCategory
 from sessypy.devices import SessyBattery, SessyDevice
 from sessypy.util import SessyConnectionException, SessyNotSupportedException
 
+from typing import Callable, Optional
+
 from .coordinator import SessyCoordinator, SessyCoordinatorEntity
 from .models import SessyConfigEntry
 from .util import start_time_from_string, stop_time_from_string, time_from_string
@@ -68,15 +70,15 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: SessyConfigEntry,
 class SessyTimeEntity(SessyCoordinatorEntity, TimeEntity):
     def __init__(self, hass: HomeAssistant, config_entry: SessyConfigEntry, name: str,
                  coordinator: SessyCoordinator, data_key,
-                 action_function: function,
+                 action_function: Callable,
                  entity_category: EntityCategory = None,
-                 transform_function: function = None):
+                 transform_function: Optional[Callable] = None):
         
         super().__init__(hass=hass, config_entry=config_entry, name=name, 
                        coordinator=coordinator, data_key=data_key, transform_function=transform_function)
         self._attr_entity_category = entity_category
         self._attr_native_value = None
-        self.action_function: function = action_function
+        self.action_function: Callable = action_function
     
     def update_from_cache(self):
         self._attr_available = self.cache_value is not None

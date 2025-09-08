@@ -7,6 +7,8 @@ from homeassistant.helpers.entity import EntityCategory
 
 from sessypy.devices import SessyBattery, SessyDevice
 
+from typing import Callable, Optional
+
 from .coordinator import SessyCoordinator, SessyCoordinatorEntity
 from .models import SessyConfigEntry
 
@@ -42,7 +44,7 @@ class SessyBinarySensor(SessyCoordinatorEntity, BinarySensorEntity):
     def __init__(self, hass: HomeAssistant, config_entry: SessyConfigEntry, name: str,
                  coordinator: SessyCoordinatorEntity, data_key,
                  device_class: BinarySensorDeviceClass = None,
-                 transform_function: function = None, 
+                 transform_function: Optional[Callable] = None,
                  entity_category: EntityCategory = None, enabled_default: bool = True):
 
         super().__init__(hass=hass, config_entry=config_entry, name=name,

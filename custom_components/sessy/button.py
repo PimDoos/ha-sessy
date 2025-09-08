@@ -1,6 +1,7 @@
 """Button entities to control Sessy"""
 from __future__ import annotations
 
+
 from homeassistant.core import HomeAssistant
 from homeassistant.components.button import ButtonEntity, ButtonDeviceClass
 from homeassistant.exceptions import HomeAssistantError
@@ -8,6 +9,8 @@ from homeassistant.helpers.entity import EntityCategory
 
 from sessypy.devices import SessyDevice
 from sessypy.util import SessyConnectionException, SessyNotSupportedException
+
+from typing import Callable, Optional
 
 from .coordinator import SessyCoordinator, SessyCoordinatorEntity
 from .models import SessyConfigEntry
@@ -38,9 +41,9 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: SessyConfigEntry,
     
 class SessyButton(SessyCoordinatorEntity, ButtonEntity):
     def __init__(self, hass: HomeAssistant, config_entry: SessyConfigEntry, name: str,
-                 coordinator: SessyCoordinator, data_key: str, action_function: function,
+                 coordinator: SessyCoordinator, data_key: str, action_function: Callable,
                  device_class: ButtonDeviceClass = None, entity_category: EntityCategory = None, 
-                 transform_function: function = None, translation_key: str = None):
+                 transform_function: Optional[Callable] = None,translation_key: str = None):
         
         super().__init__(hass=hass, config_entry=config_entry, name=name, 
                        coordinator=coordinator, data_key=data_key, 

@@ -22,6 +22,8 @@ from homeassistant.helpers.event import async_track_time_change
 from sessypy.const import SessySystemState, SessyP1State
 from sessypy.devices import SessyBattery, SessyDevice, SessyP1Meter, SessyCTMeter
 
+from typing import Callable, Optional
+
 from .coordinator import SessyCoordinator, SessyCoordinatorEntity
 from .models import SessyConfigEntry
 from .util import (divide_by_hundred_thousand, enum_to_options_list, get_nested_key, status_string_p1, status_string_system_state, transform_on_list, 
@@ -387,7 +389,7 @@ class SessySensor(SessyCoordinatorEntity, SensorEntity):
     def __init__(self, hass: HomeAssistant, config_entry: SessyConfigEntry, name: str,
                  coordinator: SessyCoordinator, data_key,
                  device_class: SensorDeviceClass = None, state_class: SensorStateClass = None, unit_of_measurement = None,
-                 transform_function: function = None, translation_key: str = None,
+                 transform_function: Optional[Callable] = None, translation_key: str = None,
                  options = None, entity_category: EntityCategory = None, precision: int = None, 
                  suggested_unit_of_measurement = None, enabled_default: bool = True):
 
@@ -416,7 +418,7 @@ class SessyScheduleSensor(SessySensor):
     def __init__(self, hass: HomeAssistant, config_entry: SessyConfigEntry, name: str,
                  coordinator: SessyCoordinator, data_key,
                  device_class: SensorDeviceClass = None, state_class: SensorStateClass = None, unit_of_measurement = None,
-                 transform_function: function = None, schedule_key: str = None,
+                 transform_function: Optional[Callable] = None, schedule_key: str = None,
                  precision: int = None, enabled_default: bool = True):
 
         self.schedule_transform_function = transform_function
@@ -484,7 +486,7 @@ class SessyLegacyScheduleSensor(SessySensor):
     def __init__(self, hass: HomeAssistant, config_entry: SessyConfigEntry, name: str,
                  coordinator: SessyCoordinator, data_key,
                  device_class: SensorDeviceClass = None, state_class: SensorStateClass = None, unit_of_measurement = None,
-                 transform_function: function = None, schedule_key: str = None,
+                 transform_function: Optional[Callable] = None, schedule_key: str = None,
                  precision: int = None, enabled_default: bool = True):
 
         self.schedule_transform_function = transform_function
