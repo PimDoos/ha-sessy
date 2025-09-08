@@ -202,14 +202,14 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: SessyConfigEntry,
             energy_status: dict = energy_status_coordinator.raw_data
             if energy_status is not None:
                 sensors.append(
-                    SessySensor(hass, config_entry, f"Charged Energy",
-                                energy_status_coordinator, f"sessy_energy.import_wh",
+                    SessySensor(hass, config_entry, "Charged Energy",
+                                energy_status_coordinator, "sessy_energy.import_wh",
                                 SensorDeviceClass.ENERGY, SensorStateClass.TOTAL_INCREASING, UnitOfEnergy.WATT_HOUR, 
                                 suggested_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR)
                 )
                 sensors.append(
-                    SessySensor(hass, config_entry, f"Discharged Energy",
-                                energy_status_coordinator, f"sessy_energy.export_wh",
+                    SessySensor(hass, config_entry, "Discharged Energy",
+                                energy_status_coordinator, "sessy_energy.export_wh",
                                 SensorDeviceClass.ENERGY, SensorStateClass.TOTAL_INCREASING, UnitOfEnergy.WATT_HOUR, 
                                 suggested_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR)
                 )
@@ -288,8 +288,8 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: SessyConfigEntry,
             p1_details: dict = p1_details_coordinator.raw_data
             gas_meter_present = p1_details.get("gas_meter_value", 0) != 0
             sensors.append(
-                SessySensor(hass, config_entry, f"Gas Consumption",
-                            p1_details_coordinator, f"gas_meter_value",
+                SessySensor(hass, config_entry, "Gas Consumption",
+                            p1_details_coordinator, "gas_meter_value",
                             SensorDeviceClass.GAS, SensorStateClass.TOTAL, UnitOfVolume.CUBIC_METERS, 
                             transform_function=divide_by_thousand, precision = 3, enabled_default = gas_meter_present)
             )
