@@ -42,7 +42,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: SessyConfigEntry,
         network_status_coordinator: SessyCoordinator = coordinators[device.get_network_status]
         network_status: dict = network_status_coordinator.raw_data
 
-        if get_nested_key(network_status,"wifi_sta.rssi") != None:
+        if get_nested_key(network_status,"wifi_sta.rssi") is not None:
             sensors.append(
                 SessySensor(hass, config_entry, "WiFi RSSI",
                             network_status_coordinator, "wifi_sta.rssi",
@@ -68,10 +68,10 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: SessyConfigEntry,
         try:
             # Disable sensors if no schedule is present on discovery
             dynamic_schedule_coordinator: SessyCoordinator = coordinators.get(device.get_dynamic_schedule, None)
-            if dynamic_schedule_coordinator != None:
+            if dynamic_schedule_coordinator is not None:
                 dynamic_schedule: dict = dynamic_schedule_coordinator.raw_data
 
-                if dynamic_schedule.get("dynamic_schedule", None) != None:
+                if dynamic_schedule.get("dynamic_schedule", None) is not None:
                     sensors.append(
                         SessyScheduleSensor(hass, config_entry, "Power Schedule",
                                     dynamic_schedule_coordinator, "dynamic_schedule",
@@ -80,7 +80,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: SessyConfigEntry,
                         )
                     )
 
-                if dynamic_schedule.get("energy_prices", None) != None:
+                if dynamic_schedule.get("energy_prices", None) is not None:
                     sensors.append(
                         SessyScheduleSensor(hass, config_entry, "Energy Price",
                                     dynamic_schedule_coordinator, "energy_prices",
@@ -93,10 +93,10 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: SessyConfigEntry,
                 # TODO remove this when legacy schedule is no longer supported
 
                 dynamic_schedule_coordinator: SessyCoordinator = coordinators.get(device.get_dynamic_schedule_legacy, None)
-                if dynamic_schedule_coordinator != None:
+                if dynamic_schedule_coordinator is not None:
                     dynamic_schedule: dict = dynamic_schedule_coordinator.raw_data
 
-                    if dynamic_schedule.get("power_strategy", None) != None:
+                    if dynamic_schedule.get("power_strategy", None) is not None:
                         sensors.append(
                             SessyLegacyScheduleSensor(hass, config_entry, "Power Schedule",
                                 dynamic_schedule_coordinator, "power_strategy",
@@ -105,7 +105,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: SessyConfigEntry,
                             )
                         )
 
-                    if dynamic_schedule.get("energy_prices", None) != None:
+                    if dynamic_schedule.get("energy_prices", None) is not None:
                         sensors.append(
                             SessyLegacyScheduleSensor(hass, config_entry, "Energy Price",
                                         dynamic_schedule_coordinator, "energy_prices",
@@ -166,7 +166,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: SessyConfigEntry,
             )
 
         
-            if get_nested_key(power_status, "sessy.inverter_current_ma") != None:
+            if get_nested_key(power_status, "sessy.inverter_current_ma") is not None:
                 sensors.append(
                     SessySensor(hass, config_entry, "Inverter Current",
                                 power_status_coordinator, "sessy.inverter_current_ma",
@@ -174,7 +174,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: SessyConfigEntry,
                                 suggested_unit_of_measurement=UnitOfElectricCurrent.AMPERE)
                 )
 
-            if get_nested_key(power_status, "sessy.pack_voltage") != None:
+            if get_nested_key(power_status, "sessy.pack_voltage") is not None:
                 sensors.append(
                     SessySensor(hass, config_entry, "Pack Voltage",
                                 power_status_coordinator, "sessy.pack_voltage",
@@ -182,7 +182,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: SessyConfigEntry,
                                 suggested_unit_of_measurement=UnitOfElectricPotential.VOLT)
                 )
                 
-            if get_nested_key(power_status, "sessy.external_power") != None:
+            if get_nested_key(power_status, "sessy.external_power") is not None:
                 sensors.append(
                     SessySensor(hass, config_entry, "External Power",
                                 power_status_coordinator, "sessy.external_power",
@@ -198,7 +198,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: SessyConfigEntry,
             # Fetch API content to check compatibility
             energy_status_coordinator: SessyCoordinator = coordinators[device.get_energy_status]
             energy_status: dict = energy_status_coordinator.raw_data
-            if energy_status != None:
+            if energy_status is not None:
                 sensors.append(
                     SessySensor(hass, config_entry, f"Charged Energy",
                                 energy_status_coordinator, f"sessy_energy.import_wh",
@@ -235,7 +235,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: SessyConfigEntry,
 
             # Metered phase energy sensors
             try:
-                if energy_status != None:
+                if energy_status is not None:
                     sensors.append(
                         SessySensor(hass, config_entry, f"Renewable Energy Phase { phase_id } Imported Energy",
                                     energy_status_coordinator, f"energy_phase{ phase_id }.import_wh",
@@ -365,7 +365,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: SessyConfigEntry,
                 # Fetch API content to check compatibility
                 energy_status_coordinator: SessyCoordinator = coordinators[device.get_energy_status]
                 energy_status: dict = energy_status_coordinator.raw_data
-                if energy_status != None:
+                if energy_status is not None:
                     sensors.append(
                         SessySensor(hass, config_entry, f"Phase { phase_id } Imported Energy",
                                     energy_status_coordinator, f"energy_phase{ phase_id }.import_wh",
@@ -408,7 +408,7 @@ class SessySensor(SessyCoordinatorEntity, SensorEntity):
         self._attr_entity_registry_enabled_default = enabled_default
 
     def update_from_cache(self):
-        self._attr_available = self.cache_value != None
+        self._attr_available = self.cache_value is not None
         self._attr_native_value = self.cache_value
 
 class SessyScheduleSensor(SessySensor):
@@ -460,7 +460,7 @@ class SessyScheduleSensor(SessySensor):
             )
         
         self._attr_native_value = current_value
-        self._attr_available = self._attr_native_value != None
+        self._attr_available = self._attr_native_value is not None
 
         self._attr_extra_state_attributes = {}
 
@@ -517,7 +517,7 @@ class SessyLegacyScheduleSensor(SessySensor):
             current_value = schedule_today_values[now.hour]
         
         self._attr_native_value = current_value
-        self._attr_available = self._attr_native_value != None
+        self._attr_available = self._attr_native_value is not None
 
         self._attr_extra_state_attributes = {}
         for schedule in self.cache_value:
