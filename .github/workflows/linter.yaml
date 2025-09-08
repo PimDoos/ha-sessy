@@ -8,13 +8,14 @@ on:
 jobs:
   run-ruff:
     runs-on: "ubuntu-latest"
+    strategy:
+      fail-fast: false
     steps:
       - name: Checkout
         uses: "actions/checkout@v5"
       - name: ruff-action
         uses: astral-sh/ruff-action@v3.5.1
-        strategy:
-          fail-fast: false
+        
   run-codespell:
     name: CodeSpell
     runs-on: ubuntu-latest
