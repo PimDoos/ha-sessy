@@ -103,7 +103,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             _LOGGER.exception("Unexpected exception")
             errors["base"] = "unknown"
         else:
-            # Connection was succesful, create config entry
+            # Connection was successful, create config entry
             return self.async_create_entry(title=info["title"], data=user_input)
 
         # Pass errors to user and show form again

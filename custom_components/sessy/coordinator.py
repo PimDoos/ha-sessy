@@ -293,7 +293,7 @@ class SessyCoordinatorEntity(CoordinatorEntity):
             self._update_failed_count = 0
         except Exception as e:
             self._update_failed_count += 1
-            message = f"Updating entity '{self.name}' failed for {self._update_failed_count} consecutive attempts. Exception occured: '{e}'"
+            message = f"Updating entity '{self.name}' failed for {self._update_failed_count} consecutive attempts. Exception occurred: '{e}'"
             self.cache_value = None
             if self._update_failed_count == ENTITY_ERROR_THRESHOLD:
                 # Log as warning once attempts exceed threshold
