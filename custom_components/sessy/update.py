@@ -120,8 +120,8 @@ class SessyUpdate(SessyCoordinatorEntity, UpdateEntity):
             device_registry = dr.async_get(self.hass)
             device = device_registry.async_get_device(self.device_info[ATTR_IDENTIFIERS])
             device_registry.async_update_device(device.id, sw_version=self.installed_version)
-        except:
-            _LOGGER.warning("Could not write OTA status to device registry")
+        except Exception as e:
+            _LOGGER.warning(f"Could not write OTA status to device registry: {e}")
 
     async def async_install(self, version: str | None, backup: bool, **kwargs: Any) -> None:
         device: SessyDevice = self.config_entry.runtime_data.device
