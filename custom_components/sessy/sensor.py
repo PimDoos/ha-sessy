@@ -450,7 +450,7 @@ class SessyScheduleSensor(SessySensor):
         )
 
         current_schedule_entry = schedule_entries_now.pop(0) if len(schedule_entries_now) > 0 else None
-        if current_schedule_entry == None:
+        if current_schedule_entry is None:
             current_value = None
         else:
             current_value = current_schedule_entry.get(self.schedule_key, None)
