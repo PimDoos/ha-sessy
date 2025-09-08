@@ -62,7 +62,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: SessyConfigEntry,
                 _LOGGER.warning(f"Sessy settings api returned an error:\n{ settings.get("error") }\nSome entities might not work until settings are saved in the Sessy portal or web UI.")
 
             # Noise controls
-            if settings.get("disable_noise_level", True) == False:
+            if not settings.get("disable_noise_level", True):
                 numbers.append(
                     SessySettingNumberEntity(hass, config_entry, "Noise Level",
                                 system_settings_coordinator, "allowed_noise_level",
