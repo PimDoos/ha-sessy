@@ -1,4 +1,5 @@
 """Config flow for Sessy integration."""
+
 from __future__ import annotations
 
 import logging
@@ -15,34 +16,35 @@ from homeassistant.const import (
     CONF_USERNAME,
     CONF_HOST,
     CONF_NAME,
-    CONF_SCAN_INTERVAL
+    CONF_SCAN_INTERVAL,
 )
 from homeassistant.helpers.service_info.zeroconf import ZeroconfServiceInfo
 
 from sessypy.devices import get_sessy_device, SessyBattery, SessyP1Meter, SessyCTMeter
 from sessypy.util import SessyConnectionException, SessyLoginException
 
-from .const import DEFAULT_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL_POWER, DOMAIN
+from .const import DEFAULT_SCAN_INTERVAL_POWER, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
+
 
 async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str, Any]:
     """Validate the user input allows us to connect."""
 
     try:
         device = await get_sessy_device(
-            host = data.get(CONF_HOST),
-            username = data.get(CONF_USERNAME),
-            password = data.get(CONF_PASSWORD),
+            host=data.get(CONF_HOST),
+            username=data.get(CONF_USERNAME),
+            password=data.get(CONF_PASSWORD),
         )
     except SessyLoginException:
         raise InvalidAuth
     except SessyConnectionException:
         raise CannotConnect
-    
+
     if device is None:
         raise CannotConnect
-    
+
     device_id = device.serial_number[0:4]
     # Return info that you want to store in the config entry.
     if isinstance(device, SessyBattery):
@@ -74,17 +76,19 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         data_schema = vol.Schema(
             {
                 vol.Required(CONF_HOST, default=self.hostname or "sessy-"): str,
-                vol.Required(CONF_USERNAME, default=self.username or vol.UNDEFINED): str,
+                vol.Required(
+                    CONF_USERNAME, default=self.username or vol.UNDEFINED
+                ): str,
                 vol.Required(CONF_PASSWORD): str,
             }
         )
         if user_input is None:
-            return self.async_show_form(
-                step_id="user", data_schema=data_schema
-            )
+            return self.async_show_form(step_id="user", data_schema=data_schema)
 
         await self.async_set_unique_id(user_input.get(CONF_USERNAME))
-        self._abort_if_unique_id_configured(updates={CONF_HOST: user_input.get(CONF_HOST)})
+        self._abort_if_unique_id_configured(
+            updates={CONF_HOST: user_input.get(CONF_HOST)}
+        )
 
         errors = {}
 
@@ -99,13 +103,14 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             _LOGGER.exception("Unexpected exception")
             errors["base"] = "unknown"
         else:
-            # Connection was succesful, create config entry
+            # Connection was successful, create config entry
             return self.async_create_entry(title=info["title"], data=user_input)
 
         # Pass errors to user and show form again
         return self.async_show_form(
             step_id="user", data_schema=data_schema, errors=errors
         )
+
     @property
     def _name(self) -> str | None:
         return self.context.get(CONF_NAME)
@@ -125,7 +130,9 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             # Get device info from zeroconf
             local_name = discovery_info.hostname[:-1]
             serial_number = discovery_info.properties.get("serial")
-            _LOGGER.info(f"Discovered Sessy device at {local_name} with serial: {serial_number}")
+            _LOGGER.info(
+                f"Discovered Sessy device at {local_name} with serial: {serial_number}"
+            )
 
             # Check for duplicates
             await self.async_set_unique_id(serial_number)
@@ -137,18 +144,18 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             # Update the autofill information
             self.hostname = local_name
             self.username = serial_number
-        except:
+        except Exception:
             return self.async_abort(reason="discovery_error")
         else:
             # Prompt user for the password
             return await self.async_step_user()
-        
+
     def async_get_options_flow(
         config_entry: config_entries.ConfigEntry,
     ) -> config_entries.OptionsFlow:
         """Create the options flow."""
         return OptionsFlowHandler(config_entry)
-    
+
 
 class OptionsFlowHandler(config_entries.OptionsFlow):
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
@@ -167,13 +174,14 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 {
                     vol.Required(
                         CONF_SCAN_INTERVAL,
-                        default=self.config_entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL_POWER.seconds),
-                    ): vol.All(
-                        vol.Coerce(int), vol.Range(min=1, max=300)
-                    )
+                        default=self.config_entry.options.get(
+                            CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL_POWER.seconds
+                        ),
+                    ): vol.All(vol.Coerce(int), vol.Range(min=1, max=300))
                 }
             ),
-        ) 
+        )
+
 
 class CannotConnect(HomeAssistantError):
     """Error to indicate we cannot connect."""
@@ -181,4 +189,3 @@ class CannotConnect(HomeAssistantError):
 
 class InvalidAuth(HomeAssistantError):
     """Error to indicate there is invalid auth."""
-

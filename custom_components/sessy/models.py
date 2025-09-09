@@ -7,6 +7,7 @@ from sessypy.devices import SessyDevice
 
 type SessyConfigEntry = ConfigEntry[SessyRuntimeData]
 
+
 @dataclass
 class SessyRuntimeData:
     device: SessyDevice = None
