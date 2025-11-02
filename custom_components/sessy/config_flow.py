@@ -75,7 +75,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         # Use discovered hostname and username if available, otherwise use defaults
         data_schema = vol.Schema(
             {
-                vol.Required(CONF_HOST, default=self.hostname or "sessy-"): str,
+                vol.Required(CONF_HOST, default=self.hostname or "sessy-DXYZ.local", description="Hostname or IP address of Sessy device",): str,
                 vol.Required(
                     CONF_USERNAME, default=self.username or vol.UNDEFINED
                 ): str,
@@ -109,6 +109,44 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         # Pass errors to user and show form again
         return self.async_show_form(
             step_id="user", data_schema=data_schema, errors=errors
+        )
+    
+    async def async_step_reconfigure(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Handle reconfiguration of Sessy integration."""
+
+        _LOGGER.info("Starting reconfigure step for Sessy")
+        
+        self._reconfig_entry = self._get_reconfigure_entry()
+        data = self._reconfig_entry.data
+
+        self.hostname = data.get(CONF_HOST)
+
+        data_schema = vol.Schema(
+            {
+                vol.Required(CONF_HOST, default=self.hostname): str,
+            }
+        )
+
+        errors = {}
+
+        if user_input is not None:
+            try:
+                # Merge stored reconfigure entry data (username/password) with user's new data (host)
+                info = await validate_input(self.hass, {**data, **user_input})
+            except CannotConnect:
+                errors["base"] = "cannot_connect"
+            except InvalidAuth:
+                errors["base"] = "invalid_auth"
+            except Exception:
+                _LOGGER.exception("Unexpected exception during reconfigure")
+                errors["base"] = "unknown"
+            else:
+                return self.async_update_reload_and_abort(title=info["title"], entry=self._reconfig_entry, data_updates=user_input)
+
+        return self.async_show_form(
+            step_id="reconfigure", data_schema=data_schema, errors=errors
         )
 
     @property
