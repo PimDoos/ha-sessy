@@ -800,8 +800,8 @@ class SessyScheduleSensor(SessySensor):
         else:
             current_value = current_schedule_entry.get(self.schedule_key, None)
 
-        if self.schedule_transform_function:
-            current_value = self.schedule_transform_function(current_value)
+            if self.schedule_transform_function:
+                current_value = self.schedule_transform_function(current_value)
 
         self._attr_native_value = current_value
         self._attr_available = self._attr_native_value is not None
