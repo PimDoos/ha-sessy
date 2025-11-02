@@ -777,7 +777,7 @@ class SessyScheduleSensor(SessySensor):
             self.async_write_ha_state()
 
         # Update on top of hour
-        self.tracker = async_track_time_change(hass, update_schedule, None, 0, 0)
+        self.tracker = async_track_time_change(hass, update_schedule, None, "/15", 0)
 
     def update_from_cache(self):
         now = datetime.now()
@@ -862,7 +862,7 @@ class SessyLegacyScheduleSensor(SessySensor):
             self.async_write_ha_state()
 
         # Update on top of hour
-        self.tracker = async_track_time_change(hass, update_schedule, None, "/15", 0)
+        self.tracker = async_track_time_change(hass, update_schedule, None, 0, 0)
 
     def update_from_cache(self):
         now = datetime.now()
