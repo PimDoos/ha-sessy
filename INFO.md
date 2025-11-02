@@ -28,6 +28,10 @@ Currently supported features:
   - Min/max power
   - Start/stop times
 
+- Schedules
+  - Read energy prices
+  - Read dynamic mode power schedule
+
 ## Sessy Meter
 
 ### Sessy P1 Dongle

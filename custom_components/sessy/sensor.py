@@ -777,7 +777,7 @@ class SessyScheduleSensor(SessySensor):
             self.async_write_ha_state()
 
         # Update on top of hour
-        self.tracker = async_track_time_change(hass, update_schedule, None, 0, 0)
+        self.tracker = async_track_time_change(hass, update_schedule, None, "/15", 0)
 
     def update_from_cache(self):
         now = datetime.now()
@@ -800,8 +800,8 @@ class SessyScheduleSensor(SessySensor):
         else:
             current_value = current_schedule_entry.get(self.schedule_key, None)
 
-        if self.schedule_transform_function:
-            current_value = self.schedule_transform_function(current_value)
+            if self.schedule_transform_function:
+                current_value = self.schedule_transform_function(current_value)
 
         self._attr_native_value = current_value
         self._attr_available = self._attr_native_value is not None
