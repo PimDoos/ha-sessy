@@ -25,17 +25,6 @@ Currently supported:
 - EPEX Energy prices
 - Energy meters for integration with Energy Dashboard
 
-TODO:
-- [X] Add Power Status sensors
-- [X] Add Power Strategy select
-- [X] Add Power Setpoint number entity
-- [X] Add update entities
-- [X] Add Device Registry information
-- [X] Add logo to home-assistant/brands
-- [X] Add HACS configuration
-- [X] Add to HACS Default repository
-- [X] Add Energy sensors
-
 Installation
 ============
 
