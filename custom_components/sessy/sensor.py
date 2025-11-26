@@ -711,6 +711,8 @@ class SessySensor(SessyCoordinatorEntity, SensorEntity):
         precision: int = None,
         suggested_unit_of_measurement=None,
         enabled_default: bool = True,
+        availability_key: str = None,
+        availability_test_value: str = None,
     ):
         super().__init__(
             hass=hass,
@@ -720,6 +722,8 @@ class SessySensor(SessyCoordinatorEntity, SensorEntity):
             data_key=data_key,
             transform_function=transform_function,
             translation_key=translation_key,
+            availability_key=availability_key,
+            availability_test_value=availability_test_value,
         )
 
         self._attr_device_class = device_class
@@ -735,7 +739,6 @@ class SessySensor(SessyCoordinatorEntity, SensorEntity):
         self._attr_entity_registry_enabled_default = enabled_default
 
     def update_from_cache(self):
-        self._attr_available = self.cache_value is not None
         self._attr_native_value = self.cache_value
 
 
