@@ -265,6 +265,8 @@ class SessyCoordinatorEntity(CoordinatorEntity):
         data_key: str,
         transform_function: Optional[Callable] = None,
         translation_key: str = None,
+        availability_key: str = None,
+        availability_test_value: str = None
     ):
         self.context = SessyEntityContext(data_key, transform_function)
         super().__init__(coordinator, self.context)
@@ -274,6 +276,8 @@ class SessyCoordinatorEntity(CoordinatorEntity):
         self.transform_function = transform_function
         self.data_key = data_key
         self.cache_value = None
+        self.availability_key = availability_key
+        self.availability_test_value = availability_test_value
 
         device: SessyDevice = config_entry.runtime_data.device
 
@@ -306,7 +310,7 @@ class SessyCoordinatorEntity(CoordinatorEntity):
             self.async_write_ha_state()
 
     def copy_from_cache(self):
-        self.cache_value = self.coordinator.data.get(self.context, None)
+        self.cache_value, self._attr_available = self.coordinator.data.get(self.context, None)
         if self.cache_value is None:
             raise TypeError(
                 f"Key {self.data_key} has no value in coordinator {self.coordinator.name}"
@@ -318,12 +322,19 @@ class SessyCoordinatorEntity(CoordinatorEntity):
 
 
 class SessyEntityContext:
-    def __init__(self, data_key: str, transform_function: Optional[Callable] = None):
+    def __init__(self, data_key: str, transform_function: Optional[Callable] = None, availability_key: Optional[str] = None, availability_test_value: Optional[str] = None):
         self.data_key = data_key
         self.transform_function = transform_function
+        self.availability_key = availability_key
+        self.availability_test_value = availability_test_value
 
     def apply(self, data):
         value = get_nested_key(data, self.data_key)
         if self.transform_function:
             value = self.transform_function(value)
-        return value
+        if self.availability_key:
+            availability_value = get_nested_key(data, self.availability_key)
+            available = availability_value == self.availability_test_value
+        else:
+            available = value is not None
+        return value, available
