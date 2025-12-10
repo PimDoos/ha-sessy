@@ -25,7 +25,7 @@ from sessypy.devices import (
 )
 from sessypy.util import SessyLoginException, SessyNotSupportedException
 
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 from .const import (
     COORDINATOR_RETRIES,
@@ -265,8 +265,10 @@ class SessyCoordinatorEntity(CoordinatorEntity):
         data_key: str,
         transform_function: Optional[Callable] = None,
         translation_key: str = None,
+        availability_key: str = None,
+        availability_test_value: str = None
     ):
-        self.context = SessyEntityContext(data_key, transform_function)
+        self.context = SessyEntityContext(data_key, transform_function, availability_key, availability_test_value)
         super().__init__(coordinator, self.context)
         self.hass = hass
         self.config_entry = config_entry
@@ -274,6 +276,8 @@ class SessyCoordinatorEntity(CoordinatorEntity):
         self.transform_function = transform_function
         self.data_key = data_key
         self.cache_value = None
+        self.availability_key = availability_key
+        self.availability_test_value = availability_test_value
 
         device: SessyDevice = config_entry.runtime_data.device
 
@@ -306,7 +310,10 @@ class SessyCoordinatorEntity(CoordinatorEntity):
             self.async_write_ha_state()
 
     def copy_from_cache(self):
-        self.cache_value = self.coordinator.data.get(self.context, None)
+        value, available = self.coordinator.data.get(self.context, tuple((None, False)))
+        self.cache_value = value
+        self._attr_available = available
+
         if self.cache_value is None:
             raise TypeError(
                 f"Key {self.data_key} has no value in coordinator {self.coordinator.name}"
@@ -315,15 +322,27 @@ class SessyCoordinatorEntity(CoordinatorEntity):
     def update_from_cache(self):
         """Entity function to write the latest cache value to the proper attributes. Implemented on platform level."""
         raise NotImplementedError()
+    
+    @property
+    def available(self) -> bool:
+        """Return True if entity is available."""
+        return super().available and self._attr_available
 
 
 class SessyEntityContext:
-    def __init__(self, data_key: str, transform_function: Optional[Callable] = None):
+    def __init__(self, data_key: str, transform_function: Optional[Callable] = None, availability_key: Optional[str] = None, availability_test_value: Optional[str] = None):
         self.data_key = data_key
         self.transform_function = transform_function
+        self.availability_key = availability_key
+        self.availability_test_value = availability_test_value
 
-    def apply(self, data):
+    def apply(self, data) -> tuple[Any, bool]:
         value = get_nested_key(data, self.data_key)
         if self.transform_function:
             value = self.transform_function(value)
-        return value
+        if self.availability_key:
+            availability_value = get_nested_key(data, self.availability_key)
+            available = availability_value == self.availability_test_value
+        else:
+            available = value is not None
+        return value, available

@@ -85,5 +85,4 @@ class SessyBinarySensor(SessyCoordinatorEntity, BinarySensorEntity):
         self._attr_entity_registry_enabled_default = enabled_default
 
     def update_from_cache(self):
-        self._attr_available = self.cache_value is not None
         self._attr_is_on = self.cache_value

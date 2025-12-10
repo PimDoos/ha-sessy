@@ -116,7 +116,6 @@ class SessyTimeEntity(SessyCoordinatorEntity, TimeEntity):
         self.action_function: Callable = action_function
 
     def update_from_cache(self):
-        self._attr_available = self.cache_value is not None
         self._attr_native_value = self.cache_value
 
     async def async_set_value(self, value: time):

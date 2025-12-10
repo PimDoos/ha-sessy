@@ -99,7 +99,6 @@ class SessySettingSwitchEntity(SessyCoordinatorEntity, SwitchEntity):
         self.action_function: Callable = action_function
 
     def update_from_cache(self):
-        self._attr_available = self.cache_value is not None
         self._attr_is_on = self.cache_value
 
     async def async_turn_on(self):
