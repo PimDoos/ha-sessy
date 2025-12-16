@@ -2,6 +2,8 @@
 [![Validate with hassfest](https://github.com/PimDoos/ha-sessy/actions/workflows/hassfest.yaml/badge.svg)](https://github.com/PimDoos/ha-sessy/actions/workflows/hassfest.yaml)
 [![HACS Action](https://github.com/PimDoos/ha-sessy/actions/workflows/hacs.yaml/badge.svg)](https://github.com/PimDoos/ha-sessy/actions/workflows/hacs.yaml)
 
+![Installations](https://github.com/golles/ha-active-installation-badges/raw/refs/heads/main/badges/sessy.svg)
+
 Home Assistant integration for [Sessy](https://www.sessy.nl/product/sessy/?ref=18d60a1daf) - **S**mart **E**nergy **S**torage **Sy**stem.
 
 Supported devices:
