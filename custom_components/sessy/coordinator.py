@@ -111,6 +111,13 @@ async def setup_coordinators(hass, config_entry: SessyConfigEntry, device: Sessy
             )
 
     elif isinstance(device, SessyP1Meter):
+        settings = await device.get_system_settings()
+        if True: #settings.get("enable_modbus", False):
+            coordinators.append(
+                SessyCoordinator(
+                    hass, config_entry, device.get_modbus_details, scan_interval_power
+                )
+            )
         coordinators.append(
             SessyCoordinator(
                 hass, config_entry, device.get_p1_details, scan_interval_power
