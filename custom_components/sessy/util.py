@@ -27,6 +27,8 @@ def backend_status_string(status_string: str, prefix: str = "") -> str:
 def status_string_p1(status_string: str) -> str:
     return backend_status_string(status_string, "P1_")
 
+def status_string_modbus(status_string: str) -> str:
+    return backend_status_string(status_string, "MODBUS_")
 
 def status_string_system_state(status_string: str) -> str:
     return backend_status_string(status_string, "SYSTEM_STATE_")

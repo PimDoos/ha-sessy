@@ -43,7 +43,7 @@ from .util import get_nested_key
 _LOGGER = logging.getLogger(__name__)
 
 
-async def setup_coordinators(hass, config_entry: SessyConfigEntry, device: SessyDevice):
+async def setup_coordinators(hass, config_entry: SessyConfigEntry, device: SessyDevice) -> dict[Callable, SessyCoordinator]:
     coordinators = list()
 
     # Get power scan interval from options flow
@@ -111,6 +111,13 @@ async def setup_coordinators(hass, config_entry: SessyConfigEntry, device: Sessy
             )
 
     elif isinstance(device, SessyP1Meter):
+        settings = await device.get_system_settings()
+        if settings.get("enable_modbus", False):
+            coordinators.append(
+                SessyCoordinator(
+                    hass, config_entry, device.get_modbus_details, scan_interval_power
+                )
+            )
         coordinators.append(
             SessyCoordinator(
                 hass, config_entry, device.get_p1_details, scan_interval_power
@@ -144,11 +151,11 @@ async def setup_coordinators(hass, config_entry: SessyConfigEntry, device: Sessy
 
 
 async def update_coordinator_options(hass, config_entry: SessyConfigEntry):
-    device = config_entry.runtime_data.device
-    update_coordinator_functions: list[Callable] = [
-        device.get_power_status,
-        device.get_ct_details,
-        device.get_p1_details,
+    update_coordinator_functions: list[str] = [
+        SessyBattery.get_power_status.__name__,
+        SessyCTMeter.get_ct_details.__name__,
+        SessyP1Meter.get_p1_details.__name__,
+        SessyP1Meter.get_modbus_details.__name__,
     ]
 
     # Get power scan interval from options flow
@@ -159,15 +166,19 @@ async def update_coordinator_options(hass, config_entry: SessyConfigEntry):
     else:
         scan_interval_power = DEFAULT_SCAN_INTERVAL_POWER
 
-    for coordinator in config_entry.runtime_data.coordinators:
-        if coordinator._device_function in update_coordinator_functions:
+    coordinators_dict: dict[Callable, SessyCoordinator] = config_entry.runtime_data.coordinators
+    for coordinator_function in coordinators_dict:
+        if coordinator_function.__name__ in update_coordinator_functions:
+            _LOGGER.debug(f"Updating scan interval for coordinator {coordinator_function.__name__} to {scan_interval_power}")
+            coordinator = coordinators_dict[coordinator_function]
             coordinator.update_interval = scan_interval_power
 
 
 async def refresh_coordinators(config_entry: SessyConfigEntry):
-    coordinators = config_entry.runtime_data.coordinators
-    for coordinator in coordinators:
-        await coordinators[coordinator].async_refresh()
+    coordinators_dict: dict[Callable, SessyCoordinator] = config_entry.runtime_data.coordinators
+    for coordinator_function in coordinators_dict:
+        coordinator = coordinators_dict[coordinator_function]
+        await coordinator.async_refresh()
 
 
 class SessyCoordinator(DataUpdateCoordinator):

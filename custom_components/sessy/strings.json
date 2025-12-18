@@ -62,6 +62,14 @@
           "parse_err": "Parse error",
           "ok": "OK"
         }
+      },
+      "modbus_state":{
+        "state":{
+          "disabled": "Disabled",
+          "error": "Error",
+          "ok": "OK",
+          "unsupported": "Unsupported"
+        }
       }
     },
     "select":{

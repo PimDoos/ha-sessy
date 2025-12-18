@@ -24,7 +24,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.event import async_track_time_change
 
-from sessypy.const import SessySystemState, SessyP1State
+from sessypy.const import SessyModbusState, SessySystemState, SessyP1State
 from sessypy.devices import SessyBattery, SessyP1Meter, SessyCTMeter
 
 from typing import Callable, Optional
@@ -35,6 +35,7 @@ from .util import (
     divide_by_hundred_thousand,
     enum_to_options_list,
     get_nested_key,
+    status_string_modbus,
     status_string_p1,
     status_string_system_state,
     transform_on_list,
@@ -448,6 +449,7 @@ async def async_setup_entry(
                 p1_details_coordinator,
                 "state",
                 SensorDeviceClass.ENUM,
+                entity_category=EntityCategory.DIAGNOSTIC,
                 translation_key="p1_state",
                 transform_function=status_string_p1,
                 options=enum_to_options_list(SessyP1State, status_string_p1),
@@ -622,6 +624,132 @@ async def async_setup_entry(
                     availability_test_value=SessyP1State.OK,
                 )
             )
+
+        # ModBus entities
+        modbus_coordinator: SessyCoordinator = coordinators.get(device.get_modbus_details, None)
+        if modbus_coordinator is not None:
+            try:
+                sensors.append(
+                    SessySensor(
+                        hass,
+                        config_entry,
+                        "Modbus Total Power",
+                        modbus_coordinator,
+                        "total_power",
+                        SensorDeviceClass.POWER,
+                        SensorStateClass.MEASUREMENT,
+                        UnitOfPower.WATT,
+                        availability_key="state",
+                        availability_test_value="MODBUS_OK",
+                    )
+                )
+
+                sensors.append(
+                    SessySensor(
+                        hass,
+                        config_entry,
+                        "Modbus Total Imported Energy",
+                        modbus_coordinator,
+                        "total_import",
+                        SensorDeviceClass.ENERGY,
+                        SensorStateClass.TOTAL_INCREASING,
+                        UnitOfEnergy.WATT_HOUR,
+                        suggested_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+                        availability_key="state",
+                        availability_test_value="MODBUS_OK",
+                    )
+                )
+
+                sensors.append(
+                    SessySensor(
+                        hass,
+                        config_entry,
+                        "Modbus Total Exported Energy",
+                        modbus_coordinator,
+                        "total_export",
+                        SensorDeviceClass.ENERGY,
+                        SensorStateClass.TOTAL_INCREASING,
+                        UnitOfEnergy.WATT_HOUR,
+                        suggested_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+                        availability_key="state",
+                        availability_test_value="MODBUS_OK",
+                    )
+                )
+
+                for phase_id in range(1, 4):
+                    sensors.append(
+                        SessySensor(
+                            hass,
+                            config_entry,
+                            f"Modbus Phase {phase_id} Voltage",
+                            modbus_coordinator,
+                            f"phase_{phase_id}.voltage",
+                            SensorDeviceClass.VOLTAGE,
+                            SensorStateClass.MEASUREMENT,
+                            UnitOfElectricPotential.MILLIVOLT,
+                            suggested_unit_of_measurement=UnitOfElectricPotential.VOLT,
+                            availability_key="state",
+                            availability_test_value="MODBUS_OK",
+                        )
+                    )
+                    sensors.append(
+                        SessySensor(
+                            hass,
+                            config_entry,
+                            f"Modbus Phase {phase_id} Current",
+                            modbus_coordinator,
+                            f"phase_{phase_id}.current",
+                            SensorDeviceClass.CURRENT,
+                            SensorStateClass.MEASUREMENT,
+                            UnitOfElectricCurrent.MILLIAMPERE,
+                            suggested_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
+                            availability_key="state",
+                            availability_test_value="MODBUS_OK",
+                        )
+                    )
+                    sensors.append(
+                        SessySensor(
+                            hass,
+                            config_entry,
+                            f"Modbus Phase {phase_id} Power",
+                            modbus_coordinator,
+                            f"phase_{phase_id}.power",
+                            SensorDeviceClass.POWER,
+                            SensorStateClass.MEASUREMENT,
+                            UnitOfPower.WATT,
+                            availability_key="state",
+                            availability_test_value="MODBUS_OK",
+                        )
+                    )
+
+                # Diagnostic fields
+                sensors.append(
+                    SessySensor(
+                        hass,
+                        config_entry,
+                        "Modbus Device Type",
+                        modbus_coordinator,
+                        "device_type",
+                        entity_category=EntityCategory.DIAGNOSTIC,
+                    )
+                )
+                sensors.append(
+                    SessySensor(
+                        hass,
+                        config_entry,
+                        "Modbus Status",
+                        modbus_coordinator,
+                        "state",
+                        SensorDeviceClass.ENUM,
+                        translation_key="modbus_state",
+                        entity_category=EntityCategory.DIAGNOSTIC,
+                        transform_function=status_string_modbus,
+                        options=enum_to_options_list(SessyModbusState, status_string_modbus),
+                    )
+                )
+
+            except Exception as e:
+                _LOGGER.warning(f"Error setting up modbus sensors: {e}")
 
     elif isinstance(device, SessyCTMeter):
         ct_details_coordinator: SessyCoordinator = coordinators[device.get_ct_details]
