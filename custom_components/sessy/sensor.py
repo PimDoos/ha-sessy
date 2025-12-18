@@ -24,7 +24,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.event import async_track_time_change
 
-from sessypy.const import SessySystemState, SessyP1State
+from sessypy.const import SessyModbusState, SessySystemState, SessyP1State
 from sessypy.devices import SessyBattery, SessyP1Meter, SessyCTMeter
 
 from typing import Callable, Optional
@@ -35,6 +35,7 @@ from .util import (
     divide_by_hundred_thousand,
     enum_to_options_list,
     get_nested_key,
+    status_string_modbus,
     status_string_p1,
     status_string_system_state,
     transform_on_list,
@@ -448,6 +449,7 @@ async def async_setup_entry(
                 p1_details_coordinator,
                 "state",
                 SensorDeviceClass.ENUM,
+                entity_category=EntityCategory.DIAGNOSTIC,
                 translation_key="p1_state",
                 transform_function=status_string_p1,
                 options=enum_to_options_list(SessyP1State, status_string_p1),
@@ -735,10 +737,14 @@ async def async_setup_entry(
                     SessySensor(
                         hass,
                         config_entry,
-                        "Modbus State",
+                        "Modbus Status",
                         modbus_coordinator,
                         "state",
+                        SensorDeviceClass.ENUM,
+                        translation_key="modbus_state",
                         entity_category=EntityCategory.DIAGNOSTIC,
+                        transform_function=status_string_modbus,
+                        options=enum_to_options_list(SessyModbusState, status_string_modbus),
                     )
                 )
 
