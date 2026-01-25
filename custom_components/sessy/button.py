@@ -13,8 +13,13 @@ from sessypy.util import SessyConnectionException, SessyNotSupportedException
 
 from typing import Callable, Optional
 
-from .coordinator import SessyCoordinator, SessyCoordinatorEntity
-from .models import SessyConfigEntry
+from .coordinator import SessyCoordinator
+from .entity import SessyCoordinatorEntity
+
+from .models import (
+    SessyConfigEntry, 
+    SessyConnectedDeviceType,
+)
 
 
 async def async_setup_entry(
@@ -67,6 +72,7 @@ class SessyButton(SessyCoordinatorEntity, ButtonEntity):
         entity_category: EntityCategory = None,
         transform_function: Optional[Callable] = None,
         translation_key: str = None,
+        connected_device_type: SessyConnectedDeviceType = SessyConnectedDeviceType.SELF,
     ):
         super().__init__(
             hass=hass,
@@ -76,6 +82,7 @@ class SessyButton(SessyCoordinatorEntity, ButtonEntity):
             data_key=data_key,
             transform_function=transform_function,
             translation_key=translation_key,
+            connected_device_type=connected_device_type,
         )
 
         self.action_function = action_function

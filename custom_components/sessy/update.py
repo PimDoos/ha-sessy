@@ -23,8 +23,9 @@ from .const import (
     SCAN_INTERVAL_OTA_BUSY,
     SESSY_RELEASE_NOTES_URL,
 )
-from .coordinator import SessyCoordinator, SessyCoordinatorEntity
-from .models import SessyConfigEntry
+from .coordinator import SessyCoordinator
+from .entity import SessyCoordinatorEntity
+from .models import SessyConfigEntry, SessyConnectedDeviceType
 from .util import unit_interval_to_percentage
 
 import logging
@@ -63,6 +64,7 @@ class SessyUpdate(SessyCoordinatorEntity, UpdateEntity):
         action_target: SessyOtaTarget = None,
         transform_function: Optional[Callable] = None,
         enabled_default: bool = True,
+        connected_device_type: SessyConnectedDeviceType = SessyConnectedDeviceType.SELF,
     ):
         self.device = config_entry.runtime_data.device
         coordinator: SessyCoordinator = config_entry.runtime_data.coordinators[
@@ -78,6 +80,7 @@ class SessyUpdate(SessyCoordinatorEntity, UpdateEntity):
             coordinator=coordinator,
             data_key=data_key,
             transform_function=transform_function,
+            connected_device_type=connected_device_type,
         )
 
         self._attr_entity_registry_enabled_default = enabled_default
@@ -159,6 +162,7 @@ class SessyUpdate(SessyCoordinatorEntity, UpdateEntity):
             self.coordinator.update_interval = DEFAULT_SCAN_INTERVAL
 
     def update_device_sw_version(self):
+        # TODO update for new device structure with multiple devices
         try:
             device_registry = dr.async_get(self.hass)
             device = device_registry.async_get_device(

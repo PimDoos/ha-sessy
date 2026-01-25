@@ -13,8 +13,9 @@ from sessypy.devices import SessyBattery, SessyDevice
 
 from typing import Callable, Optional
 
-from .coordinator import SessyCoordinator, SessyCoordinatorEntity
-from .models import SessyConfigEntry
+from .coordinator import SessyCoordinator
+from .entity import SessyCoordinatorEntity
+from .models import SessyConfigEntry, SessyConnectedDeviceType
 
 import logging
 
@@ -69,6 +70,7 @@ class SessyBinarySensor(SessyCoordinatorEntity, BinarySensorEntity):
         transform_function: Optional[Callable] = None,
         entity_category: EntityCategory = None,
         enabled_default: bool = True,
+        connected_device_type: SessyConnectedDeviceType = SessyConnectedDeviceType.SELF,
     ):
         super().__init__(
             hass=hass,
@@ -77,6 +79,7 @@ class SessyBinarySensor(SessyCoordinatorEntity, BinarySensorEntity):
             coordinator=coordinator,
             data_key=data_key,
             transform_function=transform_function,
+            connected_device_type=connected_device_type,
         )
 
         self._attr_device_class = device_class

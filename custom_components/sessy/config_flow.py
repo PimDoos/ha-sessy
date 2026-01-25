@@ -48,11 +48,11 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
     device_id = device.serial_number[0:4]
     # Return info that you want to store in the config entry.
     if isinstance(device, SessyBattery):
-        return {"title": f"Sessy Battery {device_id}"}
+        return {"title": f"Sessy Dongle {device_id}"}
     elif isinstance(device, SessyP1Meter):
-        return {"title": "Sessy P1"}
+        return {"title": f"Sessy P1 {device_id}"}
     elif isinstance(device, SessyCTMeter):
-        return {"title": "Sessy CT"}
+        return {"title": f"Sessy CT {device_id}"}
     else:
         return {"title": f"Sessy {device_id}"}
 

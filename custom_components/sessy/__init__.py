@@ -13,7 +13,7 @@ from sessypy.util import SessyLoginException, SessyConnectionException, SessyNot
 
 from .coordinator import refresh_coordinators, setup_coordinators, update_coordinator_options
 from .models import SessyConfigEntry, SessyRuntimeData
-from .util import generate_device_info
+from .device import generate_device_info
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -51,8 +51,8 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: SessyConfigEntry)
     config_entry.runtime_data = SessyRuntimeData(device = device)
 
     # Generate Device Info
-    config_entry.runtime_data.device_info = await generate_device_info(hass, config_entry, device)
     config_entry.runtime_data.coordinators = await setup_coordinators(hass, config_entry, device)
+    config_entry.runtime_data.device_info = await generate_device_info(hass, config_entry, device)
 
     config_entry.add_update_listener(
         listener=update_coordinator_options

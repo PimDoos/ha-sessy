@@ -13,8 +13,9 @@ from sessypy.util import SessyNotSupportedException, SessyConnectionException
 
 from typing import Callable, Optional
 
-from .coordinator import SessyCoordinator, SessyCoordinatorEntity
-from .models import SessyConfigEntry
+from .coordinator import SessyCoordinator
+from .entity import SessyCoordinatorEntity
+from .models import SessyConfigEntry, SessyConnectedDeviceType
 
 import logging
 
@@ -176,6 +177,7 @@ class SessyNumberEntity(SessyCoordinatorEntity, NumberEntity):
         max_value: float = None,
         entity_category: EntityCategory = None,
         transform_function: Optional[Callable] = None,
+        connected_device_type: SessyConnectedDeviceType = SessyConnectedDeviceType.SELF,
     ):
         super().__init__(
             hass=hass,
@@ -184,6 +186,7 @@ class SessyNumberEntity(SessyCoordinatorEntity, NumberEntity):
             coordinator=coordinator,
             data_key=data_key,
             transform_function=transform_function,
+            connected_device_type=connected_device_type,
         )
 
         self._attr_device_class = device_class
@@ -234,6 +237,7 @@ class SessySettingNumberEntity(SessyNumberEntity):
         max_value: float = None,
         entity_category: EntityCategory = None,
         transform_function: Optional[Callable] = None,
+        connected_device_type: SessyConnectedDeviceType = SessyConnectedDeviceType.SELF,
     ):
         device: SessyBattery = config_entry.runtime_data.device
         action_function = device.set_system_setting
@@ -251,6 +255,7 @@ class SessySettingNumberEntity(SessyNumberEntity):
             max_value,
             entity_category,
             transform_function,
+            connected_device_type=connected_device_type,
         )
 
     async def async_set_native_value(self, value: float):

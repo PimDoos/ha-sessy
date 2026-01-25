@@ -13,8 +13,9 @@ from sessypy.util import SessyConnectionException, SessyNotSupportedException
 
 from typing import Callable, Optional
 
-from .coordinator import SessyCoordinator, SessyCoordinatorEntity
-from .models import SessyConfigEntry
+from .coordinator import SessyCoordinator
+from .entity import SessyCoordinatorEntity
+from .models import SessyConfigEntry, SessyConnectedDeviceType
 from .util import start_time_from_string, stop_time_from_string, time_from_string
 
 import logging
@@ -102,6 +103,7 @@ class SessyTimeEntity(SessyCoordinatorEntity, TimeEntity):
         action_function: Callable,
         entity_category: EntityCategory = None,
         transform_function: Optional[Callable] = None,
+        connected_device_type: SessyConnectedDeviceType = SessyConnectedDeviceType.SELF,
     ):
         super().__init__(
             hass=hass,
@@ -110,6 +112,7 @@ class SessyTimeEntity(SessyCoordinatorEntity, TimeEntity):
             coordinator=coordinator,
             data_key=data_key,
             transform_function=transform_function,
+            connected_device_type=connected_device_type,
         )
         self._attr_entity_category = entity_category
         self._attr_native_value = None
