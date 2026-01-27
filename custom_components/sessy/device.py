@@ -13,8 +13,6 @@ from sessypy.devices import (
     SessyP1Meter,
 )
 
-from typing import Optional
-
 from .const import (
     DOMAIN,
     SESSY_MANUFACTURER,
@@ -26,8 +24,8 @@ from .util import decode_equipment_identifier
 _LOGGER = logging.getLogger(__name__)
 
 async def generate_device_info(
-    hass: HomeAssistant, config_entry: SessyConfigEntry, device: SessyDevice
-) -> Optional[DeviceInfo]:
+    hass: HomeAssistant, config_entry: SessyConfigEntry, device: SessyDevice, coordinators: dict[SessyConnectedDeviceType, SessyCoordinator]
+) -> dict[SessyConnectedDeviceType, DeviceInfo]:
     """Generate DeviceInfo for connected devices, if any."""
 
     device_info = dict()
@@ -41,8 +39,6 @@ async def generate_device_info(
         model=device.model,
         serial_number=device.serial_number,
     )
-
-    coordinators = config_entry.runtime_data.coordinators
 
     system_info_coordinator: SessyCoordinator = coordinators.get(device.get_system_info, None)
 
@@ -82,7 +78,7 @@ async def generate_device_info(
                 p1_serial = decode_equipment_identifier(p1_serial_dec)
 
                 device_info[SessyConnectedDeviceType.P1_METER] = DeviceInfo(
-                    name=f"DSMR {p1_serial}",
+                    name="P1 Electricity meter",
                     manufacturer=None,
                     identifiers={(DOMAIN, p1_serial)},
                     configuration_url=f"http://{device.host}/",
@@ -99,7 +95,7 @@ async def generate_device_info(
 
                 if len(gas_serial) > 8:
                     device_info[SessyConnectedDeviceType.P1_GAS_METER] = DeviceInfo(
-                        name=f"DSMR {gas_serial}",
+                        name="P1 Gas meter",
                         manufacturer=None,
                         identifiers={(DOMAIN, gas_serial)},
                         configuration_url=f"http://{device.host}/",
