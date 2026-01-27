@@ -75,7 +75,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         # Use discovered hostname and username if available, otherwise use defaults
         data_schema = vol.Schema(
             {
-                vol.Required(CONF_HOST, default=self.hostname or "sessy-DXYZ.local", description="Hostname or IP address of Sessy device",): str,
+                vol.Required(CONF_HOST, default=self.hostname or vol.UNDEFINED, description="Hostname or IP address of Sessy device",): str,
                 vol.Required(
                     CONF_USERNAME, default=self.username or vol.UNDEFINED
                 ): str,

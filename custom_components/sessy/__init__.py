@@ -48,11 +48,13 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: SessyConfigEntry)
     else:
         _LOGGER.info(f"Connection to {device.__class__} at {device.host} successful")
 
-    config_entry.runtime_data = SessyRuntimeData(device = device)
+    coordinators = await setup_coordinators(hass, config_entry, device)
 
-    # Generate Device Info
-    config_entry.runtime_data.coordinators = await setup_coordinators(hass, config_entry, device)
-    config_entry.runtime_data.device_info = await generate_device_info(hass, config_entry, device)
+    config_entry.runtime_data = SessyRuntimeData(
+        device = device, 
+        coordinators = coordinators,
+        device_info = await generate_device_info(hass, config_entry, device, coordinators)
+    )
 
     config_entry.add_update_listener(
         listener=update_coordinator_options
