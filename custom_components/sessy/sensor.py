@@ -550,7 +550,7 @@ async def async_setup_entry(
                     enabled_default=gas_meter_present,
                     availability_key="state",
                     availability_test_value=SessyP1State.OK,
-                    connected_device_type=SessyConnectedDeviceType.P1_METER,
+                    connected_device_type=SessyConnectedDeviceType.P1_GAS_METER,
                 )
             )
         except Exception as e:
