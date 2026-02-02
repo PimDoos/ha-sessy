@@ -21,6 +21,9 @@
       "invalid_auth": "Invalid authentication",
       "unknown": "Unexpected error"
     },
+    "abort": {
+      "already_configured": "This Sessy device is already configured"
+    },
     "flow_title": "{name}"
   },
   "options": {
