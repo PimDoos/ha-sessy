@@ -9,7 +9,7 @@ DEFAULT_SCAN_INTERVAL = timedelta(seconds=60)
 DEFAULT_SCAN_INTERVAL_POWER = timedelta(seconds=5)
 
 # Static scan intervals
-SCAN_INTERVAL_OTA_BUSY = timedelta(seconds=10)
+SCAN_INTERVAL_OTA_BUSY = timedelta(seconds=5)
 SCAN_INTERVAL_OTA_CHECK = timedelta(hours=6)
 SCAN_INTERVAL_SCHEDULE = timedelta(hours=1)
 
