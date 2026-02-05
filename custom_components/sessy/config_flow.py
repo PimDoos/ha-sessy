@@ -167,6 +167,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         try:
             # Get device info from zeroconf
             local_name = discovery_info.hostname[:-1]
+            ip_address = discovery_info.ip_address
             serial_number = discovery_info.properties.get("serial")
             _LOGGER.info(
                 f"Discovered Sessy device at {local_name} with serial: {serial_number}"
@@ -180,7 +181,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self._name = local_name.removesuffix(".local")
 
             # Update the autofill information
-            self.hostname = local_name
+            self.hostname = ip_address
             self.username = serial_number
         except Exception:
             return self.async_abort(reason="discovery_error")
