@@ -6,10 +6,11 @@ import logging
 
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntryNotReady
+from homeassistant.helpers.device_registry import format_mac
 from homeassistant.helpers.entity import DeviceInfo
 from sessypy.devices import (
     SessyBattery,
-    SessyDevice, 
+    SessyDevice,
     SessyP1Meter,
 )
 
@@ -23,10 +24,43 @@ from .util import decode_equipment_identifier
 
 _LOGGER = logging.getLogger(__name__)
 
+
 async def generate_device_info(
-    hass: HomeAssistant, config_entry: SessyConfigEntry, device: SessyDevice, coordinators: dict[SessyConnectedDeviceType, SessyCoordinator]
+    hass: HomeAssistant,
+    config_entry: SessyConfigEntry,
+    device: SessyDevice,
+    coordinators: dict[SessyConnectedDeviceType, SessyCoordinator],
 ) -> dict[SessyConnectedDeviceType, DeviceInfo]:
     """Generate DeviceInfo for connected devices, if any."""
+
+    network_status_coordinator: SessyCoordinator = coordinators.get(
+        device.get_network_status, None
+    )
+    if network_status_coordinator is None:
+        raise ConfigEntryNotReady(
+            f"System info not available for {device} at {device.host}"
+        )
+
+    identifiers = set((DOMAIN, device.serial_number))
+
+    wifi_status = network_status_coordinator.raw_data.get("wifi_sta")
+    if wifi_status is not None and "mac" in wifi_status:
+        wifi_mac_address = format_mac(wifi_status.get("mac"))
+        identifiers.add((DOMAIN, wifi_mac_address))
+
+    ethernet_status = network_status_coordinator.raw_data.get("eth")
+    if ethernet_status is not None and "mac" in ethernet_status:
+        ethernet_mac_address = format_mac(ethernet_status.get("mac"))
+        identifiers.add((DOMAIN, ethernet_mac_address))
+
+    system_info_coordinator: SessyCoordinator = coordinators.get(
+        device.get_system_info, None
+    )
+
+    if system_info_coordinator is None:
+        raise ConfigEntryNotReady(
+            f"System info not available for {device} at {device.host}"
+        )
 
     device_info = dict()
 
@@ -34,16 +68,11 @@ async def generate_device_info(
     device_info[SessyConnectedDeviceType.SELF] = DeviceInfo(
         name=device.name,
         manufacturer=SESSY_MANUFACTURER,
-        identifiers={(DOMAIN, device.serial_number)},
+        identifiers=identifiers,
         configuration_url=f"http://{device.host}/",
         model=device.model,
         serial_number=device.serial_number,
     )
-
-    system_info_coordinator: SessyCoordinator = coordinators.get(device.get_system_info, None)
-
-    if system_info_coordinator is None:
-        raise ConfigEntryNotReady(f"System info not available for {device} at {device.host}")
 
     if isinstance(device, SessyBattery):
         battery_serial = system_info_coordinator.raw_data.get("sessy_serial", None)
@@ -63,7 +92,7 @@ async def generate_device_info(
                 serial_number=battery_serial,
                 via_device=(DOMAIN, device.serial_number),
             )
-    
+
     elif isinstance(device, SessyP1Meter):
         p1_coordinator = coordinators.get(device.get_p1_details, None)
 
@@ -73,7 +102,11 @@ async def generate_device_info(
             p1_model = p1_coordinator.raw_data.get("header_info", None)
             p1_revision = p1_coordinator.raw_data.get("dsmr_version", None)
 
-            if p1_serial_dec is not None and p1_model is not None and p1_revision is not None:
+            if (
+                p1_serial_dec is not None
+                and p1_model is not None
+                and p1_revision is not None
+            ):
                 p1_revision_formatted = f"{(p1_revision / 10):.1f}"
                 p1_serial = decode_equipment_identifier(p1_serial_dec)
 
@@ -88,7 +121,9 @@ async def generate_device_info(
                     via_device=(DOMAIN, device.serial_number),
                 )
 
-            gas_serial_dec = p1_coordinator.raw_data.get("gas_equipment_identifier", None)
+            gas_serial_dec = p1_coordinator.raw_data.get(
+                "gas_equipment_identifier", None
+            )
 
             if gas_serial_dec is not None:
                 gas_serial = decode_equipment_identifier(gas_serial_dec)
@@ -104,7 +139,7 @@ async def generate_device_info(
                     )
 
         modbus_coordinator = coordinators.get(device.get_p1_details, None)
-        
+
         # Equipment connected via Modbus
         if modbus_coordinator is not None:
             modbus_model: str = modbus_coordinator.raw_data.get("device_type", None)
