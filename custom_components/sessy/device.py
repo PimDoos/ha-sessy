@@ -138,12 +138,12 @@ async def generate_device_info(
                         via_device=(DOMAIN, device.serial_number),
                     )
 
-        modbus_coordinator = coordinators.get(device.get_p1_details, None)
+        modbus_coordinator = coordinators.get(device.get_modbus_details, None)
 
         # Equipment connected via Modbus
         if modbus_coordinator is not None:
             modbus_model: str = modbus_coordinator.raw_data.get("device_type", None)
-            modbus_serial: str = modbus_coordinator.raw_data.get("serial_number", None)
+            modbus_serial: str = modbus_coordinator.raw_data.get("device_uid", None)
 
             if modbus_model is not None:
                 device_info[SessyConnectedDeviceType.MODBUS_METER] = DeviceInfo(

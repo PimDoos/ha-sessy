@@ -20,6 +20,7 @@ from .models import SessyConfigEntry, SessyConnectedDeviceType
 
 _LOGGER = logging.getLogger(__name__)
 
+
 class SessyCoordinatorEntity(CoordinatorEntity):
     """Base Sessy Entity, coordinated by SessyCoordinator"""
 
@@ -35,8 +36,11 @@ class SessyCoordinatorEntity(CoordinatorEntity):
         availability_key: str = None,
         availability_test_value: str = None,
         connected_device_type: SessyConnectedDeviceType = SessyConnectedDeviceType.SELF,
+        unique_id_suffix: str = None,
     ):
-        self.context = SessyEntityContext(data_key, transform_function, availability_key, availability_test_value)
+        self.context = SessyEntityContext(
+            data_key, transform_function, availability_key, availability_test_value
+        )
         super().__init__(coordinator, self.context)
         self.hass = hass
         self.config_entry = config_entry
@@ -51,12 +55,19 @@ class SessyCoordinatorEntity(CoordinatorEntity):
 
         self._attr_name = name
         self._attr_has_entity_name = True
-        self._attr_unique_id = f"sessy-{device.serial_number}-sensor-{name.replace(' ', '')}".lower()  # TODO Technical dept, this will cause issues if we ever need to change entity names
+
+        # TODO Technical dept, this will cause issues if we ever need to change entity names
+        if unique_id_suffix is None:
+            unique_id_suffix = f"sensor-{name.replace(' ', '')}"
+
+        self._attr_unique_id = (
+            f"sessy-{device.serial_number}-{unique_id_suffix}".lower()
+        )
         self._attr_translation_key = translation_key
-       
+
         self._attr_device_info = config_entry.runtime_data.device_info.get(
             connected_device_type,
-            config_entry.runtime_data.device_info.get(SessyConnectedDeviceType.SELF)
+            config_entry.runtime_data.device_info.get(SessyConnectedDeviceType.SELF),
         )
 
         self._update_failed_count = 0
@@ -94,7 +105,7 @@ class SessyCoordinatorEntity(CoordinatorEntity):
     def update_from_cache(self):
         """Entity function to write the latest cache value to the proper attributes. Implemented on platform level."""
         raise NotImplementedError()
-    
+
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
