@@ -476,10 +476,10 @@ async def async_setup_entry(
         )
         sensors.append(
             SessySensor(
-                hass, 
-                config_entry, 
-                "Tariff", 
-                p1_details_coordinator, 
+                hass,
+                config_entry,
+                "Tariff",
+                p1_details_coordinator,
                 "tariff_indicator",
                 availability_key="state",
                 availability_test_value=SessyP1State.OK,
@@ -656,7 +656,9 @@ async def async_setup_entry(
             )
 
         # ModBus entities
-        modbus_coordinator: SessyCoordinator = coordinators.get(device.get_modbus_details, None)
+        modbus_coordinator: SessyCoordinator = coordinators.get(
+            device.get_modbus_details, None
+        )
         if modbus_coordinator is not None:
             try:
                 sensors.append(
@@ -780,7 +782,9 @@ async def async_setup_entry(
                         translation_key="modbus_state",
                         entity_category=EntityCategory.DIAGNOSTIC,
                         transform_function=status_string_modbus,
-                        options=enum_to_options_list(SessyModbusState, status_string_modbus),
+                        options=enum_to_options_list(
+                            SessyModbusState, status_string_modbus
+                        ),
                     )
                 )
 
@@ -981,8 +985,10 @@ class SessyScheduleSensor(SessySensor):
 
         schedule_entries_now = list(
             filter(
-                lambda i: i.get("start_time") <= now.timestamp()
-                and i.get("end_time") > now.timestamp(),
+                lambda i: (
+                    i.get("start_time") <= now.timestamp()
+                    and i.get("end_time") > now.timestamp()
+                ),
                 schedule,
             )
         )

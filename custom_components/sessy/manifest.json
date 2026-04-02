@@ -1,9 +1,7 @@
 {
   "domain": "sessy",
   "name": "Sessy",
-  "codeowners": [
-    "@PimDoos"
-  ],
+  "codeowners": ["@PimDoos"],
   "config_flow": true,
   "dependencies": [],
   "documentation": "https://github.com/PimDoos/ha-sessy",
@@ -13,7 +11,5 @@
   "loggers": ["sessypy"],
   "requirements": ["sessypy==0.2.6"],
   "version": "0.10.0d1",
-  "zeroconf":[
-    {"type":"_http._tcp.local.","name":"sessy-*"}
-  ]
+  "zeroconf": [{ "type": "_http._tcp.local.", "name": "sessy-*" }]
 }
