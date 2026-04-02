@@ -464,7 +464,7 @@ async def async_setup_entry(
             SessySensor(
                 hass,
                 config_entry,
-                "P1 Status",
+                "Total Status",
                 p1_details_coordinator,
                 "state",
                 SensorDeviceClass.ENUM,
@@ -472,6 +472,7 @@ async def async_setup_entry(
                 translation_key="p1_state",
                 transform_function=status_string_p1,
                 options=enum_to_options_list(SessyP1State, status_string_p1),
+                unique_id_suffix="sensor-P1Status",
             )
         )
         sensors.append(
@@ -491,7 +492,7 @@ async def async_setup_entry(
             SessySensor(
                 hass,
                 config_entry,
-                "P1 Power",
+                "Total Power",
                 p1_details_coordinator,
                 "power_total",
                 SensorDeviceClass.POWER,
@@ -500,13 +501,14 @@ async def async_setup_entry(
                 availability_key="state",
                 availability_test_value=SessyP1State.OK,
                 connected_device_type=SessyConnectedDeviceType.P1_METER,
+                unique_id_suffix="sensor-P1Power",
             )
         )
         sensors.append(
             SessySensor(
                 hass,
                 config_entry,
-                "P1 Consuming Power",
+                "Total Consuming Power",
                 p1_details_coordinator,
                 "power_consumed",
                 SensorDeviceClass.POWER,
@@ -515,13 +517,14 @@ async def async_setup_entry(
                 availability_key="state",
                 availability_test_value=SessyP1State.OK,
                 connected_device_type=SessyConnectedDeviceType.P1_METER,
+                unique_id_suffix="sensor-P1ConsumingPower",
             )
         )
         sensors.append(
             SessySensor(
                 hass,
                 config_entry,
-                "P1 Producing Power",
+                "Total Producing Power",
                 p1_details_coordinator,
                 "power_produced",
                 SensorDeviceClass.POWER,
@@ -530,6 +533,7 @@ async def async_setup_entry(
                 availability_key="state",
                 availability_test_value=SessyP1State.OK,
                 connected_device_type=SessyConnectedDeviceType.P1_METER,
+                unique_id_suffix="sensor-P1ProducingPower",
             )
         )
         try:
@@ -665,7 +669,7 @@ async def async_setup_entry(
                     SessySensor(
                         hass,
                         config_entry,
-                        "Modbus Total Power",
+                        "Total Power",
                         modbus_coordinator,
                         "total_power",
                         SensorDeviceClass.POWER,
@@ -674,6 +678,7 @@ async def async_setup_entry(
                         availability_key="state",
                         availability_test_value="MODBUS_OK",
                         connected_device_type=SessyConnectedDeviceType.MODBUS_METER,
+                        unique_id_suffix="sensor-ModbusTotalPower",
                     )
                 )
 
@@ -681,7 +686,7 @@ async def async_setup_entry(
                     SessySensor(
                         hass,
                         config_entry,
-                        "Modbus Total Imported Energy",
+                        "Total Imported Energy",
                         modbus_coordinator,
                         "total_import",
                         SensorDeviceClass.ENERGY,
@@ -691,6 +696,7 @@ async def async_setup_entry(
                         availability_key="state",
                         availability_test_value="MODBUS_OK",
                         connected_device_type=SessyConnectedDeviceType.MODBUS_METER,
+                        unique_id_suffix="sensor-ModbusTotalImportedEnergy",
                     )
                 )
 
@@ -698,7 +704,7 @@ async def async_setup_entry(
                     SessySensor(
                         hass,
                         config_entry,
-                        "Modbus Total Exported Energy",
+                        "Total Exported Energy",
                         modbus_coordinator,
                         "total_export",
                         SensorDeviceClass.ENERGY,
@@ -708,6 +714,7 @@ async def async_setup_entry(
                         availability_key="state",
                         availability_test_value="MODBUS_OK",
                         connected_device_type=SessyConnectedDeviceType.MODBUS_METER,
+                        unique_id_suffix="sensor-ModbusTotalExportedEnergy",
                     )
                 )
 
@@ -716,7 +723,7 @@ async def async_setup_entry(
                         SessySensor(
                             hass,
                             config_entry,
-                            f"Modbus Phase {phase_id} Voltage",
+                            f"Phase {phase_id} Voltage",
                             modbus_coordinator,
                             f"phase_{phase_id}.voltage",
                             SensorDeviceClass.VOLTAGE,
@@ -726,13 +733,14 @@ async def async_setup_entry(
                             availability_key="state",
                             availability_test_value="MODBUS_OK",
                             connected_device_type=SessyConnectedDeviceType.MODBUS_METER,
+                            unique_id_suffix=f"sensor-ModbusPhase{phase_id}Voltage",
                         )
                     )
                     sensors.append(
                         SessySensor(
                             hass,
                             config_entry,
-                            f"Modbus Phase {phase_id} Current",
+                            f"Phase {phase_id} Current",
                             modbus_coordinator,
                             f"phase_{phase_id}.current",
                             SensorDeviceClass.CURRENT,
@@ -742,13 +750,14 @@ async def async_setup_entry(
                             availability_key="state",
                             availability_test_value="MODBUS_OK",
                             connected_device_type=SessyConnectedDeviceType.MODBUS_METER,
+                            unique_id_suffix=f"sensor-ModbusPhase{phase_id}Current",
                         )
                     )
                     sensors.append(
                         SessySensor(
                             hass,
                             config_entry,
-                            f"Modbus Phase {phase_id} Power",
+                            f"Phase {phase_id} Power",
                             modbus_coordinator,
                             f"phase_{phase_id}.power",
                             SensorDeviceClass.POWER,
@@ -757,6 +766,7 @@ async def async_setup_entry(
                             availability_key="state",
                             availability_test_value="MODBUS_OK",
                             connected_device_type=SessyConnectedDeviceType.MODBUS_METER,
+                            unique_id_suffix=f"sensor-ModbusPhase{phase_id}Power",
                         )
                     )
 
@@ -765,17 +775,18 @@ async def async_setup_entry(
                     SessySensor(
                         hass,
                         config_entry,
-                        "Modbus Device Type",
+                        "Device Type",
                         modbus_coordinator,
                         "device_type",
                         entity_category=EntityCategory.DIAGNOSTIC,
+                        unique_id_suffix="sensor-ModbusDeviceType",
                     )
                 )
                 sensors.append(
                     SessySensor(
                         hass,
                         config_entry,
-                        "Modbus Status",
+                        "Status",
                         modbus_coordinator,
                         "state",
                         SensorDeviceClass.ENUM,
@@ -785,6 +796,7 @@ async def async_setup_entry(
                         options=enum_to_options_list(
                             SessyModbusState, status_string_modbus
                         ),
+                        unique_id_suffix="sensor-ModbusStatus",
                     )
                 )
 
@@ -908,6 +920,7 @@ class SessySensor(SessyCoordinatorEntity, SensorEntity):
         availability_key: str = None,
         availability_test_value: str = None,
         connected_device_type: SessyConnectedDeviceType = SessyConnectedDeviceType.SELF,
+        unique_id_suffix: str = None,
     ):
         super().__init__(
             hass=hass,
@@ -920,6 +933,7 @@ class SessySensor(SessyCoordinatorEntity, SensorEntity):
             availability_key=availability_key,
             availability_test_value=availability_test_value,
             connected_device_type=connected_device_type,
+            unique_id_suffix=unique_id_suffix,
         )
 
         self._attr_device_class = device_class
