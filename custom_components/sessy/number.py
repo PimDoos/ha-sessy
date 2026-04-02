@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from homeassistant.const import UnitOfPower, UnitOfTime
+from homeassistant.const import PERCENTAGE, UnitOfPower, UnitOfTime
 from homeassistant.components.number import NumberEntity, NumberDeviceClass
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
@@ -133,6 +133,22 @@ async def async_setup_entry(
                         entity_category=EntityCategory.CONFIG,
                     )
                 )
+            if settings.get("min_soc", None) is not None:
+                numbers.append(
+                    SessySettingNumberEntity(
+                        hass,
+                        config_entry,
+                        "Minimum State of Charge",
+                        system_settings_coordinator,
+                        "min_soc",
+                        None,
+                        PERCENTAGE,
+                        0,
+                        100,
+                        entity_category=EntityCategory.CONFIG,
+                    )
+                )
+
         except Exception as e:
             _LOGGER.warning(
                 f"Error setting up firmware specific settings: {e}\n{settings}"
