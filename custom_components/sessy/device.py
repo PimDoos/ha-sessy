@@ -41,7 +41,7 @@ async def generate_device_info(
             f"System info not available for {device} at {device.host}"
         )
 
-    identifiers = set((DOMAIN, device.serial_number))
+    identifiers = {(DOMAIN, device.serial_number)}
 
     wifi_status = network_status_coordinator.raw_data.get("wifi_sta")
     if wifi_status is not None and "mac" in wifi_status:
