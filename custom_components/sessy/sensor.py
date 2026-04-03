@@ -96,6 +96,7 @@ async def async_setup_entry(
                 SensorStateClass.MEASUREMENT,
                 UnitOfInformation.BYTES,
                 entity_category=EntityCategory.DIAGNOSTIC,
+                suggested_unit_of_measurement=UnitOfInformation.KILOBYTES,
             )
         )
 
@@ -464,7 +465,7 @@ async def async_setup_entry(
             SessySensor(
                 hass,
                 config_entry,
-                "Total Status",
+                "Status",
                 p1_details_coordinator,
                 "state",
                 SensorDeviceClass.ENUM,
@@ -472,6 +473,7 @@ async def async_setup_entry(
                 translation_key="p1_state",
                 transform_function=status_string_p1,
                 options=enum_to_options_list(SessyP1State, status_string_p1),
+                connected_device_type=SessyConnectedDeviceType.P1_METER,
                 unique_id_suffix="sensor-P1Status",
             )
         )
@@ -555,6 +557,7 @@ async def async_setup_entry(
                     availability_key="state",
                     availability_test_value=SessyP1State.OK,
                     connected_device_type=SessyConnectedDeviceType.P1_GAS_METER,
+                    unique_id_suffix="sensor-GasConsumption",
                 )
             )
         except Exception as e:
