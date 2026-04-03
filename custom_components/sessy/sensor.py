@@ -1000,6 +1000,11 @@ class SessyScheduleSensor(SessySensor):
 
         schedule: list = self.cache_value
 
+        if schedule is None:
+            self._attr_available = False
+            self._attr_native_value = None
+            return
+
         schedule_entries_now = list(
             filter(
                 lambda i: (
