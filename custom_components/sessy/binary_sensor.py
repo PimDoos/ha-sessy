@@ -49,6 +49,7 @@ async def async_setup_entry(
                         "sessy.strategy_overridden",
                         BinarySensorDeviceClass.RUNNING,
                         entity_category=EntityCategory.DIAGNOSTIC,
+                        connected_device_type=SessyConnectedDeviceType.BATTERY,
                     )
                 )
 

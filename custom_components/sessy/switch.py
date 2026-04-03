@@ -49,6 +49,7 @@ async def async_setup_entry(
                         "eco_nom_charge",
                         device.set_system_setting,
                         entity_category=EntityCategory.CONFIG,
+                        connected_device_type=SessyConnectedDeviceType.BATTERY,
                     )
                 )
 
@@ -63,6 +64,7 @@ async def async_setup_entry(
                         "pack_temp_limit_enabled",
                         device.set_system_setting,
                         entity_category=EntityCategory.CONFIG,
+                        connected_device_type=SessyConnectedDeviceType.BATTERY,
                     )
                 )
 

@@ -44,6 +44,7 @@ async def async_setup_entry(
                 options=SessyPowerStrategy,
                 translation_key="battery_strategy",
                 transform_function=status_string_power_strategy,
+                connected_device_type=SessyConnectedDeviceType.BATTERY,
             )
         )
 

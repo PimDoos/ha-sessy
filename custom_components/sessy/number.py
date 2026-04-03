@@ -46,6 +46,7 @@ async def async_setup_entry(
                 UnitOfPower.WATT,
                 -2200,
                 2200,
+                connected_device_type=SessyConnectedDeviceType.BATTERY,
             )
         )
 
@@ -63,6 +64,7 @@ async def async_setup_entry(
                 50,
                 2000,
                 entity_category=EntityCategory.CONFIG,
+                connected_device_type=SessyConnectedDeviceType.BATTERY,
             )
         )
         numbers.append(
@@ -77,6 +79,7 @@ async def async_setup_entry(
                 50,
                 2200,
                 entity_category=EntityCategory.CONFIG,
+                connected_device_type=SessyConnectedDeviceType.BATTERY,
             )
         )
 
@@ -100,6 +103,7 @@ async def async_setup_entry(
                         min_value=1,
                         max_value=5,
                         entity_category=EntityCategory.CONFIG,
+                        connected_device_type=SessyConnectedDeviceType.BATTERY,
                     )
                 )
 
@@ -117,6 +121,7 @@ async def async_setup_entry(
                         50,
                         2200,
                         entity_category=EntityCategory.CONFIG,
+                        connected_device_type=SessyConnectedDeviceType.BATTERY,
                     )
                 )
             if settings.get("eco_charge_hours", None) is not None:
@@ -132,6 +137,7 @@ async def async_setup_entry(
                         0,
                         24,
                         entity_category=EntityCategory.CONFIG,
+                        connected_device_type=SessyConnectedDeviceType.BATTERY,
                     )
                 )
             if settings.get("min_soc", None) is not None:
@@ -147,6 +153,7 @@ async def async_setup_entry(
                         0,
                         100,
                         entity_category=EntityCategory.CONFIG,
+                        connected_device_type=SessyConnectedDeviceType.BATTERY,
                     )
                 )
 
