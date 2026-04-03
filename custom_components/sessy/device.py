@@ -107,7 +107,7 @@ async def generate_device_info(
                 and p1_model is not None
                 and p1_revision is not None
             ):
-                p1_revision_formatted = f"{(p1_revision / 10):.1f}"
+                p1_revision_formatted = f"DSMR {(p1_revision / 10):.1f}"
                 p1_serial = decode_equipment_identifier(p1_serial_dec)
 
                 device_info[SessyConnectedDeviceType.P1_METER] = DeviceInfo(
