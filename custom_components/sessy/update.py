@@ -10,13 +10,13 @@ from homeassistant.components.update import (
     UpdateDeviceClass,
     UpdateEntityFeature,
 )
-from homeassistant.const import ATTR_IDENTIFIERS
 from homeassistant.exceptions import HomeAssistantError
-from homeassistant.helpers import device_registry as dr
 
 from sessypy.const import SessyOtaTarget, SessyOtaState
 from sessypy.devices import SessyDevice
 from sessypy.util import SessyConnectionException, SessyNotSupportedException
+
+from custom_components.sessy.device import update_sw_version
 
 from .const import (
     DEFAULT_SCAN_INTERVAL,
@@ -103,27 +103,34 @@ class SessyUpdate(SessyCoordinatorEntity, UpdateEntity):
         ]
 
         if "available_firmware" in ota_self:
-            if ota_self.get("available_firmware") != "":
-                self._attr_latest_version = ota_self.get("available_firmware")
+            if ota_self["available_firmware"].get("version", "") != "":
+                self._attr_latest_version = ota_self["available_firmware"]["version"]
 
         if "installed_firmware" in ota_self:
-            if ota_self.get("installed_firmware") != "":
+            if ota_self["installed_firmware"].get("version", "") != "":
                 last_installed_version = self._attr_installed_version
-                self._attr_installed_version = ota_self.get("installed_firmware")
+                self._attr_installed_version = ota_self["installed_firmware"]["version"]
 
                 # Check if firmware version has changed and update device registry
                 if last_installed_version != self._attr_installed_version:
-                    self.update_device_sw_version()
+                    update_sw_version(
+                        self.hass, self.config_entry, self._attr_installed_version
+                    )
 
         if "installed_firmware" in ota_serial:
-            if ota_serial.get("installed_firmware") != "":
+            if ota_serial["installed_firmware"].get("version", "") != "":
                 last_installed_version_serial = self.serial_installed_version
-                self.serial_installed_version = ota_serial.get("installed_firmware")
+                self.serial_installed_version = ota_serial["installed_firmware"][
+                    "version"
+                ]
 
                 # Check if firmware version has changed and update device registry
                 if last_installed_version_serial != self.serial_installed_version:
-                    self.update_device_sw_version(
-                        connected_device_type=SessyConnectedDeviceType.BATTERY
+                    update_sw_version(
+                        self.hass,
+                        self.config_entry,
+                        self.serial_installed_version,
+                        SessyConnectedDeviceType.BATTERY,
                     )
 
         # Determine overall state based on both serial and self OTA status
@@ -153,22 +160,6 @@ class SessyUpdate(SessyCoordinatorEntity, UpdateEntity):
         else:
             # Restore scan interval
             self.coordinator.update_interval = DEFAULT_SCAN_INTERVAL
-
-    def update_device_sw_version(
-        self,
-        connected_device_type: SessyConnectedDeviceType = SessyConnectedDeviceType.SELF,
-    ):
-        try:
-            device_info = self.config_entry.runtime_data.device_info.get(
-                connected_device_type
-            )
-            device_registry = dr.async_get(self.hass)
-            device = device_registry.async_get_device(device_info[ATTR_IDENTIFIERS])
-            device_registry.async_update_device(
-                device.id, sw_version=self.installed_version
-            )
-        except Exception as e:
-            _LOGGER.warning("Could not write OTA status to device registry: %s", e)
 
     async def async_install(
         self, version: str | None, backup: bool, **kwargs: Any

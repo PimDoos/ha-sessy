@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import logging
 
+from homeassistant.const import ATTR_IDENTIFIERS
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntryNotReady
-from homeassistant.helpers.device_registry import format_mac
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.entity import DeviceInfo
 from sessypy.devices import (
     SessyBattery,
@@ -45,12 +46,12 @@ async def generate_device_info(
 
     wifi_status = network_status_coordinator.raw_data.get("wifi_sta")
     if wifi_status is not None and "mac" in wifi_status:
-        wifi_mac_address = format_mac(wifi_status.get("mac"))
+        wifi_mac_address = dr.format_mac(wifi_status.get("mac"))
         identifiers.add((DOMAIN, wifi_mac_address))
 
     ethernet_status = network_status_coordinator.raw_data.get("eth")
     if ethernet_status is not None and "mac" in ethernet_status:
-        ethernet_mac_address = format_mac(ethernet_status.get("mac"))
+        ethernet_mac_address = dr.format_mac(ethernet_status.get("mac"))
         identifiers.add((DOMAIN, ethernet_mac_address))
 
     system_info_coordinator: SessyCoordinator = coordinators.get(
@@ -157,3 +158,20 @@ async def generate_device_info(
                 )
 
     return device_info
+
+
+def update_sw_version(
+    hass,
+    config_entry: SessyConfigEntry,
+    new_version: str,
+    connected_device_type: SessyConnectedDeviceType = SessyConnectedDeviceType.SELF,
+):
+    try:
+        device_info = config_entry.runtime_data.device_info.get(connected_device_type)
+        device_registry = dr.async_get(hass)
+        device = device_registry.async_get_device(device_info[ATTR_IDENTIFIERS])
+        device_registry.async_update_device(device.id, sw_version=new_version)
+    except Exception as e:
+        _LOGGER.warning(
+            "Could not write new software version to device registry: %s", e
+        )
