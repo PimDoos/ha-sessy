@@ -10,6 +10,6 @@
   "issue_tracker": "https://github.com/PimDoos/ha-sessy/issues",
   "loggers": ["sessypy"],
   "requirements": ["sessypy==0.2.6"],
-  "version": "0.10.0",
+  "version": "1.0.0",
   "zeroconf": [{ "type": "_http._tcp.local.", "name": "sessy-*" }]
 }
