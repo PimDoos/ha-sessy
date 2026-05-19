@@ -84,7 +84,7 @@ async def generate_device_info(
             battery_revision_formatted = f"{(battery_revision / 100):.2f}"
 
             device_info[SessyConnectedDeviceType.BATTERY] = DeviceInfo(
-                name=f"Sessy Battery {battery_serial}",
+                name=f"Sessy Battery {battery_serial[:4]}",
                 manufacturer=SESSY_MANUFACTURER,
                 identifiers={(DOMAIN, battery_serial)},
                 configuration_url=f"http://{device.host}/",
