@@ -4,13 +4,13 @@ from enum import Enum
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 
-from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.device_registry import DeviceInfo
 
 from sessypy.devices import SessyDevice, SessyBattery, SessyP1Meter, SessyCTMeter
 
 from typing import Callable, Optional
 
-from .const import DOMAIN
+from .const import DOMAIN, SESSY_MANUFACTURER
 
 import logging
 
@@ -18,8 +18,6 @@ _LOGGER = logging.getLogger(__name__)
 
 
 # Transform functions
-
-
 def backend_status_string(status_string: str, prefix: str = "") -> str:
     return status_string.removeprefix(prefix).lower()
 
@@ -92,7 +90,7 @@ def unit_interval_to_percentage(input: float) -> float:
 
 # End transform functions
 
-
+# TODO Remove (deprecated)
 async def generate_device_info(
     hass: HomeAssistant, config_entry: ConfigEntry, device: SessyDevice
 ) -> DeviceInfo:
@@ -107,7 +105,7 @@ async def generate_device_info(
     # Generate Device Info
     device_info = DeviceInfo(
         name=device.name,
-        manufacturer="Charged B.V.",
+        manufacturer=SESSY_MANUFACTURER,
         identifiers={(DOMAIN, device.serial_number)},
         configuration_url=f"http://{device.host}/",
         model=model,
@@ -115,6 +113,14 @@ async def generate_device_info(
     )
 
     return device_info
+
+def decode_equipment_identifier(equipment_identifier_decimal: str) -> str:
+    """Decode DSMR equipment identifier from decimal string"""
+    equipment_identifier = ""
+    for i in range(0, len(equipment_identifier_decimal), 2):
+        byte = equipment_identifier_decimal[i : i + 2]
+        equipment_identifier += chr(int(byte, 16))
+    return equipment_identifier
 
 
 def get_nested_key(data, key):

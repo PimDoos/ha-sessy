@@ -13,8 +13,9 @@ from sessypy.util import SessyNotSupportedException, SessyConnectionException
 
 from typing import Callable, Optional
 
-from .coordinator import SessyCoordinator, SessyCoordinatorEntity
-from .models import SessyConfigEntry
+from .coordinator import SessyCoordinator
+from .entity import SessyCoordinatorEntity
+from .models import SessyConfigEntry, SessyConnectedDeviceType
 
 import logging
 
@@ -45,6 +46,7 @@ async def async_setup_entry(
                 UnitOfPower.WATT,
                 -2200,
                 2200,
+                connected_device_type=SessyConnectedDeviceType.BATTERY,
             )
         )
 
@@ -62,6 +64,7 @@ async def async_setup_entry(
                 50,
                 2000,
                 entity_category=EntityCategory.CONFIG,
+                connected_device_type=SessyConnectedDeviceType.BATTERY,
             )
         )
         numbers.append(
@@ -76,6 +79,7 @@ async def async_setup_entry(
                 50,
                 2200,
                 entity_category=EntityCategory.CONFIG,
+                connected_device_type=SessyConnectedDeviceType.BATTERY,
             )
         )
 
@@ -99,6 +103,7 @@ async def async_setup_entry(
                         min_value=1,
                         max_value=5,
                         entity_category=EntityCategory.CONFIG,
+                        connected_device_type=SessyConnectedDeviceType.BATTERY,
                     )
                 )
 
@@ -116,6 +121,7 @@ async def async_setup_entry(
                         50,
                         2200,
                         entity_category=EntityCategory.CONFIG,
+                        connected_device_type=SessyConnectedDeviceType.BATTERY,
                     )
                 )
             if settings.get("eco_charge_hours", None) is not None:
@@ -131,6 +137,7 @@ async def async_setup_entry(
                         0,
                         24,
                         entity_category=EntityCategory.CONFIG,
+                        connected_device_type=SessyConnectedDeviceType.BATTERY,
                     )
                 )
             if settings.get("min_soc", None) is not None:
@@ -146,6 +153,7 @@ async def async_setup_entry(
                         0,
                         100,
                         entity_category=EntityCategory.CONFIG,
+                        connected_device_type=SessyConnectedDeviceType.BATTERY,
                     )
                 )
 
@@ -192,6 +200,7 @@ class SessyNumberEntity(SessyCoordinatorEntity, NumberEntity):
         max_value: float = None,
         entity_category: EntityCategory = None,
         transform_function: Optional[Callable] = None,
+        connected_device_type: SessyConnectedDeviceType = SessyConnectedDeviceType.SELF,
     ):
         super().__init__(
             hass=hass,
@@ -200,6 +209,7 @@ class SessyNumberEntity(SessyCoordinatorEntity, NumberEntity):
             coordinator=coordinator,
             data_key=data_key,
             transform_function=transform_function,
+            connected_device_type=connected_device_type,
         )
 
         self._attr_device_class = device_class
@@ -250,6 +260,7 @@ class SessySettingNumberEntity(SessyNumberEntity):
         max_value: float = None,
         entity_category: EntityCategory = None,
         transform_function: Optional[Callable] = None,
+        connected_device_type: SessyConnectedDeviceType = SessyConnectedDeviceType.SELF,
     ):
         device: SessyBattery = config_entry.runtime_data.device
         action_function = device.set_system_setting
@@ -267,6 +278,7 @@ class SessySettingNumberEntity(SessyNumberEntity):
             max_value,
             entity_category,
             transform_function,
+            connected_device_type=connected_device_type,
         )
 
     async def async_set_native_value(self, value: float):

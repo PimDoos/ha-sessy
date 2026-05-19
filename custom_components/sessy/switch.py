@@ -12,8 +12,9 @@ from sessypy.util import SessyNotSupportedException, SessyConnectionException
 
 from typing import Callable, Optional
 
-from .coordinator import SessyCoordinator, SessyCoordinatorEntity
-from .models import SessyConfigEntry
+from .coordinator import SessyCoordinator
+from .entity import SessyCoordinatorEntity
+from .models import SessyConfigEntry, SessyConnectedDeviceType
 
 import logging
 
@@ -48,6 +49,7 @@ async def async_setup_entry(
                         "eco_nom_charge",
                         device.set_system_setting,
                         entity_category=EntityCategory.CONFIG,
+                        connected_device_type=SessyConnectedDeviceType.BATTERY,
                     )
                 )
 
@@ -62,6 +64,7 @@ async def async_setup_entry(
                         "pack_temp_limit_enabled",
                         device.set_system_setting,
                         entity_category=EntityCategory.CONFIG,
+                        connected_device_type=SessyConnectedDeviceType.BATTERY,
                     )
                 )
 
@@ -83,6 +86,7 @@ class SessySettingSwitchEntity(SessyCoordinatorEntity, SwitchEntity):
         device_class: SwitchDeviceClass = None,
         entity_category: EntityCategory = None,
         transform_function: Optional[Callable] = None,
+        connected_device_type: SessyConnectedDeviceType = SessyConnectedDeviceType.SELF,
     ):
         super().__init__(
             hass=hass,
@@ -91,6 +95,7 @@ class SessySettingSwitchEntity(SessyCoordinatorEntity, SwitchEntity):
             coordinator=coordinator,
             data_key=data_key,
             transform_function=transform_function,
+            connected_device_type=connected_device_type,
         )
 
         self._attr_device_class = device_class

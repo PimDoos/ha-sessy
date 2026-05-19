@@ -21,6 +21,9 @@
       "invalid_auth": "Ongeldige gebruikersnaam en/of wachtwoord",
       "unknown": "Onbekende fout"
     },
+    "abort": {
+      "already_configured": "Deze Sessy is al geconfigureerd"
+    },
     "flow_title": "{name}"
   },
   "options": {

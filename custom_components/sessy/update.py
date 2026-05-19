@@ -10,21 +10,22 @@ from homeassistant.components.update import (
     UpdateDeviceClass,
     UpdateEntityFeature,
 )
-from homeassistant.const import ATTR_IDENTIFIERS
 from homeassistant.exceptions import HomeAssistantError
-from homeassistant.helpers import device_registry as dr
 
 from sessypy.const import SessyOtaTarget, SessyOtaState
 from sessypy.devices import SessyDevice
 from sessypy.util import SessyConnectionException, SessyNotSupportedException
+
+from custom_components.sessy.device import update_sw_version
 
 from .const import (
     DEFAULT_SCAN_INTERVAL,
     SCAN_INTERVAL_OTA_BUSY,
     SESSY_RELEASE_NOTES_URL,
 )
-from .coordinator import SessyCoordinator, SessyCoordinatorEntity
-from .models import SessyConfigEntry
+from .coordinator import SessyCoordinator
+from .entity import SessyCoordinatorEntity
+from .models import SessyConfigEntry, SessyConnectedDeviceType
 from .util import unit_interval_to_percentage
 
 import logging
@@ -40,15 +41,7 @@ async def async_setup_entry(
     update_entities = []
 
     # Treat Sessy Dongle and serial device (AC board) as one unit
-    update_entities.append(
-        SessyUpdate(
-            hass,
-            config_entry,
-            "Firmware",
-            SessyOtaTarget.SELF,
-            action_target=SessyOtaTarget.ALL,
-        )
-    )
+    update_entities.append(SessyUpdate(hass, config_entry, "Firmware"))
 
     async_add_entities(update_entities)
 
@@ -59,10 +52,9 @@ class SessyUpdate(SessyCoordinatorEntity, UpdateEntity):
         hass: HomeAssistant,
         config_entry: SessyConfigEntry,
         name: str,
-        cache_target: SessyOtaTarget,
-        action_target: SessyOtaTarget = None,
         transform_function: Optional[Callable] = None,
         enabled_default: bool = True,
+        connected_device_type: SessyConnectedDeviceType = SessyConnectedDeviceType.SELF,
     ):
         self.device = config_entry.runtime_data.device
         coordinator: SessyCoordinator = config_entry.runtime_data.coordinators[
@@ -70,14 +62,14 @@ class SessyUpdate(SessyCoordinatorEntity, UpdateEntity):
         ]
         self.coordinator = coordinator
 
-        data_key = cache_target.name.lower()
         super().__init__(
             hass=hass,
             config_entry=config_entry,
             name=name,
             coordinator=coordinator,
-            data_key=data_key,
+            data_key=None,
             transform_function=transform_function,
+            connected_device_type=connected_device_type,
         )
 
         self._attr_entity_registry_enabled_default = enabled_default
@@ -87,13 +79,8 @@ class SessyUpdate(SessyCoordinatorEntity, UpdateEntity):
         )
         self._attr_release_url = SESSY_RELEASE_NOTES_URL
 
-        self.cache_target = cache_target
-        if action_target:
-            self.action_target = action_target
-        else:
-            self.action_target = cache_target
-
         self.cache_value = dict()
+        self.serial_installed_version = None
 
     def update_from_cache(self):
         if not self.cache_value:
@@ -102,80 +89,84 @@ class SessyUpdate(SessyCoordinatorEntity, UpdateEntity):
         else:
             self._attr_available = True
 
-        state = self.cache_value.get("state", SessyOtaState.INACTIVE.value)
+        ota_self = self.cache_value.get("self")
+        ota_serial = self.cache_value.get("serial")
 
-        last_installed_version = self._attr_installed_version
-        self._attr_installed_version = self.cache_value.get(
-            "installed_firmware", dict()
-        ).get("version", None)
+        ota_states = [
+            ota_self.get("state", SessyOtaState.DISABLED),
+            ota_serial.get("state", SessyOtaState.DISABLED),
+        ]
 
-        # Write new firmware version to device registry
-        if (
-            self.cache_target == SessyOtaTarget.SELF
-            and last_installed_version != self._attr_installed_version
-        ):
-            self.update_device_sw_version()
+        ota_progress = [
+            ota_self.get("update_progress", 0),
+            ota_serial.get("update_progress", 0),
+        ]
 
-        # Skip version check if Sessy reports it is up to date or has not checked yet
-        if state in [
-            SessyOtaState.UP_TO_DATE.value,
-            SessyOtaState.INACTIVE.value,
-            SessyOtaState.CHECKING,
+        if "available_firmware" in ota_self:
+            if ota_self["available_firmware"].get("version", "") != "":
+                self._attr_latest_version = ota_self["available_firmware"]["version"]
+
+        if "installed_firmware" in ota_self:
+            if ota_self["installed_firmware"].get("version", "") != "":
+                last_installed_version = self._attr_installed_version
+                self._attr_installed_version = ota_self["installed_firmware"]["version"]
+
+                # Check if firmware version has changed and update device registry
+                if last_installed_version != self._attr_installed_version:
+                    update_sw_version(
+                        self.hass, self.config_entry, self._attr_installed_version
+                    )
+
+        if "installed_firmware" in ota_serial:
+            if ota_serial["installed_firmware"].get("version", "") != "":
+                last_installed_version_serial = self.serial_installed_version
+                self.serial_installed_version = ota_serial["installed_firmware"][
+                    "version"
+                ]
+
+                # Check if firmware version has changed and update device registry
+                if last_installed_version_serial != self.serial_installed_version:
+                    update_sw_version(
+                        self.hass,
+                        self.config_entry,
+                        self.serial_installed_version,
+                        SessyConnectedDeviceType.BATTERY,
+                    )
+
+        # Determine overall state based on both serial and self OTA status
+        if SessyOtaState.UPDATING in ota_states:
+            self._attr_in_progress = True
+            if ota_states[1] == SessyOtaState.DISABLED:
+                self._attr_update_percentage = unit_interval_to_percentage(
+                    ota_progress[0]
+                )
+            else:
+                self._attr_update_percentage = (
+                    unit_interval_to_percentage(ota_progress[0]) / 2
+                    + unit_interval_to_percentage(ota_progress[1]) / 2
+                )
+        elif ota_states[0] == SessyOtaState.DONE and ota_states[1] in [
+            SessyOtaState.DONE,
+            SessyOtaState.DISABLED,
         ]:
-            self._attr_latest_version = self._attr_installed_version
-        else:
-            self._attr_latest_version = self.cache_value.get(
-                "available_firmware", dict()
-            ).get("version", None)
-
-        if state == SessyOtaState.UPDATING.value:
-            self.coordinator.update_interval = SCAN_INTERVAL_OTA_BUSY
-
-            progress: int = self.cache_value.get("update_progress", None)
-            if not progress:
-                self._attr_in_progress = True
-            else:
-                self._attr_in_progress = unit_interval_to_percentage(progress)
-        elif state == SessyOtaState.DONE.value:
-            self._attr_in_progress = 100
-        elif self.action_target == SessyOtaTarget.ALL:
-            # When OtaTarget == ALL, serial device is updated first
-            ota_data: dict = self.coordinator.get_data()
-
-            cache_serial = ota_data.get(SessyOtaTarget.SERIAL.name.lower())
-            if cache_serial is None:
-                # Whoops, no data for serial available in cache. Skip until next update.
-                pass
-            elif cache_serial.get("state") == SessyOtaState.UPDATING.value:
-                self.coordinator.update_interval = SCAN_INTERVAL_OTA_BUSY
-
-                self._attr_in_progress = True
-            else:
-                self._attr_in_progress = False
+            self._attr_in_progress = True
+            self._attr_update_percentage = 100
         else:
             self._attr_in_progress = False
 
+        # Poll more frequently if an update is in progress
+        if self._attr_in_progress:
+            self.coordinator.update_interval = SCAN_INTERVAL_OTA_BUSY
+        else:
             # Restore scan interval
             self.coordinator.update_interval = DEFAULT_SCAN_INTERVAL
-
-    def update_device_sw_version(self):
-        try:
-            device_registry = dr.async_get(self.hass)
-            device = device_registry.async_get_device(
-                self.device_info[ATTR_IDENTIFIERS]
-            )
-            device_registry.async_update_device(
-                device.id, sw_version=self.installed_version
-            )
-        except Exception as e:
-            _LOGGER.warning(f"Could not write OTA status to device registry: {e}")
 
     async def async_install(
         self, version: str | None, backup: bool, **kwargs: Any
     ) -> None:
         device: SessyDevice = self.config_entry.runtime_data.device
         try:
-            await device.install_ota(self.action_target)
+            await device.install_ota(SessyOtaTarget.ALL)
             self._attr_in_progress = True
         except SessyNotSupportedException as e:
             raise HomeAssistantError(

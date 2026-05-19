@@ -1,4 +1,6 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from enum import StrEnum
+from typing import Callable
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity import DeviceInfo
@@ -7,9 +9,18 @@ from sessypy.devices import SessyDevice
 
 type SessyConfigEntry = ConfigEntry[SessyRuntimeData]
 
+class SessyConnectedDeviceType(StrEnum):
+    SELF = "self"
+    BATTERY = "battery"
+    P1_METER = "p1_meter"
+    P1_GAS_METER = "p1_gas_meter"
+    MODBUS_METER = "modbus_meter"
 
 @dataclass
 class SessyRuntimeData:
-    device: SessyDevice = None
-    device_info: DeviceInfo = None
-    coordinators: dict[DataUpdateCoordinator] = field(default_factory=dict)
+    device: SessyDevice
+    device_info: dict[SessyConnectedDeviceType,DeviceInfo]
+    coordinators: dict[Callable, DataUpdateCoordinator]
+
+
+    

@@ -48,11 +48,11 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
     device_id = device.serial_number[0:4]
     # Return info that you want to store in the config entry.
     if isinstance(device, SessyBattery):
-        return {"title": f"Sessy Battery {device_id}"}
+        return {"title": f"Sessy Dongle {device_id}"}
     elif isinstance(device, SessyP1Meter):
-        return {"title": "Sessy P1"}
+        return {"title": f"Sessy P1 {device_id}"}
     elif isinstance(device, SessyCTMeter):
-        return {"title": "Sessy CT"}
+        return {"title": f"Sessy CT {device_id}"}
     else:
         return {"title": f"Sessy {device_id}"}
 
@@ -75,7 +75,11 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         # Use discovered hostname and username if available, otherwise use defaults
         data_schema = vol.Schema(
             {
-                vol.Required(CONF_HOST, default=self.hostname or "sessy-DXYZ.local", description="Hostname or IP address of Sessy device",): str,
+                vol.Required(
+                    CONF_HOST,
+                    default=self.hostname or vol.UNDEFINED,
+                    description="Hostname or IP address of Sessy device",
+                ): str,
                 vol.Required(
                     CONF_USERNAME, default=self.username or vol.UNDEFINED
                 ): str,
@@ -110,14 +114,14 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="user", data_schema=data_schema, errors=errors
         )
-    
+
     async def async_step_reconfigure(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Handle reconfiguration of Sessy integration."""
 
         _LOGGER.info("Starting reconfigure step for Sessy")
-        
+
         self._reconfig_entry = self._get_reconfigure_entry()
         data = self._reconfig_entry.data
 
@@ -143,7 +147,11 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 _LOGGER.exception("Unexpected exception during reconfigure")
                 errors["base"] = "unknown"
             else:
-                return self.async_update_reload_and_abort(title=info["title"], entry=self._reconfig_entry, data_updates=user_input)
+                return self.async_update_reload_and_abort(
+                    title=info["title"],
+                    entry=self._reconfig_entry,
+                    data_updates=user_input,
+                )
 
         return self.async_show_form(
             step_id="reconfigure", data_schema=data_schema, errors=errors
@@ -167,6 +175,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         try:
             # Get device info from zeroconf
             local_name = discovery_info.hostname[:-1]
+            ip_address = discovery_info.ip_address
             serial_number = discovery_info.properties.get("serial")
             _LOGGER.info(
                 f"Discovered Sessy device at {local_name} with serial: {serial_number}"
@@ -180,7 +189,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self._name = local_name.removesuffix(".local")
 
             # Update the autofill information
-            self.hostname = local_name
+            self.hostname = ip_address
             self.username = serial_number
         except Exception:
             return self.async_abort(reason="discovery_error")
@@ -189,6 +198,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             return await self.async_step_user()
 
     def async_get_options_flow(
+        self,
         config_entry: config_entries.ConfigEntry,
     ) -> config_entries.OptionsFlow:
         """Create the options flow."""
