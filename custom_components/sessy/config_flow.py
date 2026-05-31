@@ -147,7 +147,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 _LOGGER.exception("Unexpected exception during reconfigure")
                 errors["base"] = "unknown"
             else:
-                return self.async_update_reload_and_abort(
+                return self.async_update_and_abort(
                     title=info["title"],
                     entry=self._reconfig_entry,
                     data_updates=user_input,
