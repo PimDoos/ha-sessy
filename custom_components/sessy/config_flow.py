@@ -56,7 +56,7 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
     else:
         device_info = {"title": f"Sessy {device_id}"}
 
-    device.close()
+    await device.close()
     return device_info
 
 
