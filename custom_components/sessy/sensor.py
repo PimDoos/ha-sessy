@@ -662,6 +662,40 @@ async def async_setup_entry(
                 )
             )
 
+        # Combine tariff 1 and 2 energy into total energy sensors
+        sensors.append(
+            SessyCombinedSensor(
+                hass,
+                config_entry,
+                "Total Consumed Energy",
+                p1_details_coordinator,
+                ["power_consumed_tariff1", "power_consumed_tariff2"],
+                SensorDeviceClass.ENERGY,
+                SensorStateClass.TOTAL,
+                UnitOfEnergy.WATT_HOUR,
+                suggested_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+                availability_key="state",
+                availability_test_value=SessyP1State.OK,
+                connected_device_type=SessyConnectedDeviceType.P1_METER,
+            )
+        )
+        sensors.append(
+            SessyCombinedSensor(
+                hass,
+                config_entry,
+                "Total Produced Energy",
+                p1_details_coordinator,
+                ["power_produced_tariff1", "power_produced_tariff2"],
+                SensorDeviceClass.ENERGY,
+                SensorStateClass.TOTAL,
+                UnitOfEnergy.WATT_HOUR,
+                suggested_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+                availability_key="state",
+                availability_test_value=SessyP1State.OK,
+                connected_device_type=SessyConnectedDeviceType.P1_METER,
+            )
+        )
+
         # ModBus entities
         modbus_coordinator: SessyCoordinator = coordinators.get(
             device.get_modbus_details, None
@@ -909,7 +943,7 @@ class SessySensor(SessyCoordinatorEntity, SensorEntity):
         config_entry: SessyConfigEntry,
         name: str,
         coordinator: SessyCoordinator,
-        data_key,
+        data_key: str,
         device_class: SensorDeviceClass = None,
         state_class: SensorStateClass = None,
         unit_of_measurement=None,
@@ -953,6 +987,71 @@ class SessySensor(SessyCoordinatorEntity, SensorEntity):
 
     def update_from_cache(self):
         self._attr_native_value = self.cache_value
+
+
+class SessyCombinedSensor(SessySensor):
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        config_entry: SessyConfigEntry,
+        name: str,
+        coordinator: SessyCoordinator,
+        data_keys: list[str],
+        device_class: SensorDeviceClass = None,
+        state_class: SensorStateClass = None,
+        unit_of_measurement=None,
+        transform_function: Optional[Callable] = None,
+        translation_key: str = None,
+        options=None,
+        entity_category: EntityCategory = None,
+        precision: int = None,
+        suggested_unit_of_measurement=None,
+        enabled_default: bool = True,
+        availability_key: str = None,
+        availability_test_value: str = None,
+        connected_device_type: SessyConnectedDeviceType = SessyConnectedDeviceType.SELF,
+        unique_id_suffix: str = None,
+    ):
+        super().__init__(
+            hass=hass,
+            config_entry=config_entry,
+            name=name,
+            coordinator=coordinator,
+            data_key="",  # Use root of coordinator data
+            device_class=device_class,
+            state_class=state_class,
+            unit_of_measurement=unit_of_measurement,
+            transform_function=transform_function,
+            translation_key=translation_key,
+            options=options,
+            entity_category=entity_category,
+            precision=precision,
+            suggested_unit_of_measurement=suggested_unit_of_measurement,
+            enabled_default=enabled_default,
+            availability_key=availability_key,
+            availability_test_value=availability_test_value,
+            connected_device_type=connected_device_type,
+            unique_id_suffix=unique_id_suffix,
+        )
+
+        self.data_keys = data_keys
+
+    def update_from_cache(self):
+        values = [get_nested_key(self.cache_value, key) for key in self.data_keys]
+        available = all(v is not None for v in values)
+
+        self._attr_available = available
+
+        if not available:
+            self._attr_native_value = None
+            return
+
+        if self.transform_function:
+            combined_value = self.transform_function(values)
+        else:
+            combined_value = sum(values)
+
+        self._attr_native_value = combined_value
 
 
 class SessyScheduleSensor(SessySensor):
