@@ -1017,7 +1017,7 @@ class SessyCombinedSensor(SessySensor):
             config_entry=config_entry,
             name=name,
             coordinator=coordinator,
-            data_key=data_keys[0],  # Use first key for caching
+            data_key="",  # Use root of coordinator data
             device_class=device_class,
             state_class=state_class,
             unit_of_measurement=unit_of_measurement,
@@ -1037,7 +1037,14 @@ class SessyCombinedSensor(SessySensor):
         self.data_keys = data_keys
 
     def update_from_cache(self):
-        values = [get_nested_key(self.coordinator.data, key) for key in self.data_keys]
+        values = [get_nested_key(self.cache_value, key) for key in self.data_keys]
+        available = all(v is not None for v in values)
+
+        self._attr_available = available
+
+        if not available:
+            self._attr_native_value = None
+            return
 
         if self.transform_function:
             combined_value = self.transform_function(values)
@@ -1045,7 +1052,6 @@ class SessyCombinedSensor(SessySensor):
             combined_value = sum(values)
 
         self._attr_native_value = combined_value
-        self._attr_available = all(v is not None for v in values)
 
 
 class SessyScheduleSensor(SessySensor):
