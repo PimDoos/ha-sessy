@@ -47,12 +47,12 @@ async def generate_device_info(
     wifi_status = network_status_coordinator.raw_data.get("wifi_sta")
     if wifi_status is not None and "mac" in wifi_status:
         wifi_mac_address = dr.format_mac(wifi_status.get("mac"))
-        identifiers.add((DOMAIN, wifi_mac_address))
+        identifiers.add((dr.CONNECTION_NETWORK_MAC, wifi_mac_address))
 
     ethernet_status = network_status_coordinator.raw_data.get("eth")
     if ethernet_status is not None and "mac" in ethernet_status:
         ethernet_mac_address = dr.format_mac(ethernet_status.get("mac"))
-        identifiers.add((DOMAIN, ethernet_mac_address))
+        identifiers.add((dr.CONNECTION_NETWORK_MAC, ethernet_mac_address))
 
     system_info_coordinator: SessyCoordinator = coordinators.get(
         device.get_system_info, None
