@@ -197,16 +197,16 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             # Prompt user for the password
             return await self.async_step_user()
 
+    @staticmethod
     def async_get_options_flow(
-        self,
         config_entry: config_entries.ConfigEntry,
     ) -> config_entries.OptionsFlow:
         """Create the options flow."""
-        return OptionsFlowHandler(config_entry)
+        return OptionsFlowHandler()
 
 
 class OptionsFlowHandler(config_entries.OptionsFlow):
-    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
+    def __init__(self) -> None:
         """Initialize options flow."""
 
     async def async_step_init(
