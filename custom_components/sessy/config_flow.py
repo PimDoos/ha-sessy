@@ -48,13 +48,16 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
     device_id = device.serial_number[0:4]
     # Return info that you want to store in the config entry.
     if isinstance(device, SessyBattery):
-        return {"title": f"Sessy Dongle {device_id}"}
+        device_info = {"title": f"Sessy Dongle {device_id}"}
     elif isinstance(device, SessyP1Meter):
-        return {"title": f"Sessy P1 {device_id}"}
+        device_info = {"title": f"Sessy P1 {device_id}"}
     elif isinstance(device, SessyCTMeter):
-        return {"title": f"Sessy CT {device_id}"}
+        device_info = {"title": f"Sessy CT {device_id}"}
     else:
-        return {"title": f"Sessy {device_id}"}
+        device_info = {"title": f"Sessy {device_id}"}
+
+    await device.close()
+    return device_info
 
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -147,7 +150,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 _LOGGER.exception("Unexpected exception during reconfigure")
                 errors["base"] = "unknown"
             else:
-                return self.async_update_reload_and_abort(
+                return self.async_update_and_abort(
                     title=info["title"],
                     entry=self._reconfig_entry,
                     data_updates=user_input,
