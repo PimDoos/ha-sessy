@@ -12,7 +12,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout
-        uses: "actions/checkout@v6"
+        uses: "actions/checkout@v7"
       - name: ruff-action
         uses: astral-sh/ruff-action@v4.0.0
         
@@ -23,7 +23,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: CodeSpell
         uses: codespell-project/actions-codespell@v2
         with:
