@@ -65,8 +65,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     VERSION = 1
 
-    hostname = None
-    username = None
+    hostname: str = None
+    username: str = None
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -192,7 +192,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self._name = local_name.removesuffix(".local")
 
             # Update the autofill information
-            self.hostname = ip_address
+            self.hostname = ip_address.compressed
             self.username = serial_number
         except Exception:
             return self.async_abort(reason="discovery_error")
