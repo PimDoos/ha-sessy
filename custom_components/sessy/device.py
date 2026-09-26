@@ -75,6 +75,12 @@ async def generate_device_info(
         serial_number=device.serial_number,
     )
 
+    device_registry = dr.async_get(hass)
+    device_entry_self = device_registry.async_get_or_create(
+        config_entry_id=config_entry.entry_id,
+        **device_info[SessyConnectedDeviceType.SELF],
+    )
+
     if isinstance(device, SessyBattery):
         battery_serial = system_info_coordinator.raw_data.get("sessy_serial", None)
         battery_revision = system_info_coordinator.raw_data.get("sessy_revision", None)
@@ -91,7 +97,7 @@ async def generate_device_info(
                 model="Sessy Battery",
                 hw_version=battery_revision_formatted,
                 serial_number=battery_serial,
-                via_device=(DOMAIN, device.serial_number),
+                via_device_id=device_entry_self.id,
             )
 
     elif isinstance(device, SessyP1Meter):
@@ -119,7 +125,7 @@ async def generate_device_info(
                     model=p1_model,
                     hw_version=p1_revision_formatted,
                     serial_number=p1_serial,
-                    via_device=(DOMAIN, device.serial_number),
+                    via_device_id=device_entry_self.id,
                 )
 
             gas_serial_dec = p1_coordinator.raw_data.get(
@@ -136,7 +142,7 @@ async def generate_device_info(
                         identifiers={(DOMAIN, gas_serial)},
                         configuration_url=f"http://{device.host}/",
                         serial_number=gas_serial,
-                        via_device=(DOMAIN, device.serial_number),
+                        via_device_id=device_entry_self.id,
                     )
 
         modbus_coordinator = coordinators.get(device.get_modbus_details, None)
@@ -154,7 +160,7 @@ async def generate_device_info(
                     configuration_url=f"http://{device.host}/",
                     model=modbus_model,
                     serial_number=modbus_serial,
-                    via_device=(DOMAIN, device.serial_number),
+                    via_device_id=device_entry_self.id,
                 )
 
     return device_info
@@ -168,9 +174,20 @@ def update_sw_version(
 ):
     try:
         device_info = config_entry.runtime_data.device_info.get(connected_device_type)
+        identifiers = device_info.get(ATTR_IDENTIFIERS)
+        if identifiers is None or len(identifiers) == 0:
+            raise ValueError(
+                f"Device info for {connected_device_type} does not contain identifiers"
+            )
+
+        identifier: tuple[str, str] = next(iter(identifiers))
+
         device_registry = dr.async_get(hass)
-        device = device_registry.async_get_device(device_info[ATTR_IDENTIFIERS])
-        device_registry.async_update_device(device.id, sw_version=new_version)
+        device = device_registry.async_get_device_by_identifier(
+            identifier,
+            config_entry_id=config_entry.entry_id,
+        )
+        device_registry.async_update_device(device_id=device.id, sw_version=new_version)
     except Exception as e:
         _LOGGER.warning(
             "Could not write new software version to device registry: %s", e
