@@ -173,32 +173,30 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Handle zeroconf discovery."""
 
         _LOGGER.info("Starting zeroconf config flow for Sessy")
-        try:
-            # Get device info from zeroconf
-            local_name = discovery_info.hostname[:-1]
-            ip_address = discovery_info.ip_address
-            serial_number = discovery_info.properties.get("serial")
-            _LOGGER.info(
-                "Discovered Sessy device at %s with serial: %s",
-                local_name,
-                serial_number,
-            )
 
-            # Check for duplicates
-            await self.async_set_unique_id(serial_number)
-            self._abort_if_unique_id_configured()
+        # Get device info from zeroconf
+        local_name = discovery_info.hostname[:-1]
+        ip_address = discovery_info.ip_address
+        serial_number = discovery_info.properties.get("serial")
+        _LOGGER.info(
+            "Discovered Sessy device at %s with serial: %s",
+            local_name,
+            serial_number,
+        )
 
-            # Update the config flow title
-            self._name = local_name.removesuffix(".local")
+        # Check for duplicates
+        await self.async_set_unique_id(serial_number)
+        self._abort_if_unique_id_configured()
 
-            # Update the autofill information
-            self.hostname = ip_address.compressed
-            self.username = serial_number
-        except Exception:  # noqa: BLE001
-            return self.async_abort(reason="discovery_error")
-        else:
-            # Prompt user for the password
-            return await self.async_step_user()
+        # Update the config flow title
+        self._name = local_name.removesuffix(".local")
+
+        # Update the autofill information
+        self.hostname = ip_address.compressed
+        self.username = serial_number
+
+        # Prompt user for the password
+        return await self.async_step_user()
 
     @staticmethod
     def async_get_options_flow(
