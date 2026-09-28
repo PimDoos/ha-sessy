@@ -58,7 +58,7 @@ def only_positive(value: int) -> int:
 
 def time_from_string(value: str) -> time:
     """Convert a string in the format HH:MM to a time object"""
-    return datetime.strptime(value, "%H:%M").time()
+    return datetime.strptime(value, "%H:%M").time()  # noqa: DTZ007
 
 
 def start_time_from_string(value: str) -> time:

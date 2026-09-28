@@ -30,49 +30,47 @@ async def async_setup_entry(
 
     if isinstance(device, SessyBattery):
         # Firmware or hardware-revision specific settings
-        try:
-            system_settings_coordinator: SessyCoordinator = coordinators[
-                device.get_system_settings
-            ]
-            settings: dict = system_settings_coordinator.raw_data
+        system_settings_coordinator: SessyCoordinator = coordinators[
+            device.get_system_settings
+        ]
+        settings: dict = system_settings_coordinator.raw_data
 
-            # Eco mode controls (fw 1.6.8+)
-            if settings.get("eco_nom_charge", None) is not None:
-                switches.append(
-                    SessySettingSwitchEntity(
-                        hass,
-                        config_entry,
-                        "Eco NOM Charging Enabled",
-                        system_settings_coordinator,
-                        "eco_nom_charge",
-                        device.set_system_setting,
-                        entity_category=EntityCategory.CONFIG,
-                        connected_device_type=SessyConnectedDeviceType.BATTERY,
-                    )
+        # Eco mode controls (fw 1.6.8+)
+        if settings.get("eco_nom_charge", None) is not None:
+            switches.append(
+                SessySettingSwitchEntity(
+                    hass,
+                    config_entry,
+                    "Eco NOM Charging Enabled",
+                    system_settings_coordinator,
+                    "eco_nom_charge",
+                    device.set_system_setting,
+                    entity_category=EntityCategory.CONFIG,
+                    connected_device_type=SessyConnectedDeviceType.BATTERY,
                 )
+            )
 
-            # Temperature limit controls (fw 1.9.0+)
-            if settings.get("pack_temp_limit_enabled", None) is not None:
-                switches.append(
-                    SessySettingSwitchEntity(
-                        hass,
-                        config_entry,
-                        "Temperature Limit Enabled",
-                        system_settings_coordinator,
-                        "pack_temp_limit_enabled",
-                        device.set_system_setting,
-                        entity_category=EntityCategory.CONFIG,
-                        connected_device_type=SessyConnectedDeviceType.BATTERY,
-                    )
+        # Temperature limit controls (fw 1.9.0+)
+        if settings.get("pack_temp_limit_enabled", None) is not None:
+            switches.append(
+                SessySettingSwitchEntity(
+                    hass,
+                    config_entry,
+                    "Temperature Limit Enabled",
+                    system_settings_coordinator,
+                    "pack_temp_limit_enabled",
+                    device.set_system_setting,
+                    entity_category=EntityCategory.CONFIG,
+                    connected_device_type=SessyConnectedDeviceType.BATTERY,
                 )
-
-        except Exception as e:
-            _LOGGER.warning("Error setting firmware specific settings: %s", e)
+            )
 
     async_add_entities(switches)
 
 
 class SessySettingSwitchEntity(SessyCoordinatorEntity, SwitchEntity):
+    """Switch entity to control boolean settings on Sessy devices"""
+
     def __init__(
         self,
         hass: HomeAssistant,

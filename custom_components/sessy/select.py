@@ -5,7 +5,6 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable
 from enum import Enum
-from typing import Optional
 
 from homeassistant.components.select import SelectEntity
 from homeassistant.core import HomeAssistant
@@ -51,6 +50,8 @@ async def async_setup_entry(
 
 
 class SessySelectEntity(SessyCoordinatorEntity, SelectEntity):
+    """Entity to control Sessy settings enums"""
+
     def __init__(
         self,
         hass: HomeAssistant,

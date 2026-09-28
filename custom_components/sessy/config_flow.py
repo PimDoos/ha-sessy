@@ -194,7 +194,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             # Update the autofill information
             self.hostname = ip_address.compressed
             self.username = serial_number
-        except Exception:
+        except Exception:  # noqa: BLE001
             return self.async_abort(reason="discovery_error")
         else:
             # Prompt user for the password
