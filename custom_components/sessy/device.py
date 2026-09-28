@@ -189,7 +189,7 @@ def update_sw_version(
             config_entry_id=config_entry.entry_id,
         )
         device_registry.async_update_device(device_id=device.id, sw_version=new_version)
-    except Exception as e:
+    except ValueError as e:
         _LOGGER.warning(
             "Could not write new software version to device registry: %s", e
         )

@@ -77,7 +77,7 @@ class SessyCoordinatorEntity(CoordinatorEntity):
         try:
             self.copy_from_cache()
             self._update_failed_count = 0
-        except Exception as e:
+        except ValueError as e:
             self._update_failed_count += 1
             message = f"Updating entity '{self.name}' failed for {self._update_failed_count} consecutive attempts. Exception occurred: '{e}'"
             self.cache_value = None
@@ -98,7 +98,7 @@ class SessyCoordinatorEntity(CoordinatorEntity):
         self._attr_available = available
 
         if self.cache_value is None:
-            raise TypeError(
+            raise ValueError(
                 f"Key {self.data_key} has no value in coordinator {self.coordinator.name}"
             )
 

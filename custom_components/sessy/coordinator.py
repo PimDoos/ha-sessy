@@ -22,7 +22,7 @@ from sessypy.devices import (
     SessyMeter,
     SessyP1Meter,
 )
-from sessypy.util import SessyLoginException, SessyNotSupportedException
+from sessypy.util import SessyException, SessyLoginException, SessyNotSupportedException
 
 from .const import (
     COORDINATOR_RETRIES,
@@ -107,7 +107,7 @@ async def setup_coordinators(
                     device.serial_number,
                     e,
                 )
-        except Exception as e:
+        except SessyException as e:
             _LOGGER.error(
                 "Error while fetching dynamic schedule for Sessy device %s. Error: %s",
                 device.serial_number,
