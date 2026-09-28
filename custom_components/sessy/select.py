@@ -1,24 +1,22 @@
 """Select entities to control Sessy"""
 
 from __future__ import annotations
+
+import logging
+from collections.abc import Callable
 from enum import Enum
 
-from homeassistant.core import HomeAssistant
 from homeassistant.components.select import SelectEntity
+from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
-
 from sessypy.const import SessyPowerStrategy
 from sessypy.devices import SessyBattery
 from sessypy.util import SessyConnectionException, SessyNotSupportedException
-
-from typing import Callable, Optional
 
 from .coordinator import SessyCoordinator
 from .entity import SessyCoordinatorEntity
 from .models import SessyConfigEntry, SessyConnectedDeviceType
 from .util import enum_to_options_list, status_string_power_strategy
-
-import logging
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -52,6 +50,8 @@ async def async_setup_entry(
 
 
 class SessySelectEntity(SessyCoordinatorEntity, SelectEntity):
+    """Entity to control Sessy settings enums"""
+
     def __init__(
         self,
         hass: HomeAssistant,
@@ -61,8 +61,8 @@ class SessySelectEntity(SessyCoordinatorEntity, SelectEntity):
         data_key,
         action_function: Callable,
         options: Enum,
-        transform_function: Optional[Callable],
-        translation_key: str = None,
+        transform_function: Callable | None,
+        translation_key: str | None = None,
         connected_device_type: SessyConnectedDeviceType = SessyConnectedDeviceType.SELF,
     ):
         super().__init__(

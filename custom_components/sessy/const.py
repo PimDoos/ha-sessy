@@ -1,3 +1,5 @@
+"""Shared constants for Sessy integration"""
+
 from datetime import timedelta
 
 DOMAIN = "sessy"

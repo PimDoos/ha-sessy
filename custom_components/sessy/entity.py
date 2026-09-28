@@ -3,14 +3,13 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from sessypy.devices import (
     SessyDevice,
 )
-
-from typing import Callable, Optional
 
 from .const import (
     ENTITY_ERROR_THRESHOLD,
@@ -31,12 +30,12 @@ class SessyCoordinatorEntity(CoordinatorEntity):
         name: str,
         coordinator: SessyCoordinator,
         data_key: str,
-        transform_function: Optional[Callable] = None,
-        translation_key: str = None,
-        availability_key: str = None,
-        availability_test_value: str = None,
+        transform_function: Callable | None = None,
+        translation_key: str | None = None,
+        availability_key: str | None = None,
+        availability_test_value: str | None = None,
         connected_device_type: SessyConnectedDeviceType = SessyConnectedDeviceType.SELF,
-        unique_id_suffix: str = None,
+        unique_id_suffix: str | None = None,
     ):
         self.context = SessyEntityContext(
             data_key, transform_function, availability_key, availability_test_value
@@ -78,7 +77,7 @@ class SessyCoordinatorEntity(CoordinatorEntity):
         try:
             self.copy_from_cache()
             self._update_failed_count = 0
-        except Exception as e:
+        except ValueError as e:
             self._update_failed_count += 1
             message = f"Updating entity '{self.name}' failed for {self._update_failed_count} consecutive attempts. Exception occurred: '{e}'"
             self.cache_value = None
@@ -93,12 +92,13 @@ class SessyCoordinatorEntity(CoordinatorEntity):
             self.async_write_ha_state()
 
     def copy_from_cache(self):
-        value, available = self.coordinator.data.get(self.context, tuple((None, False)))
+        """Copy the latest value from the coordinator cache to the entity cache."""
+        value, available = self.coordinator.data.get(self.context, (None, False))
         self.cache_value = value
         self._attr_available = available
 
         if self.cache_value is None:
-            raise TypeError(
+            raise ValueError(
                 f"Key {self.data_key} has no value in coordinator {self.coordinator.name}"
             )
 

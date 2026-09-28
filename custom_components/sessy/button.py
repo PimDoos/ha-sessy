@@ -2,22 +2,19 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 
+from homeassistant.components.button import ButtonDeviceClass, ButtonEntity
 from homeassistant.core import HomeAssistant
-from homeassistant.components.button import ButtonEntity, ButtonDeviceClass
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity import EntityCategory
-
 from sessypy.devices import SessyDevice
 from sessypy.util import SessyConnectionException, SessyNotSupportedException
 
-from typing import Callable, Optional
-
 from .coordinator import SessyCoordinator
 from .entity import SessyCoordinatorEntity
-
 from .models import (
-    SessyConfigEntry, 
+    SessyConfigEntry,
     SessyConnectedDeviceType,
 )
 
@@ -60,6 +57,8 @@ async def async_setup_entry(
 
 
 class SessyButton(SessyCoordinatorEntity, ButtonEntity):
+    """Sessy button entity."""
+
     def __init__(
         self,
         hass: HomeAssistant,
@@ -70,8 +69,8 @@ class SessyButton(SessyCoordinatorEntity, ButtonEntity):
         action_function: Callable,
         device_class: ButtonDeviceClass = None,
         entity_category: EntityCategory = None,
-        transform_function: Optional[Callable] = None,
-        translation_key: str = None,
+        transform_function: Callable | None = None,
+        translation_key: str | None = None,
         connected_device_type: SessyConnectedDeviceType = SessyConnectedDeviceType.SELF,
     ):
         super().__init__(

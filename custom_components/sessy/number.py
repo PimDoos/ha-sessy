@@ -2,22 +2,20 @@
 
 from __future__ import annotations
 
+import logging
+from collections.abc import Callable
+
+from homeassistant.components.number import NumberDeviceClass, NumberEntity
 from homeassistant.const import PERCENTAGE, UnitOfPower, UnitOfTime
-from homeassistant.components.number import NumberEntity, NumberDeviceClass
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity import EntityCategory
-
 from sessypy.devices import SessyBattery, SessyDevice, SessyMeter
-from sessypy.util import SessyNotSupportedException, SessyConnectionException
-
-from typing import Callable, Optional
+from sessypy.util import SessyConnectionException, SessyNotSupportedException
 
 from .coordinator import SessyCoordinator
 from .entity import SessyCoordinatorEntity
 from .models import SessyConfigEntry, SessyConnectedDeviceType
-
-import logging
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -84,82 +82,79 @@ async def async_setup_entry(
         )
 
         # Firmware or hardware-revision specific settings
-        try:
-            settings: dict = system_settings_coordinator.raw_data
-            if "error" in settings:
-                _LOGGER.warning(
-                    f"Sessy settings api returned an error:\n{settings.get('error')}\nSome entities might not work until settings are saved in the Sessy portal or web UI."
-                )
 
-            # Noise controls
-            if not settings.get("disable_noise_level", True):
-                numbers.append(
-                    SessySettingNumberEntity(
-                        hass,
-                        config_entry,
-                        "Noise Level",
-                        system_settings_coordinator,
-                        "allowed_noise_level",
-                        min_value=1,
-                        max_value=5,
-                        entity_category=EntityCategory.CONFIG,
-                        connected_device_type=SessyConnectedDeviceType.BATTERY,
-                    )
-                )
-
-            # Eco mode controls (fw 1.6.8+)
-            if settings.get("eco_charge_power", None) is not None:
-                numbers.append(
-                    SessySettingNumberEntity(
-                        hass,
-                        config_entry,
-                        "Eco Charge Power",
-                        system_settings_coordinator,
-                        "eco_charge_power",
-                        NumberDeviceClass.POWER,
-                        UnitOfPower.WATT,
-                        50,
-                        2200,
-                        entity_category=EntityCategory.CONFIG,
-                        connected_device_type=SessyConnectedDeviceType.BATTERY,
-                    )
-                )
-            if settings.get("eco_charge_hours", None) is not None:
-                numbers.append(
-                    SessySettingNumberEntity(
-                        hass,
-                        config_entry,
-                        "Eco Charge Hours",
-                        system_settings_coordinator,
-                        "eco_charge_hours",
-                        NumberDeviceClass.DURATION,
-                        UnitOfTime.HOURS,
-                        0,
-                        24,
-                        entity_category=EntityCategory.CONFIG,
-                        connected_device_type=SessyConnectedDeviceType.BATTERY,
-                    )
-                )
-            if settings.get("min_soc", None) is not None:
-                numbers.append(
-                    SessySettingNumberEntity(
-                        hass,
-                        config_entry,
-                        "Minimum State of Charge",
-                        system_settings_coordinator,
-                        "min_soc",
-                        None,
-                        PERCENTAGE,
-                        0,
-                        100,
-                        entity_category=EntityCategory.CONFIG,
-                        connected_device_type=SessyConnectedDeviceType.BATTERY,
-                    )
-                )
-
-        except Exception as e:
+        settings: dict = system_settings_coordinator.raw_data
+        if "error" in settings:
+            # TODO Raise a repair if this occurs
             _LOGGER.warning(
-                f"Error setting up firmware specific settings: {e}\n{settings}"
+                "Sessy settings api returned an error:\n%s\nSome entities might not work until settings are saved in the Sessy portal or web UI.",
+                settings["error"],
+            )
+
+        # Noise controls
+        if not settings.get("disable_noise_level", True):
+            numbers.append(
+                SessySettingNumberEntity(
+                    hass,
+                    config_entry,
+                    "Noise Level",
+                    system_settings_coordinator,
+                    "allowed_noise_level",
+                    min_value=1,
+                    max_value=5,
+                    entity_category=EntityCategory.CONFIG,
+                    connected_device_type=SessyConnectedDeviceType.BATTERY,
+                )
+            )
+
+        # Eco mode controls (fw 1.6.8+)
+        if settings.get("eco_charge_power", None) is not None:
+            numbers.append(
+                SessySettingNumberEntity(
+                    hass,
+                    config_entry,
+                    "Eco Charge Power",
+                    system_settings_coordinator,
+                    "eco_charge_power",
+                    NumberDeviceClass.POWER,
+                    UnitOfPower.WATT,
+                    50,
+                    2200,
+                    entity_category=EntityCategory.CONFIG,
+                    connected_device_type=SessyConnectedDeviceType.BATTERY,
+                )
+            )
+        if settings.get("eco_charge_hours", None) is not None:
+            numbers.append(
+                SessySettingNumberEntity(
+                    hass,
+                    config_entry,
+                    "Eco Charge Hours",
+                    system_settings_coordinator,
+                    "eco_charge_hours",
+                    NumberDeviceClass.DURATION,
+                    UnitOfTime.HOURS,
+                    0,
+                    24,
+                    entity_category=EntityCategory.CONFIG,
+                    connected_device_type=SessyConnectedDeviceType.BATTERY,
+                )
+            )
+        if settings.get("min_soc", None) is not None:
+            numbers.append(
+                SessySettingNumberEntity(
+                    hass,
+                    config_entry,
+                    "Minimum State of Charge",
+                    system_settings_coordinator,
+                    "min_soc",
+                    None,
+                    PERCENTAGE,
+                    0,
+                    100,
+                    entity_category=EntityCategory.CONFIG,
+                    connected_device_type=SessyConnectedDeviceType.BATTERY,
+                )
             )
 
     elif isinstance(device, SessyMeter):
@@ -196,10 +191,10 @@ class SessyNumberEntity(SessyCoordinatorEntity, NumberEntity):
         action_function: Callable,
         device_class: NumberDeviceClass = None,
         unit_of_measurement=None,
-        min_value: float = None,
-        max_value: float = None,
+        min_value: float | None = None,
+        max_value: float | None = None,
         entity_category: EntityCategory = None,
-        transform_function: Optional[Callable] = None,
+        transform_function: Callable | None = None,
         connected_device_type: SessyConnectedDeviceType = SessyConnectedDeviceType.SELF,
     ):
         super().__init__(
@@ -256,10 +251,10 @@ class SessySettingNumberEntity(SessyNumberEntity):
         data_key,
         device_class: NumberDeviceClass = None,
         unit_of_measurement=None,
-        min_value: float = None,
-        max_value: float = None,
+        min_value: float | None = None,
+        max_value: float | None = None,
         entity_category: EntityCategory = None,
-        transform_function: Optional[Callable] = None,
+        transform_function: Callable | None = None,
         connected_device_type: SessyConnectedDeviceType = SessyConnectedDeviceType.SELF,
     ):
         device: SessyBattery = config_entry.runtime_data.device
