@@ -2,22 +2,20 @@
 
 from __future__ import annotations
 
+import logging
+from collections.abc import Callable
+
 from homeassistant.components.binary_sensor import (
-    BinarySensorEntity,
     BinarySensorDeviceClass,
+    BinarySensorEntity,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
-
 from sessypy.devices import SessyBattery, SessyDevice
-
-from typing import Callable, Optional
 
 from .coordinator import SessyCoordinator
 from .entity import SessyCoordinatorEntity
 from .models import SessyConfigEntry, SessyConnectedDeviceType
-
-import logging
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -39,7 +37,7 @@ async def async_setup_entry(
             ]
             power_status: dict = power_status_coordinator.raw_data
 
-            if "strategy_overridden" in power_status.get("sessy", dict()):
+            if "strategy_overridden" in power_status.get("sessy", {}):
                 binary_sensors.append(
                     SessyBinarySensor(
                         hass,
@@ -54,7 +52,7 @@ async def async_setup_entry(
                 )
 
         except Exception as e:
-            _LOGGER.warning(f"Error setting up power status binary_sensors: {e}")
+            _LOGGER.warning("Error setting up power status binary_sensors: %s", e)
 
     async_add_entities(binary_sensors)
 
@@ -68,7 +66,7 @@ class SessyBinarySensor(SessyCoordinatorEntity, BinarySensorEntity):
         coordinator: SessyCoordinatorEntity,
         data_key,
         device_class: BinarySensorDeviceClass = None,
-        transform_function: Optional[Callable] = None,
+        transform_function: Callable | None = None,
         entity_category: EntityCategory = None,
         enabled_default: bool = True,
         connected_device_type: SessyConnectedDeviceType = SessyConnectedDeviceType.SELF,

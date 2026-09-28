@@ -2,21 +2,19 @@
 
 from __future__ import annotations
 
-from homeassistant.components.switch import SwitchEntity, SwitchDeviceClass
+import logging
+from collections.abc import Callable
+
+from homeassistant.components.switch import SwitchDeviceClass, SwitchEntity
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity import EntityCategory
-
 from sessypy.devices import SessyBattery
-from sessypy.util import SessyNotSupportedException, SessyConnectionException
-
-from typing import Callable, Optional
+from sessypy.util import SessyConnectionException, SessyNotSupportedException
 
 from .coordinator import SessyCoordinator
 from .entity import SessyCoordinatorEntity
 from .models import SessyConfigEntry, SessyConnectedDeviceType
-
-import logging
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -69,7 +67,7 @@ async def async_setup_entry(
                 )
 
         except Exception as e:
-            _LOGGER.warning(f"Error setting firmware specific settings: {e}")
+            _LOGGER.warning("Error setting firmware specific settings: %s", e)
 
     async_add_entities(switches)
 
@@ -81,11 +79,11 @@ class SessySettingSwitchEntity(SessyCoordinatorEntity, SwitchEntity):
         config_entry: SessyConfigEntry,
         name: str,
         coordinator: SessyCoordinator,
-        data_key,
+        data_key: str,
         action_function: Callable,
         device_class: SwitchDeviceClass = None,
         entity_category: EntityCategory = None,
-        transform_function: Optional[Callable] = None,
+        transform_function: Callable | None = None,
         connected_device_type: SessyConnectedDeviceType = SessyConnectedDeviceType.SELF,
     ):
         super().__init__(
@@ -106,10 +104,10 @@ class SessySettingSwitchEntity(SessyCoordinatorEntity, SwitchEntity):
     def update_from_cache(self):
         self._attr_is_on = self.cache_value
 
-    async def async_turn_on(self):
+    async def async_turn_on(self, **kwargs):
         await self._set_value(True)
 
-    async def async_turn_off(self):
+    async def async_turn_off(self, **kwargs):
         await self._set_value(False)
 
     async def _set_value(self, value: bool):

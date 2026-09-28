@@ -1,52 +1,50 @@
 """Sensor to read data from Sessy"""
 
 from __future__ import annotations
+
+import logging
+from collections.abc import Callable
 from datetime import datetime, timedelta
 
+from homeassistant.components.sensor import (
+    SensorDeviceClass,
+    SensorEntity,
+    SensorStateClass,
+)
 from homeassistant.const import (
     CURRENCY_EURO,
-    UnitOfPower,
     PERCENTAGE,
-    UnitOfElectricPotential,
-    UnitOfElectricCurrent,
-    UnitOfInformation,
     SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
-    UnitOfFrequency,
+    UnitOfElectricCurrent,
+    UnitOfElectricPotential,
     UnitOfEnergy,
+    UnitOfFrequency,
+    UnitOfInformation,
+    UnitOfPower,
     UnitOfVolume,
-)
-from homeassistant.components.sensor import (
-    SensorEntity,
-    SensorDeviceClass,
-    SensorStateClass,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.event import async_track_time_change
-
-from sessypy.const import SessyModbusState, SessySystemState, SessyP1State
-from sessypy.devices import SessyBattery, SessyP1Meter, SessyCTMeter
-
-from typing import Callable, Optional
+from sessypy.const import SessyModbusState, SessyP1State, SessySystemState
+from sessypy.devices import SessyBattery, SessyCTMeter, SessyP1Meter
 
 from .coordinator import SessyCoordinator
 from .entity import SessyCoordinatorEntity
 from .models import SessyConfigEntry, SessyConnectedDeviceType
 from .util import (
     divide_by_hundred_thousand,
+    divide_by_thousand,
     enum_to_options_list,
     get_nested_key,
+    only_negative_as_positive,
+    only_positive,
     status_string_modbus,
     status_string_p1,
     status_string_system_state,
     transform_on_list,
     unit_interval_to_percentage,
-    divide_by_thousand,
-    only_negative_as_positive,
-    only_positive,
 )
-
-import logging
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -82,7 +80,7 @@ async def async_setup_entry(
                 )
             )
     except Exception as e:
-        _LOGGER.warning(f"Error setting up WiFi RSSI sensor: {e}")
+        _LOGGER.warning("Error setting up WiFi RSSI sensor: %s", e)
 
     for memory_type in ("internal", "external"):
         sensors.append(
@@ -182,7 +180,7 @@ async def async_setup_entry(
                         )
 
         except Exception as e:
-            _LOGGER.warning(f"Error setting up schedule sensors: {e}")
+            _LOGGER.warning("Error setting up schedule sensors: %s", e)
 
         # Power Status
         try:
@@ -339,7 +337,7 @@ async def async_setup_entry(
                 )
 
         except Exception as e:
-            _LOGGER.warning(f"Error setting up power status sensors: {e}")
+            _LOGGER.warning("Error setting up power status sensors: %s", e)
 
         # Sessy Energy sensors
         try:
@@ -378,7 +376,7 @@ async def async_setup_entry(
                     )
                 )
         except Exception as e:
-            _LOGGER.warning(f"Error setting up battery energy sensors: {e}")
+            _LOGGER.warning("Error setting up battery energy sensors: %s", e)
 
         for phase_id in range(1, 4):
             sensors.append(
@@ -456,7 +454,7 @@ async def async_setup_entry(
                     )
             except Exception as e:
                 _LOGGER.warning(
-                    f"Error setting up battery metered phase energy sensors: {e}"
+                    "Error setting up battery metered phase energy sensors: %s", e
                 )
 
     elif isinstance(device, SessyP1Meter):
@@ -561,7 +559,7 @@ async def async_setup_entry(
                 )
             )
         except Exception as e:
-            _LOGGER.warning(f"Error setting up gas meter: {e}")
+            _LOGGER.warning("Error setting up gas meter: %s", e)
 
         for phase_id in range(1, 4):
             sensors.append(
@@ -931,12 +929,14 @@ async def async_setup_entry(
                         )
                     )
             except Exception as e:
-                _LOGGER.warning(f"Error setting up CT meter energy sensors: {e}")
+                _LOGGER.warning("Error setting up CT meter energy sensors: %s", e)
 
     async_add_entities(sensors)
 
 
 class SessySensor(SessyCoordinatorEntity, SensorEntity):
+    """Sessy Sensor entity"""
+
     def __init__(
         self,
         hass: HomeAssistant,
@@ -947,17 +947,17 @@ class SessySensor(SessyCoordinatorEntity, SensorEntity):
         device_class: SensorDeviceClass = None,
         state_class: SensorStateClass = None,
         unit_of_measurement=None,
-        transform_function: Optional[Callable] = None,
-        translation_key: str = None,
+        transform_function: Callable | None = None,
+        translation_key: str | None = None,
         options=None,
         entity_category: EntityCategory = None,
-        precision: int = None,
+        precision: int | None = None,
         suggested_unit_of_measurement=None,
         enabled_default: bool = True,
-        availability_key: str = None,
-        availability_test_value: str = None,
+        availability_key: str | None = None,
+        availability_test_value: str | None = None,
         connected_device_type: SessyConnectedDeviceType = SessyConnectedDeviceType.SELF,
-        unique_id_suffix: str = None,
+        unique_id_suffix: str | None = None,
     ):
         super().__init__(
             hass=hass,
@@ -990,6 +990,8 @@ class SessySensor(SessyCoordinatorEntity, SensorEntity):
 
 
 class SessyCombinedSensor(SessySensor):
+    """Sessy Sensor entity which combines multiple data keys"""
+
     def __init__(
         self,
         hass: HomeAssistant,
@@ -1000,17 +1002,17 @@ class SessyCombinedSensor(SessySensor):
         device_class: SensorDeviceClass = None,
         state_class: SensorStateClass = None,
         unit_of_measurement=None,
-        transform_function: Optional[Callable] = None,
-        translation_key: str = None,
+        transform_function: Callable | None = None,
+        translation_key: str | None = None,
         options=None,
         entity_category: EntityCategory = None,
-        precision: int = None,
+        precision: int | None = None,
         suggested_unit_of_measurement=None,
         enabled_default: bool = True,
-        availability_key: str = None,
-        availability_test_value: str = None,
+        availability_key: str | None = None,
+        availability_test_value: str | None = None,
         connected_device_type: SessyConnectedDeviceType = SessyConnectedDeviceType.SELF,
-        unique_id_suffix: str = None,
+        unique_id_suffix: str | None = None,
     ):
         super().__init__(
             hass=hass,
@@ -1055,6 +1057,11 @@ class SessyCombinedSensor(SessySensor):
 
 
 class SessyScheduleSensor(SessySensor):
+    """
+    A sensor that updates its value based on a schedule provided by the Sessy API.
+    The complete schedule is exposed via state attributes
+    """
+
     def __init__(
         self,
         hass: HomeAssistant,
@@ -1065,9 +1072,9 @@ class SessyScheduleSensor(SessySensor):
         device_class: SensorDeviceClass = None,
         state_class: SensorStateClass = None,
         unit_of_measurement=None,
-        transform_function: Optional[Callable] = None,
-        schedule_key: str = None,
-        precision: int = None,
+        transform_function: Callable | None = None,
+        schedule_key: str | None = None,
+        precision: int | None = None,
         enabled_default: bool = True,
     ):
         self.schedule_transform_function = transform_function
@@ -1087,7 +1094,7 @@ class SessyScheduleSensor(SessySensor):
 
         self.schedule_key = schedule_key
 
-        async def update_schedule(event_time_utc: datetime = None):
+        async def update_schedule(event_time_utc: datetime | None = None):
             self.update_from_cache()
             self.async_write_ha_state()
 
@@ -1132,7 +1139,7 @@ class SessyScheduleSensor(SessySensor):
 
         schedule_entry: dict
 
-        prices_attribute = dict()
+        prices_attribute = {}
 
         for schedule_entry in schedule:
             start_date = datetime.fromtimestamp(schedule_entry.get("start_time"))
@@ -1147,6 +1154,8 @@ class SessyScheduleSensor(SessySensor):
 
 
 class SessyLegacyScheduleSensor(SessySensor):
+    """Sensor that updates based on the Sessy schedule API"""
+
     def __init__(
         self,
         hass: HomeAssistant,
@@ -1157,9 +1166,9 @@ class SessyLegacyScheduleSensor(SessySensor):
         device_class: SensorDeviceClass = None,
         state_class: SensorStateClass = None,
         unit_of_measurement=None,
-        transform_function: Optional[Callable] = None,
-        schedule_key: str = None,
-        precision: int = None,
+        transform_function: Callable | None = None,
+        schedule_key: str | None = None,
+        precision: int | None = None,
         enabled_default: bool = True,
     ):
         self.schedule_transform_function = transform_function
@@ -1179,7 +1188,7 @@ class SessyLegacyScheduleSensor(SessySensor):
 
         self.schedule_key = schedule_key
 
-        async def update_schedule(event_time_utc: datetime = None):
+        async def update_schedule(event_time_utc: datetime | None = None):
             self.update_from_cache()
             self.async_write_ha_state()
 
@@ -1190,7 +1199,7 @@ class SessyLegacyScheduleSensor(SessySensor):
         now = datetime.now()
 
         schedule_today = self.day_schedule()
-        schedule_today_values = schedule_today.get(self.schedule_key, list())
+        schedule_today_values = schedule_today.get(self.schedule_key, [])
 
         if self.schedule_transform_function:
             current_value = self.schedule_transform_function(
@@ -1217,6 +1226,7 @@ class SessyLegacyScheduleSensor(SessySensor):
                 )
 
     def day_schedule(self, offset: int = 0) -> dict:
+        """Get the schedule for a day at specified offset"""
         schedule_date = datetime.now()
         schedule_date += timedelta(days=offset)
         date_key = schedule_date.strftime("%Y-%m-%d")

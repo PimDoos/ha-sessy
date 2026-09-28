@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import timedelta
 import logging
+from collections.abc import Callable
+from datetime import timedelta
+from typing import Any
 
 import async_timeout
-
 from homeassistant.const import CONF_SCAN_INTERVAL
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import (
@@ -22,8 +23,6 @@ from sessypy.devices import (
     SessyP1Meter,
 )
 from sessypy.util import SessyLoginException, SessyNotSupportedException
-
-from typing import Any, Callable, Optional
 
 from .const import (
     COORDINATOR_RETRIES,
@@ -40,8 +39,11 @@ from .util import get_nested_key
 _LOGGER = logging.getLogger(__name__)
 
 
-async def setup_coordinators(hass, config_entry: SessyConfigEntry, device: SessyDevice) -> dict[Callable, SessyCoordinator]:
-    coordinators = list()
+async def setup_coordinators(
+    hass, config_entry: SessyConfigEntry, device: SessyDevice
+) -> dict[Callable, SessyCoordinator]:
+    """Set up the Sessy API coordinators"""
+    coordinators = []
 
     # Get power scan interval from options flow
     if CONF_SCAN_INTERVAL in config_entry.options:
@@ -85,7 +87,8 @@ async def setup_coordinators(hass, config_entry: SessyConfigEntry, device: Sessy
             )
         except SessyNotSupportedException:
             _LOGGER.warning(
-                f"{device.name} is not using the latest dynamic schedule API, falling back to legacy schedule sensors. Update Sessy to firmware 1.9.2 or later to use the new dynamic schedule API."
+                "%s is not using the latest dynamic schedule API, falling back to legacy schedule sensors. Update Sessy to firmware 1.9.2 or later to use the new dynamic schedule API.",
+                device.serial_number,
             )
             try:
                 # Fallback to legacy dynamic schedule if the new one is not supported
@@ -100,11 +103,15 @@ async def setup_coordinators(hass, config_entry: SessyConfigEntry, device: Sessy
                 )
             except SessyNotSupportedException as e:
                 _LOGGER.warning(
-                    f"Dynamic schedule not supported by Sessy device {device.serial_number}. Error: {e}"
+                    "Dynamic schedule not supported by Sessy device %s. Error: %s",
+                    device.serial_number,
+                    e,
                 )
         except Exception as e:
             _LOGGER.error(
-                f"Error while fetching dynamic schedule for Sessy device {device.serial_number}. Error: {e}"
+                "Error while fetching dynamic schedule for Sessy device %s. Error: %s",
+                device.serial_number,
+                e,
             )
 
     elif isinstance(device, SessyP1Meter):
@@ -133,12 +140,12 @@ async def setup_coordinators(hass, config_entry: SessyConfigEntry, device: Sessy
             SessyCoordinator(hass, config_entry, device.get_grid_target)
         )
 
-    if isinstance(device, SessyBattery) or isinstance(device, SessyCTMeter):
+    if isinstance(device, (SessyBattery, SessyCTMeter)):
         coordinators.append(
             SessyCoordinator(hass, config_entry, device.get_energy_status)
         )
 
-    coordinators_dict = dict()
+    coordinators_dict = {}
     coordinator: SessyCoordinator
     for coordinator in coordinators:
         await coordinator.async_config_entry_first_refresh()
@@ -148,6 +155,7 @@ async def setup_coordinators(hass, config_entry: SessyConfigEntry, device: Sessy
 
 
 async def update_coordinator_options(hass, config_entry: SessyConfigEntry):
+    """Update the Sessy API coordinators with new options"""
     update_coordinator_functions: list[str] = [
         SessyBattery.get_power_status.__name__,
         SessyCTMeter.get_ct_details.__name__,
@@ -163,18 +171,25 @@ async def update_coordinator_options(hass, config_entry: SessyConfigEntry):
     else:
         scan_interval_power = DEFAULT_SCAN_INTERVAL_POWER
 
-    coordinators_dict: dict[Callable, SessyCoordinator] = config_entry.runtime_data.coordinators
-    for coordinator_function in coordinators_dict:
+    coordinators_dict: dict[Callable, SessyCoordinator] = (
+        config_entry.runtime_data.coordinators
+    )
+    for coordinator_function, coordinator in coordinators_dict.items():
         if coordinator_function.__name__ in update_coordinator_functions:
-            _LOGGER.debug(f"Updating scan interval for coordinator {coordinator_function.__name__} to {scan_interval_power}")
-            coordinator = coordinators_dict[coordinator_function]
+            _LOGGER.debug(
+                "Updating scan interval for coordinator %s to %s",
+                coordinator_function.__name__,
+                scan_interval_power,
+            )
             coordinator.update_interval = scan_interval_power
 
 
 async def refresh_coordinators(config_entry: SessyConfigEntry):
-    coordinators_dict: dict[Callable, SessyCoordinator] = config_entry.runtime_data.coordinators
-    for coordinator_function in coordinators_dict:
-        coordinator = coordinators_dict[coordinator_function]
+    """Refresh all coordinators for a config entry"""
+    coordinators_dict: dict[Callable, SessyCoordinator] = (
+        config_entry.runtime_data.coordinators
+    )
+    for coordinator in coordinators_dict.values():
         await coordinator.async_refresh()
 
 
@@ -203,7 +218,7 @@ class SessyCoordinator(DataUpdateCoordinator):
             always_update=False,
         )
         self._device_function = device_function
-        self._raw_data = dict()
+        self._raw_data = {}
 
     async def _async_setup(self):
         """Set up the coordinator
@@ -230,7 +245,7 @@ class SessyCoordinator(DataUpdateCoordinator):
                     data = await self._device_function()
 
                 contexts: list[SessyEntityContext] = set(self.async_contexts())
-                flattened_data = dict()
+                flattened_data = {}
                 for context in contexts:
                     flattened_data[context] = context.apply(data)
 
@@ -248,27 +263,40 @@ class SessyCoordinator(DataUpdateCoordinator):
                     ) from err
                 else:
                     _LOGGER.debug(
-                        f"Error communicating with Sessy API, retrying in {COORDINATOR_RETRY_DELAY} seconds. {err}"
+                        "Error communicating with Sessy API, retrying in %s seconds. %s",
+                        COORDINATOR_RETRY_DELAY,
+                        err,
                     )
                     await asyncio.sleep(COORDINATOR_RETRY_DELAY)
                     continue
 
     def get_data(self):
+        """Return the processed data from the last update"""
         return self.data
 
     @property
     def raw_data(self):
+        """Return the raw data from the last update"""
         return self._raw_data
-    
+
 
 class SessyEntityContext:
-    def __init__(self, data_key: str, transform_function: Optional[Callable] = None, availability_key: Optional[str] = None, availability_test_value: Optional[str] = None):
+    """Context for a Sessy entity to extract data from the coordinator's data"""
+
+    def __init__(
+        self,
+        data_key: str,
+        transform_function: Callable | None = None,
+        availability_key: str | None = None,
+        availability_test_value: str | None = None,
+    ):
         self.data_key = data_key
         self.transform_function = transform_function
         self.availability_key = availability_key
         self.availability_test_value = availability_test_value
 
     def apply(self, data) -> tuple[Any, bool]:
+        """Apply the context to the data and return the value and availability"""
         value = get_nested_key(data, self.data_key)
         if self.transform_function:
             value = self.transform_function(value)

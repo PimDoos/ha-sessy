@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import logging
 
+from homeassistant.config_entries import ConfigEntryNotReady
 from homeassistant.const import ATTR_IDENTIFIERS
 from homeassistant.core import HomeAssistant
-from homeassistant.config_entries import ConfigEntryNotReady
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.entity import DeviceInfo
 from sessypy.devices import (
@@ -62,7 +62,7 @@ async def generate_device_info(
             f"System info not available for {device} at {device.host}"
         )
 
-    device_info = dict()
+    device_info = {}
 
     # Generate own device info
     device_info[SessyConnectedDeviceType.SELF] = DeviceInfo(
@@ -172,6 +172,7 @@ def update_sw_version(
     new_version: str,
     connected_device_type: SessyConnectedDeviceType = SessyConnectedDeviceType.SELF,
 ):
+    """Update the software version of a device in the device registry."""
     try:
         device_info = config_entry.runtime_data.device_info.get(connected_device_type)
         identifiers = device_info.get(ATTR_IDENTIFIERS)

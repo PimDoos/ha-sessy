@@ -1,24 +1,22 @@
 """Time entities to control Sessy"""
 
 from __future__ import annotations
+
+import logging
+from collections.abc import Callable
 from datetime import time
 
 from homeassistant.components.time import TimeEntity
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity import EntityCategory
-
 from sessypy.devices import SessyBattery
 from sessypy.util import SessyConnectionException, SessyNotSupportedException
-
-from typing import Callable, Optional
 
 from .coordinator import SessyCoordinator
 from .entity import SessyCoordinatorEntity
 from .models import SessyConfigEntry, SessyConnectedDeviceType
 from .util import start_time_from_string, stop_time_from_string, time_from_string
-
-import logging
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -38,7 +36,7 @@ async def async_setup_entry(
         ]
 
         async def partial_update_enabled_time(
-            start_time: time = None, stop_time: time = None
+            start_time: time | None = None, stop_time: time | None = None
         ) -> str:
             settings: dict = system_settings_coordinator.raw_data
             settings_enabled_time = settings.get("enabled_time").split("-")
@@ -94,6 +92,8 @@ async def async_setup_entry(
 
 
 class SessyTimeEntity(SessyCoordinatorEntity, TimeEntity):
+    """Entity to control Sessy time settings"""
+
     def __init__(
         self,
         hass: HomeAssistant,
@@ -103,7 +103,7 @@ class SessyTimeEntity(SessyCoordinatorEntity, TimeEntity):
         data_key,
         action_function: Callable,
         entity_category: EntityCategory = None,
-        transform_function: Optional[Callable] = None,
+        transform_function: Callable | None = None,
         connected_device_type: SessyConnectedDeviceType = SessyConnectedDeviceType.SELF,
     ):
         super().__init__(

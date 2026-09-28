@@ -2,22 +2,20 @@
 
 from __future__ import annotations
 
+import logging
+from collections.abc import Callable
+
+from homeassistant.components.number import NumberDeviceClass, NumberEntity
 from homeassistant.const import PERCENTAGE, UnitOfPower, UnitOfTime
-from homeassistant.components.number import NumberEntity, NumberDeviceClass
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity import EntityCategory
-
 from sessypy.devices import SessyBattery, SessyDevice, SessyMeter
-from sessypy.util import SessyNotSupportedException, SessyConnectionException
-
-from typing import Callable, Optional
+from sessypy.util import SessyConnectionException, SessyNotSupportedException
 
 from .coordinator import SessyCoordinator
 from .entity import SessyCoordinatorEntity
 from .models import SessyConfigEntry, SessyConnectedDeviceType
-
-import logging
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -88,7 +86,8 @@ async def async_setup_entry(
             settings: dict = system_settings_coordinator.raw_data
             if "error" in settings:
                 _LOGGER.warning(
-                    f"Sessy settings api returned an error:\n{settings.get('error')}\nSome entities might not work until settings are saved in the Sessy portal or web UI."
+                    "Sessy settings api returned an error:\n%s\nSome entities might not work until settings are saved in the Sessy portal or web UI.",
+                    settings["error"],
                 )
 
             # Noise controls
@@ -159,7 +158,7 @@ async def async_setup_entry(
 
         except Exception as e:
             _LOGGER.warning(
-                f"Error setting up firmware specific settings: {e}\n{settings}"
+                "Error setting up firmware specific settings: %s\n%s", e, settings
             )
 
     elif isinstance(device, SessyMeter):
@@ -196,10 +195,10 @@ class SessyNumberEntity(SessyCoordinatorEntity, NumberEntity):
         action_function: Callable,
         device_class: NumberDeviceClass = None,
         unit_of_measurement=None,
-        min_value: float = None,
-        max_value: float = None,
+        min_value: float | None = None,
+        max_value: float | None = None,
         entity_category: EntityCategory = None,
-        transform_function: Optional[Callable] = None,
+        transform_function: Callable | None = None,
         connected_device_type: SessyConnectedDeviceType = SessyConnectedDeviceType.SELF,
     ):
         super().__init__(
@@ -256,10 +255,10 @@ class SessySettingNumberEntity(SessyNumberEntity):
         data_key,
         device_class: NumberDeviceClass = None,
         unit_of_measurement=None,
-        min_value: float = None,
-        max_value: float = None,
+        min_value: float | None = None,
+        max_value: float | None = None,
         entity_category: EntityCategory = None,
-        transform_function: Optional[Callable] = None,
+        transform_function: Callable | None = None,
         connected_device_type: SessyConnectedDeviceType = SessyConnectedDeviceType.SELF,
     ):
         device: SessyBattery = config_entry.runtime_data.device

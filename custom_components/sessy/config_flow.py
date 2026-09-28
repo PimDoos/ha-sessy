@@ -6,21 +6,19 @@ import logging
 from typing import Any
 
 import voluptuous as vol
-
 from homeassistant import config_entries
+from homeassistant.const import (
+    CONF_HOST,
+    CONF_NAME,
+    CONF_PASSWORD,
+    CONF_SCAN_INTERVAL,
+    CONF_USERNAME,
+)
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.exceptions import HomeAssistantError
-from homeassistant.const import (
-    CONF_PASSWORD,
-    CONF_USERNAME,
-    CONF_HOST,
-    CONF_NAME,
-    CONF_SCAN_INTERVAL,
-)
 from homeassistant.helpers.service_info.zeroconf import ZeroconfServiceInfo
-
-from sessypy.devices import get_sessy_device, SessyBattery, SessyP1Meter, SessyCTMeter
+from sessypy.devices import SessyBattery, SessyCTMeter, SessyP1Meter, get_sessy_device
 from sessypy.util import SessyConnectionException, SessyLoginException
 
 from .const import DEFAULT_SCAN_INTERVAL_POWER, DOMAIN
@@ -37,10 +35,10 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
             username=data.get(CONF_USERNAME),
             password=data.get(CONF_PASSWORD),
         )
-    except SessyLoginException:
-        raise InvalidAuth
-    except SessyConnectionException:
-        raise CannotConnect
+    except SessyLoginException as e:
+        raise InvalidAuth from e
+    except SessyConnectionException as e:
+        raise CannotConnect from e
 
     if device is None:
         raise CannotConnect
@@ -125,8 +123,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         _LOGGER.info("Starting reconfigure step for Sessy")
 
-        self._reconfig_entry = self._get_reconfigure_entry()
-        data = self._reconfig_entry.data
+        reconfig_entry = self._get_reconfigure_entry()
+        data = reconfig_entry.data
 
         self.hostname = data.get(CONF_HOST)
 
@@ -140,7 +138,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             try:
-                # Merge stored reconfigure entry data (username/password) with user's new data (host)
+                # Merge stored data with user's new data
                 info = await validate_input(self.hass, {**data, **user_input})
             except CannotConnect:
                 errors["base"] = "cannot_connect"
@@ -152,7 +150,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             else:
                 return self.async_update_and_abort(
                     title=info["title"],
-                    entry=self._reconfig_entry,
+                    entry=reconfig_entry,
                     data_updates=user_input,
                 )
 
@@ -181,7 +179,9 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             ip_address = discovery_info.ip_address
             serial_number = discovery_info.properties.get("serial")
             _LOGGER.info(
-                f"Discovered Sessy device at {local_name} with serial: {serial_number}"
+                "Discovered Sessy device at %s with serial: %s",
+                local_name,
+                serial_number,
             )
 
             # Check for duplicates
@@ -209,6 +209,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 
 class OptionsFlowHandler(config_entries.OptionsFlow):
+    """Handle Sessy options flow."""
+
     def __init__(self) -> None:
         """Initialize options flow."""
 
