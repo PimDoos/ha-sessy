@@ -447,25 +447,31 @@ async def async_setup_entry(
         p1_details_coordinator: SessyCoordinator = coordinators[device.get_p1_details]
         p1_details: dict = p1_details_coordinator.raw_data
 
-        sensors.append(
-            SessySensor(
-                hass,
-                config_entry,
-                "Status",
-                p1_details_coordinator,
-                "state",
-                SensorDeviceClass.ENUM,
-                entity_category=EntityCategory.DIAGNOSTIC,
-                translation_key="p1_state",
-                transform_function=status_string_p1,
-                options=enum_to_options_list(SessyP1State, status_string_p1),
-                connected_device_type=SessyConnectedDeviceType.P1_METER,
-                unique_id_suffix="sensor-P1Status",
-            )
-        )
-
         # Only add DSMR sensors if P1 meter is connected and in OK state
-        if p1_details.get("state", SessyP1State.NOT_CONNECTED) == SessyP1State.OK:
+
+        if p1_details.get("state", SessyP1State.NOT_CONNECTED) != SessyP1State.OK:
+            _LOGGER.info(
+                "Skipping P1 meter for %s. P1 status: %s",
+                device.name,
+                p1_details.get("state"),
+            )
+        else:
+            sensors.append(
+                SessySensor(
+                    hass,
+                    config_entry,
+                    "Status",
+                    p1_details_coordinator,
+                    "state",
+                    SensorDeviceClass.ENUM,
+                    entity_category=EntityCategory.DIAGNOSTIC,
+                    translation_key="p1_state",
+                    transform_function=status_string_p1,
+                    options=enum_to_options_list(SessyP1State, status_string_p1),
+                    connected_device_type=SessyConnectedDeviceType.P1_METER,
+                    unique_id_suffix="sensor-P1Status",
+                )
+            )
             sensors.append(
                 SessySensor(
                     hass,
@@ -663,9 +669,14 @@ async def async_setup_entry(
 
         # Only enable gas meter if data is present
         if (
-            p1_details.get("gas_meter_equipment_identifier", 0) != 0
-            and p1_details.get("gas_meter_value.time", "") != ""
+            p1_details.get("gas_meter_equipment_identifier", 0) == 0
+            or p1_details.get("gas_meter_value.time", "") != ""
         ):
+            _LOGGER.info(
+                "Skipping P1 gas meter for %s. No gas meter data available.",
+                device.name,
+            )
+        else:
             sensors.append(
                 SessySensor(
                     hass,
@@ -692,10 +703,14 @@ async def async_setup_entry(
 
         # Only enable if modbus is present and has a valid device_uid
         if (
-            modbus_coordinator is not None
-            and modbus_coordinator.raw_data.get("device_uid", SESSY_MODBUS_DEFAULT_UID)
-            != SESSY_MODBUS_DEFAULT_UID
+            modbus_coordinator is None
+            or modbus_coordinator.raw_data.get("device_uid", SESSY_MODBUS_DEFAULT_UID)
+            == SESSY_MODBUS_DEFAULT_UID
         ):
+            _LOGGER.info(
+                "Skipping Modbus sensors for %s. No Modbus data available.", device.name
+            )
+        else:
             sensors.append(
                 SessySensor(
                     hass,
