@@ -29,6 +29,8 @@ from homeassistant.helpers.event import async_track_time_change
 from sessypy.const import SessyModbusState, SessyP1State, SessySystemState
 from sessypy.devices import SessyBattery, SessyCTMeter, SessyP1Meter
 
+from custom_components.sessy.const import SESSY_MODBUS_DEFAULT_UID
+
 from .coordinator import SessyCoordinator
 from .entity import SessyCoordinatorEntity
 from .models import SessyConfigEntry, SessyConnectedDeviceType
@@ -443,6 +445,8 @@ async def async_setup_entry(
 
     elif isinstance(device, SessyP1Meter):
         p1_details_coordinator: SessyCoordinator = coordinators[device.get_p1_details]
+        p1_details: dict = p1_details_coordinator.raw_data
+
         sensors.append(
             SessySensor(
                 hass,
@@ -459,163 +463,178 @@ async def async_setup_entry(
                 unique_id_suffix="sensor-P1Status",
             )
         )
-        sensors.append(
-            SessySensor(
-                hass,
-                config_entry,
-                "Tariff",
-                p1_details_coordinator,
-                "tariff_indicator",
-                availability_key="state",
-                availability_test_value=SessyP1State.OK,
-                connected_device_type=SessyConnectedDeviceType.P1_METER,
-            )
-        )
 
-        sensors.append(
-            SessySensor(
-                hass,
-                config_entry,
-                "Total Power",
-                p1_details_coordinator,
-                "power_total",
-                SensorDeviceClass.POWER,
-                SensorStateClass.MEASUREMENT,
-                UnitOfPower.WATT,
-                availability_key="state",
-                availability_test_value=SessyP1State.OK,
-                connected_device_type=SessyConnectedDeviceType.P1_METER,
-                unique_id_suffix="sensor-P1Power",
-            )
-        )
-        sensors.append(
-            SessySensor(
-                hass,
-                config_entry,
-                "Total Consuming Power",
-                p1_details_coordinator,
-                "power_consumed",
-                SensorDeviceClass.POWER,
-                SensorStateClass.MEASUREMENT,
-                UnitOfPower.WATT,
-                availability_key="state",
-                availability_test_value=SessyP1State.OK,
-                connected_device_type=SessyConnectedDeviceType.P1_METER,
-                unique_id_suffix="sensor-P1ConsumingPower",
-            )
-        )
-        sensors.append(
-            SessySensor(
-                hass,
-                config_entry,
-                "Total Producing Power",
-                p1_details_coordinator,
-                "power_produced",
-                SensorDeviceClass.POWER,
-                SensorStateClass.MEASUREMENT,
-                UnitOfPower.WATT,
-                availability_key="state",
-                availability_test_value=SessyP1State.OK,
-                connected_device_type=SessyConnectedDeviceType.P1_METER,
-                unique_id_suffix="sensor-P1ProducingPower",
-            )
-        )
-
-        p1_details: dict = p1_details_coordinator.raw_data
-        gas_meter_present = p1_details.get("gas_meter_value", 0) != 0
-        sensors.append(
-            SessySensor(
-                hass,
-                config_entry,
-                "Gas Consumption",
-                p1_details_coordinator,
-                "gas_meter_value",
-                SensorDeviceClass.GAS,
-                SensorStateClass.TOTAL,
-                UnitOfVolume.CUBIC_METERS,
-                transform_function=divide_by_thousand,
-                precision=3,
-                enabled_default=gas_meter_present,
-                availability_key="state",
-                availability_test_value=SessyP1State.OK,
-                connected_device_type=SessyConnectedDeviceType.P1_GAS_METER,
-                unique_id_suffix="sensor-GasConsumption",
-            )
-        )
-
-        for phase_id in range(1, 4):
+        # Only add DSMR sensors if P1 meter is connected and in OK state
+        if p1_details.get("state", SessyP1State.NOT_CONNECTED) == SessyP1State.OK:
             sensors.append(
                 SessySensor(
                     hass,
                     config_entry,
-                    f"Phase {phase_id} Voltage",
+                    "Tariff",
                     p1_details_coordinator,
-                    f"voltage_l{phase_id}",
-                    SensorDeviceClass.VOLTAGE,
-                    SensorStateClass.MEASUREMENT,
-                    UnitOfElectricPotential.MILLIVOLT,
-                    suggested_unit_of_measurement=UnitOfElectricPotential.VOLT,
+                    "tariff_indicator",
                     availability_key="state",
                     availability_test_value=SessyP1State.OK,
                     connected_device_type=SessyConnectedDeviceType.P1_METER,
                 )
             )
+
             sensors.append(
                 SessySensor(
                     hass,
                     config_entry,
-                    f"Phase {phase_id} Current",
+                    "Total Power",
                     p1_details_coordinator,
-                    f"current_l{phase_id}",
-                    SensorDeviceClass.CURRENT,
-                    SensorStateClass.MEASUREMENT,
-                    UnitOfElectricCurrent.MILLIAMPERE,
-                    precision=0,
-                    suggested_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
-                    availability_key="state",
-                    availability_test_value=SessyP1State.OK,
-                    connected_device_type=SessyConnectedDeviceType.P1_METER,
-                )
-            )
-            sensors.append(
-                SessySensor(
-                    hass,
-                    config_entry,
-                    f"Phase {phase_id} Consuming Power",
-                    p1_details_coordinator,
-                    f"power_consumed_l{phase_id}",
+                    "power_total",
                     SensorDeviceClass.POWER,
                     SensorStateClass.MEASUREMENT,
                     UnitOfPower.WATT,
                     availability_key="state",
                     availability_test_value=SessyP1State.OK,
                     connected_device_type=SessyConnectedDeviceType.P1_METER,
+                    unique_id_suffix="sensor-P1Power",
                 )
             )
             sensors.append(
                 SessySensor(
                     hass,
                     config_entry,
-                    f"Phase {phase_id} Producing Power",
+                    "Total Consuming Power",
                     p1_details_coordinator,
-                    f"power_produced_l{phase_id}",
+                    "power_consumed",
                     SensorDeviceClass.POWER,
                     SensorStateClass.MEASUREMENT,
                     UnitOfPower.WATT,
                     availability_key="state",
                     availability_test_value=SessyP1State.OK,
                     connected_device_type=SessyConnectedDeviceType.P1_METER,
+                    unique_id_suffix="sensor-P1ConsumingPower",
                 )
             )
-
-        for tariff_id in range(1, 3):
             sensors.append(
                 SessySensor(
                     hass,
                     config_entry,
-                    f"Tariff {tariff_id} Consumed Energy",
+                    "Total Producing Power",
                     p1_details_coordinator,
-                    f"power_consumed_tariff{tariff_id}",
+                    "power_produced",
+                    SensorDeviceClass.POWER,
+                    SensorStateClass.MEASUREMENT,
+                    UnitOfPower.WATT,
+                    availability_key="state",
+                    availability_test_value=SessyP1State.OK,
+                    connected_device_type=SessyConnectedDeviceType.P1_METER,
+                    unique_id_suffix="sensor-P1ProducingPower",
+                )
+            )
+
+            for phase_id in range(1, 4):
+                sensors.append(
+                    SessySensor(
+                        hass,
+                        config_entry,
+                        f"Phase {phase_id} Voltage",
+                        p1_details_coordinator,
+                        f"voltage_l{phase_id}",
+                        SensorDeviceClass.VOLTAGE,
+                        SensorStateClass.MEASUREMENT,
+                        UnitOfElectricPotential.MILLIVOLT,
+                        suggested_unit_of_measurement=UnitOfElectricPotential.VOLT,
+                        availability_key="state",
+                        availability_test_value=SessyP1State.OK,
+                        connected_device_type=SessyConnectedDeviceType.P1_METER,
+                    )
+                )
+                sensors.append(
+                    SessySensor(
+                        hass,
+                        config_entry,
+                        f"Phase {phase_id} Current",
+                        p1_details_coordinator,
+                        f"current_l{phase_id}",
+                        SensorDeviceClass.CURRENT,
+                        SensorStateClass.MEASUREMENT,
+                        UnitOfElectricCurrent.MILLIAMPERE,
+                        precision=0,
+                        suggested_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
+                        availability_key="state",
+                        availability_test_value=SessyP1State.OK,
+                        connected_device_type=SessyConnectedDeviceType.P1_METER,
+                    )
+                )
+                sensors.append(
+                    SessySensor(
+                        hass,
+                        config_entry,
+                        f"Phase {phase_id} Consuming Power",
+                        p1_details_coordinator,
+                        f"power_consumed_l{phase_id}",
+                        SensorDeviceClass.POWER,
+                        SensorStateClass.MEASUREMENT,
+                        UnitOfPower.WATT,
+                        availability_key="state",
+                        availability_test_value=SessyP1State.OK,
+                        connected_device_type=SessyConnectedDeviceType.P1_METER,
+                    )
+                )
+                sensors.append(
+                    SessySensor(
+                        hass,
+                        config_entry,
+                        f"Phase {phase_id} Producing Power",
+                        p1_details_coordinator,
+                        f"power_produced_l{phase_id}",
+                        SensorDeviceClass.POWER,
+                        SensorStateClass.MEASUREMENT,
+                        UnitOfPower.WATT,
+                        availability_key="state",
+                        availability_test_value=SessyP1State.OK,
+                        connected_device_type=SessyConnectedDeviceType.P1_METER,
+                    )
+                )
+
+            for tariff_id in range(1, 3):
+                sensors.append(
+                    SessySensor(
+                        hass,
+                        config_entry,
+                        f"Tariff {tariff_id} Consumed Energy",
+                        p1_details_coordinator,
+                        f"power_consumed_tariff{tariff_id}",
+                        SensorDeviceClass.ENERGY,
+                        SensorStateClass.TOTAL,
+                        UnitOfEnergy.WATT_HOUR,
+                        suggested_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+                        availability_key="state",
+                        availability_test_value=SessyP1State.OK,
+                        connected_device_type=SessyConnectedDeviceType.P1_METER,
+                    )
+                )
+                sensors.append(
+                    SessySensor(
+                        hass,
+                        config_entry,
+                        f"Tariff {tariff_id} Produced Energy",
+                        p1_details_coordinator,
+                        f"power_produced_tariff{tariff_id}",
+                        SensorDeviceClass.ENERGY,
+                        SensorStateClass.TOTAL,
+                        UnitOfEnergy.WATT_HOUR,
+                        suggested_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+                        availability_key="state",
+                        availability_test_value=SessyP1State.OK,
+                        connected_device_type=SessyConnectedDeviceType.P1_METER,
+                    )
+                )
+
+            # Combine tariff 1 and 2 energy into total energy sensors
+            sensors.append(
+                SessyCombinedSensor(
+                    hass,
+                    config_entry,
+                    "Total Consumed Energy",
+                    p1_details_coordinator,
+                    ["power_consumed_tariff1", "power_consumed_tariff2"],
                     SensorDeviceClass.ENERGY,
                     SensorStateClass.TOTAL,
                     UnitOfEnergy.WATT_HOUR,
@@ -626,12 +645,12 @@ async def async_setup_entry(
                 )
             )
             sensors.append(
-                SessySensor(
+                SessyCombinedSensor(
                     hass,
                     config_entry,
-                    f"Tariff {tariff_id} Produced Energy",
+                    "Total Produced Energy",
                     p1_details_coordinator,
-                    f"power_produced_tariff{tariff_id}",
+                    ["power_produced_tariff1", "power_produced_tariff2"],
                     SensorDeviceClass.ENERGY,
                     SensorStateClass.TOTAL,
                     UnitOfEnergy.WATT_HOUR,
@@ -642,45 +661,41 @@ async def async_setup_entry(
                 )
             )
 
-        # Combine tariff 1 and 2 energy into total energy sensors
-        sensors.append(
-            SessyCombinedSensor(
-                hass,
-                config_entry,
-                "Total Consumed Energy",
-                p1_details_coordinator,
-                ["power_consumed_tariff1", "power_consumed_tariff2"],
-                SensorDeviceClass.ENERGY,
-                SensorStateClass.TOTAL,
-                UnitOfEnergy.WATT_HOUR,
-                suggested_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
-                availability_key="state",
-                availability_test_value=SessyP1State.OK,
-                connected_device_type=SessyConnectedDeviceType.P1_METER,
+        # Only enable gas meter if data is present
+        if (
+            p1_details.get("gas_meter_equipment_identifier", 0) != 0
+            and p1_details.get("gas_meter_value.time", "") != ""
+        ):
+            sensors.append(
+                SessySensor(
+                    hass,
+                    config_entry,
+                    "Gas Consumption",
+                    p1_details_coordinator,
+                    "gas_meter_value",
+                    SensorDeviceClass.GAS,
+                    SensorStateClass.TOTAL,
+                    UnitOfVolume.CUBIC_METERS,
+                    transform_function=divide_by_thousand,
+                    precision=3,
+                    availability_key="state",
+                    availability_test_value=SessyP1State.OK,
+                    connected_device_type=SessyConnectedDeviceType.P1_GAS_METER,
+                    unique_id_suffix="sensor-GasConsumption",
+                )
             )
-        )
-        sensors.append(
-            SessyCombinedSensor(
-                hass,
-                config_entry,
-                "Total Produced Energy",
-                p1_details_coordinator,
-                ["power_produced_tariff1", "power_produced_tariff2"],
-                SensorDeviceClass.ENERGY,
-                SensorStateClass.TOTAL,
-                UnitOfEnergy.WATT_HOUR,
-                suggested_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
-                availability_key="state",
-                availability_test_value=SessyP1State.OK,
-                connected_device_type=SessyConnectedDeviceType.P1_METER,
-            )
-        )
 
         # ModBus entities
         modbus_coordinator: SessyCoordinator = coordinators.get(
             device.get_modbus_details, None
         )
-        if modbus_coordinator is not None:
+
+        # Only enable if modbus is present and has a valid device_uid
+        if (
+            modbus_coordinator is not None
+            and modbus_coordinator.raw_data.get("device_uid", SESSY_MODBUS_DEFAULT_UID)
+            != SESSY_MODBUS_DEFAULT_UID
+        ):
             sensors.append(
                 SessySensor(
                     hass,
@@ -795,6 +810,7 @@ async def async_setup_entry(
                     modbus_coordinator,
                     "device_type",
                     entity_category=EntityCategory.DIAGNOSTIC,
+                    connected_device_type=SessyConnectedDeviceType.MODBUS_METER,
                     unique_id_suffix="sensor-ModbusDeviceType",
                 )
             )
@@ -808,6 +824,7 @@ async def async_setup_entry(
                     SensorDeviceClass.ENUM,
                     translation_key="modbus_state",
                     entity_category=EntityCategory.DIAGNOSTIC,
+                    connected_device_type=SessyConnectedDeviceType.MODBUS_METER,
                     transform_function=status_string_modbus,
                     options=enum_to_options_list(
                         SessyModbusState, status_string_modbus
