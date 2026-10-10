@@ -18,6 +18,7 @@ from sessypy.devices import (
 from .const import (
     DOMAIN,
     SESSY_MANUFACTURER,
+    SESSY_MODBUS_DEFAULT_UID,
 )
 from .coordinator import SessyCoordinator
 from .models import SessyConfigEntry, SessyConnectedDeviceType
@@ -111,8 +112,10 @@ async def generate_device_info(
 
             if (
                 p1_serial_dec is not None
+                and p1_serial_dec != ""
                 and p1_model is not None
                 and p1_revision is not None
+                and p1_revision != 0
             ):
                 p1_revision_formatted = f"DSMR {(p1_revision / 10):.1f}"
                 p1_serial = decode_equipment_identifier(p1_serial_dec)
@@ -127,12 +130,17 @@ async def generate_device_info(
                     serial_number=p1_serial,
                     via_device_id=device_entry_self.id,
                 )
+            else:
+                _LOGGER.info(
+                    "Electricity meter details not available for %s. Skipping.",
+                    device.name,
+                )
 
             gas_serial_dec = p1_coordinator.raw_data.get(
-                "gas_equipment_identifier", None
+                "gas_meter_equipment_identifier", None
             )
 
-            if gas_serial_dec is not None:
+            if gas_serial_dec is not None and gas_serial_dec != "":
                 gas_serial = decode_equipment_identifier(gas_serial_dec)
 
                 if len(gas_serial) > 8:
@@ -144,6 +152,10 @@ async def generate_device_info(
                         serial_number=gas_serial,
                         via_device_id=device_entry_self.id,
                     )
+            else:
+                _LOGGER.info(
+                    "Gas meter details not available for %s. Skipping.", device.name
+                )
 
         modbus_coordinator = coordinators.get(device.get_modbus_details, None)
 
@@ -152,7 +164,7 @@ async def generate_device_info(
             modbus_model: str = modbus_coordinator.raw_data.get("device_type", None)
             modbus_serial: str = modbus_coordinator.raw_data.get("device_uid", None)
 
-            if modbus_model is not None:
+            if modbus_model is not None and modbus_serial != SESSY_MODBUS_DEFAULT_UID:
                 device_info[SessyConnectedDeviceType.MODBUS_METER] = DeviceInfo(
                     name=f"{modbus_model}",
                     manufacturer=None,
@@ -161,6 +173,10 @@ async def generate_device_info(
                     model=modbus_model,
                     serial_number=modbus_serial,
                     via_device_id=device_entry_self.id,
+                )
+            else:
+                _LOGGER.info(
+                    "Modbus meter details not available for %s. Skipping.", device.name
                 )
 
     return device_info
