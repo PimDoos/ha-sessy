@@ -29,8 +29,6 @@ from homeassistant.helpers.event import async_track_time_change
 from sessypy.const import SessyModbusState, SessyP1State, SessySystemState
 from sessypy.devices import SessyBattery, SessyCTMeter, SessyP1Meter
 
-from custom_components.sessy.const import SESSY_MODBUS_DEFAULT_UID
-
 from .coordinator import SessyCoordinator
 from .entity import SessyCoordinatorEntity
 from .models import SessyConfigEntry, SessyConnectedDeviceType
@@ -58,6 +56,7 @@ async def async_setup_entry(
 
     device = config_entry.runtime_data.device
     coordinators = config_entry.runtime_data.coordinators
+    device_info = config_entry.runtime_data.device_info
     sensors = []
 
     # Disable WiFi RSSI sensor if WiFi is not connected on discovery
@@ -444,18 +443,14 @@ async def async_setup_entry(
                 )
 
     elif isinstance(device, SessyP1Meter):
-        p1_details_coordinator: SessyCoordinator = coordinators[device.get_p1_details]
-        p1_details: dict = p1_details_coordinator.raw_data
+        p1_details_coordinator: SessyCoordinator = coordinators.get(
+            device.get_p1_details
+        )
 
-        # Only add DSMR sensors if P1 meter is connected and in OK state
-
-        if p1_details.get("state", SessyP1State.NOT_CONNECTED) != SessyP1State.OK:
-            _LOGGER.info(
-                "Skipping P1 meter for %s. P1 status: %s",
-                device.name,
-                p1_details.get("state"),
-            )
-        else:
+        if (
+            p1_details_coordinator is not None
+            and SessyConnectedDeviceType.P1_METER in device_info
+        ):
             sensors.append(
                 SessySensor(
                     hass,
@@ -667,34 +662,26 @@ async def async_setup_entry(
                 )
             )
 
-        # Only enable gas meter if data is present
-        if (
-            p1_details.get("gas_meter_equipment_identifier", 0) == 0
-            or p1_details.get("gas_meter_value.time", "") != ""
-        ):
-            _LOGGER.info(
-                "Skipping P1 gas meter for %s. No gas meter data available.",
-                device.name,
-            )
-        else:
-            sensors.append(
-                SessySensor(
-                    hass,
-                    config_entry,
-                    "Gas Consumption",
-                    p1_details_coordinator,
-                    "gas_meter_value",
-                    SensorDeviceClass.GAS,
-                    SensorStateClass.TOTAL,
-                    UnitOfVolume.CUBIC_METERS,
-                    transform_function=divide_by_thousand,
-                    precision=3,
-                    availability_key="state",
-                    availability_test_value=SessyP1State.OK,
-                    connected_device_type=SessyConnectedDeviceType.P1_GAS_METER,
-                    unique_id_suffix="sensor-GasConsumption",
+            # Only enable gas meter if data is present
+            if SessyConnectedDeviceType.P1_GAS_METER in device_info:
+                sensors.append(
+                    SessySensor(
+                        hass,
+                        config_entry,
+                        "Gas Consumption",
+                        p1_details_coordinator,
+                        "gas_meter_value",
+                        SensorDeviceClass.GAS,
+                        SensorStateClass.TOTAL,
+                        UnitOfVolume.CUBIC_METERS,
+                        transform_function=divide_by_thousand,
+                        precision=3,
+                        availability_key="state",
+                        availability_test_value=SessyP1State.OK,
+                        connected_device_type=SessyConnectedDeviceType.P1_GAS_METER,
+                        unique_id_suffix="sensor-GasConsumption",
+                    )
                 )
-            )
 
         # ModBus entities
         modbus_coordinator: SessyCoordinator = coordinators.get(
@@ -703,14 +690,9 @@ async def async_setup_entry(
 
         # Only enable if modbus is present and has a valid device_uid
         if (
-            modbus_coordinator is None
-            or modbus_coordinator.raw_data.get("device_uid", SESSY_MODBUS_DEFAULT_UID)
-            == SESSY_MODBUS_DEFAULT_UID
+            modbus_coordinator is not None
+            and SessyConnectedDeviceType.MODBUS_METER in device_info
         ):
-            _LOGGER.info(
-                "Skipping Modbus sensors for %s. No Modbus data available.", device.name
-            )
-        else:
             sensors.append(
                 SessySensor(
                     hass,
