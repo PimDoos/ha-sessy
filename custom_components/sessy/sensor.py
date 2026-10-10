@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -1091,7 +1091,7 @@ class SessyScheduleSensor(SessySensor):
         self.tracker = async_track_time_change(hass, update_schedule, None, "/15", 0)
 
     def update_from_cache(self):
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=datetime.UTC)
 
         schedule: list = self.cache_value
 
@@ -1132,7 +1132,7 @@ class SessyScheduleSensor(SessySensor):
 
         for schedule_entry in schedule:
             start_date = datetime.fromtimestamp(
-                schedule_entry.get("start_time"), tz=timezone.utc
+                schedule_entry.get("start_time"), tz=datetime.UTC
             )
             if self.schedule_transform_function:
                 prices_attribute[start_date] = self.schedule_transform_function(
@@ -1187,7 +1187,7 @@ class SessyLegacyScheduleSensor(SessySensor):
         self.tracker = async_track_time_change(hass, update_schedule, None, 0, 0)
 
     def update_from_cache(self):
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=datetime.UTC)
 
         schedule_today = self.day_schedule()
         schedule_today_values = schedule_today.get(self.schedule_key, [])
@@ -1218,7 +1218,7 @@ class SessyLegacyScheduleSensor(SessySensor):
 
     def day_schedule(self, offset: int = 0) -> dict:
         """Get the schedule for a day at specified offset"""
-        schedule_date = datetime.now(tz=timezone.utc)
+        schedule_date = datetime.now(tz=datetime.UTC)
         schedule_date += timedelta(days=offset)
         date_key = schedule_date.strftime("%Y-%m-%d")
 
