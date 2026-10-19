@@ -200,3 +200,4 @@ class SessyUpdate(SessyCoordinatorEntity, UpdateEntity):
         self._attr_in_progress = True
         self._attr_update_percentage = 0
         self.async_write_ha_state()
+        await self.coordinator.async_request_refresh()
