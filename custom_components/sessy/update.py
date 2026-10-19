@@ -193,4 +193,10 @@ class SessyUpdate(SessyCoordinatorEntity, UpdateEntity):
         )
 
         self.coordinator.update_interval = SCAN_INTERVAL_OTA_BUSY
-        await self.coordinator.async_request_refresh()
+
+        # Sessy API does not immeadiately return the update progress, so do not poll directly.
+        # Set state to updating and progress to 0% until the next update from the coordinator
+
+        self._attr_in_progress = True
+        self._attr_update_percentage = 0
+        self.async_write_ha_state()
