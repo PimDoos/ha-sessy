@@ -1,6 +1,7 @@
 {
   "domain": "sessy",
   "name": "Sessy",
+  "category": ["energy.solar_batteries", "energy.meters_monitoring"],
   "codeowners": ["@PimDoos"],
   "config_flow": true,
   "dependencies": [],
@@ -10,6 +11,6 @@
   "issue_tracker": "https://github.com/PimDoos/ha-sessy/issues",
   "loggers": ["sessypy"],
   "requirements": ["sessypy==0.2.6"],
-  "version": "1.0.6",
+  "version": "1.0.5",
   "zeroconf": [{ "type": "_http._tcp.local.", "name": "sessy-*" }]
 }
