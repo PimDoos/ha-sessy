@@ -1,5 +1,7 @@
 {
   "name": "Sessy",
   "country": "NL",
-  "homeassistant": "2026.8.0"
+  "filename": "sessy.zip",
+  "homeassistant": "2026.8.0",
+  "zip_release": true
 }
