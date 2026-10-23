@@ -1,6 +1,7 @@
 {
   "domain": "sessy",
   "name": "Sessy",
+  "categories": ["energy.solar_batteries", "energy.meters_monitoring"],
   "codeowners": ["@PimDoos"],
   "config_flow": true,
   "dependencies": [],
