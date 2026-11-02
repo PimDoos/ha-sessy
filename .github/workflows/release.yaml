@@ -24,6 +24,6 @@ jobs:
           zip sessy.zip -r ./
 
       - name: "Upload the ZIP file to the release"
-        uses: "softprops/action-gh-release@v2.0.8"
+        uses: "softprops/action-gh-release@v3.0.3"
         with:
           files: ${{ github.workspace }}/custom_components/sessy/sessy.zip
